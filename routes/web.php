@@ -6,6 +6,14 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+Route::get('/admin-login', function () {
+    return view('welcome');
+});
+
+Route::fallback(function () {
+    return view('welcome');
+});
+
 Route::get('/api/health', function () {
     return response()->json([
         'status' => 'Online',
