@@ -151,6 +151,22 @@ export default function StudentRequestForm({ onNavigate }) {
       setGeneratedRef(data.tracking_number);
       setIsSubmitting(false);
       setSubmitSuccess(true);
+
+      // Save to localStorage for track dashboard
+      const saved = JSON.parse(localStorage.getItem('student_requests') || '[]');
+      const doc = documents.find(d => d.code === selectedDoc);
+      saved.push({
+        ref: data.tracking_number,
+        title: doc?.name || selectedDoc,
+        date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+        status: 'Pending',
+        progress: 20,
+        purpose: purpose,
+        price: totalPrice,
+        pickup: 'Registrar Office Claim',
+        fullName: personalInfo.fullName,
+      });
+      localStorage.setItem('student_requests', JSON.stringify(saved));
     } catch (err) {
       setSubmitError('Network error. Please check your connection and try again.');
       setIsSubmitting(false);
