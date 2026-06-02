@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Document;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -48,8 +49,13 @@ class StoreStudentRequest extends FormRequest
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
-            if ($this->input('selectedDoc') === 'grades' && empty($this->input('selectedSemesters'))) {
-                $validator->errors()->add('selectedSemesters', 'Please select at least one year-semester combination for Certificate of Grades.');
+            $code = $this->input('selectedDoc');
+            if (!$code) return;
+
+            $isPerSemester = Document::where('code', $code)->value('is_per_semester');
+
+            if ($isPerSemester && empty($this->input('selectedSemesters'))) {
+                $validator->errors()->add('selectedSemesters', 'Please select at least one year-semester combination for this document.');
             }
         });
     }
