@@ -30,9 +30,12 @@ class StoreStudentRequest extends FormRequest
             'contactNo' => 'required|string|max:20',
             'email' => 'required|email|max:255',
             'course' => 'required|string|max:255',
-            'selectedDoc' => 'required|string|exists:documents,code',
+            'selectedDocs' => 'required|array|min:1',
+            'selectedDocs.*' => 'required|string|exists:documents,code',
             'selectedSemesters' => 'nullable|array',
             'selectedSemesters.*' => ['string', Rule::in(self::VALID_SEMESTER_COMBOS)],
+            'pages' => 'nullable|integer|min:1',
+            'paymentMethod' => 'required|string|in:cash,online',
             'purpose' => 'required|string|max:1000',
         ];
     }
@@ -40,22 +43,32 @@ class StoreStudentRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'selectedDoc.required' => 'Please select a document.',
-            'selectedDoc.exists' => 'Invalid document type selected.',
+            'selectedDocs.required' => 'Please select at least one document.',
+            'selectedDocs.min' => 'Please select at least one document.',
+            'selectedDocs.*.exists' => 'Invalid document type selected.',
             'selectedSemesters.*.in' => 'Invalid year-semester combination.',
+            'paymentMethod.required' => 'Please select a payment method.',
+            'paymentMethod.in' => 'Invalid payment method selected.',
         ];
     }
 
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
-            $code = $this->input('selectedDoc');
-            if (!$code) return;
+            $codes = $this->input('selectedDocs');
+            if (!$codes) return;
 
-            $isPerSemester = Document::where('code', $code)->value('is_per_semester');
+            $docs = Document::whereIn('code', $codes)->get();
 
-            if ($isPerSemester && empty($this->input('selectedSemesters'))) {
-                $validator->errors()->add('selectedSemesters', 'Please select at least one year-semester combination for this document.');
+            $hasSemesterDoc = $docs->contains('is_per_semester', true);
+            $hasPerPageDoc = $docs->contains('is_per_page', true);
+
+            if ($hasSemesterDoc && empty($this->input('selectedSemesters'))) {
+                $validator->errors()->add('selectedSemesters', 'Please select at least one year-semester combination for the selected document.');
+            }
+
+            if ($hasPerPageDoc && !$this->input('pages')) {
+                $validator->errors()->add('pages', 'Please specify the number of pages for this document.');
             }
         });
     }

@@ -51,6 +51,7 @@ class DocumentSeeder extends Seeder
             'description' => 'Official academic record of completed subjects and grades.',
             'price' => 150,
             'is_per_semester' => false,
+            'is_per_page' => true,
             'processing_days' => 7,
         ]);
     }

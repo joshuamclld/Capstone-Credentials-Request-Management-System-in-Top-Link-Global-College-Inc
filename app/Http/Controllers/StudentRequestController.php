@@ -14,14 +14,18 @@ class StudentRequestController extends Controller
         return DB::transaction(function () use ($request) {
             $validated = $request->validated();
 
-            $document = Document::where('code', $validated['selectedDoc'])->firstOrFail();
+            $documents = Document::whereIn('code', $validated['selectedDocs'])->get();
 
             $totalFee = $this->calculateFee(
-                $document,
-                $validated['selectedSemesters'] ?? []
+                $documents,
+                $validated['selectedSemesters'] ?? [],
+                $validated['pages'] ?? null
             );
 
             $trackingNumber = $this->generateTrackingNumber();
+
+            $paymentMethod = $validated['paymentMethod'];
+            $paymentStatus = $paymentMethod === 'online' ? 'pending_verification' : 'unpaid';
 
             StudentRequest::create([
                 'tracking_number' => $trackingNumber,
@@ -30,8 +34,11 @@ class StudentRequestController extends Controller
                 'contact_number' => $validated['contactNo'],
                 'email' => $validated['email'],
                 'course' => $validated['course'],
-                'document_id' => $document->id,
+                'document_ids' => $validated['selectedDocs'],
                 'semesters' => $validated['selectedSemesters'] ?? [],
+                'pages' => $validated['pages'] ?? null,
+                'payment_method' => $paymentMethod,
+                'payment_status' => $paymentStatus,
                 'purpose' => $validated['purpose'],
                 'total_fee' => $totalFee,
                 'status' => 'Pending',
@@ -45,13 +52,55 @@ class StudentRequestController extends Controller
         });
     }
 
-    private function calculateFee(Document $document, array $semesters): float
+    public function show(string $trackingNumber)
     {
-        if ($document->is_per_semester) {
-            return (float) ($document->price * count($semesters));
+        $request = StudentRequest::where('tracking_number', $trackingNumber)->first();
+
+        if (!$request) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tracking number not found.',
+            ], 404);
         }
 
-        return (float) $document->price;
+        $documents = Document::whereIn('code', $request->document_ids)->get();
+        $documentNames = $documents->pluck('name')->toArray();
+        $processingDays = $documents->max('processing_days');
+
+        return response()->json([
+            'success' => true,
+            'request' => [
+                'tracking_number' => $request->tracking_number,
+                'student_name' => $request->full_name,
+                'documents' => $documentNames,
+                'semesters' => $request->semesters ?? [],
+                'pages' => $request->pages,
+                'payment_method' => $request->payment_method,
+                'payment_status' => $request->payment_status,
+                'status' => $request->status,
+                'remarks' => $request->remarks,
+                'total_fee' => (float) $request->total_fee,
+                'processing_days' => $processingDays,
+                'created_at' => $request->created_at->format('F d, Y'),
+            ],
+        ]);
+    }
+
+    private function calculateFee($documents, array $semesters, ?int $pages): float
+    {
+        $total = 0;
+
+        foreach ($documents as $document) {
+            if ($document->is_per_semester) {
+                $total += $document->price * count($semesters);
+            } elseif ($document->is_per_page) {
+                $total += $document->price * ($pages ?? 1);
+            } else {
+                $total += $document->price;
+            }
+        }
+
+        return (float) $total;
     }
 
     private function generateTrackingNumber(): string

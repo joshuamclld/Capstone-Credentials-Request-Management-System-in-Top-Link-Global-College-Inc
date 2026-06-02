@@ -13,8 +13,11 @@ class StudentRequest extends Model
         'contact_number',
         'email',
         'course',
-        'document_id',
+        'document_ids',
         'semesters',
+        'pages',
+        'payment_method',
+        'payment_status',
         'purpose',
         'total_fee',
         'status',
@@ -24,13 +27,9 @@ class StudentRequest extends Model
     protected function casts(): array
     {
         return [
+            'document_ids' => 'array',
             'semesters' => 'array',
             'total_fee' => 'decimal:2',
         ];
-    }
-
-    public function document()
-    {
-        return $this->belongsTo(Document::class);
     }
 }

@@ -13,7 +13,7 @@ const DOCUMENT_META = {
 
 export default function StudentRequestForm({ onNavigate }) {
   const [step, setStep] = useState(1);
-  
+
   const [personalInfo, setPersonalInfo] = useState({
     fullName: '',
     studentId: '',
@@ -22,8 +22,10 @@ export default function StudentRequestForm({ onNavigate }) {
     course: ''
   });
 
-  const [selectedDoc, setSelectedDoc] = useState('');
+  const [selectedDocs, setSelectedDocs] = useState([]);
   const [selectedSemesters, setSelectedSemesters] = useState([]);
+  const [pages, setPages] = useState(1);
+  const [paymentMethod, setPaymentMethod] = useState('');
   const [purpose, setPurpose] = useState('');
 
   const [documents, setDocuments] = useState([]);
@@ -51,18 +53,29 @@ export default function StudentRequestForm({ onNavigate }) {
   const resetForm = () => {
     setStep(1);
     setPersonalInfo({ fullName: '', studentId: '', contactNo: '', email: '', course: '' });
-    setSelectedDoc('');
+    setSelectedDocs([]);
     setSelectedSemesters([]);
+    setPages(1);
+    setPaymentMethod('');
     setPurpose('');
     setSubmitError('');
   };
 
-  // Calculations
-  const selectedDocument = documents.find(d => d.code === selectedDoc);
+  const selectedDocObjects = documents.filter(d => selectedDocs.includes(d.code));
+
+  const hasSemesterDoc = selectedDocObjects.some(d => d.is_per_semester);
+  const hasPerPageDoc = selectedDocObjects.some(d => d.is_per_page);
+
+  const gradesPrice = documents.find(d => d.code === 'grades')?.price ?? 50;
+  const torPrice = documents.find(d => d.code === 'tor')?.price ?? 150;
+
   const totalPrice = (() => {
-    if (!selectedDocument) return 0;
-    if (selectedDocument.is_per_semester) return Number(selectedDocument.price) * selectedSemesters.length;
-    return Number(selectedDocument.price);
+    if (selectedDocObjects.length === 0) return 0;
+    return selectedDocObjects.reduce((sum, doc) => {
+      if (doc.is_per_semester) return sum + Number(doc.price) * selectedSemesters.length;
+      if (doc.is_per_page) return sum + Number(doc.price) * pages;
+      return sum + Number(doc.price);
+    }, 0);
   })();
 
   const handlePersonalChange = (e) => {
@@ -72,9 +85,13 @@ export default function StudentRequestForm({ onNavigate }) {
     });
   };
 
-  const selectDocument = (code) => {
-    setSelectedDoc(code);
-    if (code !== 'grades') setSelectedSemesters([]);
+  const toggleDocument = (code) => {
+    setSelectedDocs(prev => {
+      if (prev.includes(code)) {
+        return prev.filter(c => c !== code);
+      }
+      return [...prev, code];
+    });
   };
 
   const toggleSemester = (combo) => {
@@ -89,12 +106,20 @@ export default function StudentRequestForm({ onNavigate }) {
     e.preventDefault();
     setStepError('');
     if (step === 2) {
-      if (!selectedDoc) {
-        setStepError('Please select a document.');
+      if (selectedDocs.length === 0) {
+        setStepError('Please select at least one document.');
         return;
       }
-      if (selectedDoc === 'grades' && selectedSemesters.length === 0) {
-        setStepError('Please select at least one year-semester combination for Certificate of Grades.');
+      if (hasSemesterDoc && selectedSemesters.length === 0) {
+        setStepError('Please select at least one year-semester combination for the selected document.');
+        return;
+      }
+      if (hasPerPageDoc && (!pages || pages < 1)) {
+        setStepError('Please specify the number of pages.');
+        return;
+      }
+      if (!purpose.trim()) {
+        setStepError('Please enter the purpose of your request.');
         return;
       }
     }
@@ -115,6 +140,12 @@ export default function StudentRequestForm({ onNavigate }) {
     setIsSubmitting(true);
     setSubmitError('');
 
+    if (!paymentMethod) {
+      setSubmitError('Please select a payment method.');
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       const response = await fetch('/requests', {
         method: 'POST',
@@ -129,8 +160,10 @@ export default function StudentRequestForm({ onNavigate }) {
           contactNo: personalInfo.contactNo,
           email: personalInfo.email,
           course: personalInfo.course,
-          selectedDoc: selectedDoc,
+          selectedDocs: selectedDocs,
           selectedSemesters: selectedSemesters,
+          pages: hasPerPageDoc ? pages : null,
+          paymentMethod: paymentMethod,
           purpose: purpose,
         }),
       });
@@ -151,22 +184,6 @@ export default function StudentRequestForm({ onNavigate }) {
       setGeneratedRef(data.tracking_number);
       setIsSubmitting(false);
       setSubmitSuccess(true);
-
-      // Save to localStorage for track dashboard
-      const saved = JSON.parse(localStorage.getItem('student_requests') || '[]');
-      const doc = documents.find(d => d.code === selectedDoc);
-      saved.push({
-        ref: data.tracking_number,
-        title: doc?.name || selectedDoc,
-        date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
-        status: 'Pending',
-        progress: 20,
-        purpose: purpose,
-        price: totalPrice,
-        pickup: 'Registrar Office Claim',
-        fullName: personalInfo.fullName,
-      });
-      localStorage.setItem('student_requests', JSON.stringify(saved));
     } catch (err) {
       setSubmitError('Network error. Please check your connection and try again.');
       setIsSubmitting(false);
@@ -178,9 +195,9 @@ export default function StudentRequestForm({ onNavigate }) {
       {/* TopAppBar */}
       <header className="sticky top-0 z-50 flex justify-between items-center px-margin-mobile md:px-margin-desktop h-20 w-full bg-surface/80 backdrop-blur-md border-b border-outline-variant">
         <div className="flex items-center gap-4 cursor-pointer" onClick={(e) => { e.preventDefault(); onNavigate('/'); }}>
-          <img 
-            alt="Top Link Global College Logo" 
-            className="h-14 w-auto object-contain" 
+          <img
+            alt="Top Link Global College Logo"
+            className="h-14 w-auto object-contain"
             src="/images/logo.png"
             onError={(e) => {
               e.target.src = "https://lh3.googleusercontent.com/aida-public/AB6AXuCyMyPRtdQPf2Gskza0ayx5mNzvWT4tgO9yFmfXXsefaddaBTwUvTgYlWlWRJkMJmmvz8ueNr0ogEN2P3H9HlduWN59CLbmCUS-Sava7XzZ85xXL2CXpbHeZ0FpohCD3LoojhIz4lDxRmFgceThTZVWO6RfIXoDw4QNe2vrVGvik2DcE1oj_OWCLI48o-x9viGfWL_686ah978VK6oQwGAEr9tMroLasRlhWDJDWxYGQz9TEGby0kxKxKjHRF67jCUf3ZPlQhEzadk";
@@ -192,22 +209,22 @@ export default function StudentRequestForm({ onNavigate }) {
           </div>
         </div>
         <nav className="hidden md:flex gap-2 items-center">
-          <a 
-            className="text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high transition-all px-5 py-2.5 rounded-full" 
+          <a
+            className="text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high transition-all px-5 py-2.5 rounded-full"
             href="/"
             onClick={(e) => { e.preventDefault(); onNavigate('/'); }}
           >
             Home
           </a>
-          <a 
-            className="text-primary font-bold font-label-md text-label-md hover:bg-primary/10 transition-all px-5 py-2.5 rounded-full" 
+          <a
+            className="text-primary font-bold font-label-md text-label-md hover:bg-primary/10 transition-all px-5 py-2.5 rounded-full"
             href="/request"
             onClick={(e) => e.preventDefault()}
           >
             Request
           </a>
-          <a 
-            className="text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high transition-all px-5 py-2.5 rounded-full" 
+          <a
+            className="text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high transition-all px-5 py-2.5 rounded-full"
             href="/track"
             onClick={(e) => { e.preventDefault(); onNavigate('/track'); }}
           >
@@ -232,13 +249,13 @@ export default function StudentRequestForm({ onNavigate }) {
               <p className="text-2xl font-bold text-primary tracking-wider">{generatedRef}</p>
             </div>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button 
+              <button
                 onClick={(e) => { e.preventDefault(); onNavigate('/track'); }}
                 className="bg-primary text-on-primary px-8 py-4 rounded-xl font-bold hover:opacity-95 transition-all cursor-pointer"
               >
                 Track Status Page
               </button>
-              <button 
+              <button
                 onClick={(e) => { e.preventDefault(); setSubmitSuccess(false); resetForm(); }}
                 className="border-2 border-primary/20 text-primary px-8 py-4 rounded-xl font-bold hover:bg-primary/5 transition-all cursor-pointer"
               >
@@ -252,14 +269,12 @@ export default function StudentRequestForm({ onNavigate }) {
             {/* Multi-step Progress Bar */}
             <div className="mb-10 w-full max-w-2xl mx-auto">
               <div className="flex justify-between items-center mb-4 relative">
-                {/* Progress Lines */}
                 <div className="absolute top-1/2 left-0 w-full h-0.5 bg-surface-container-high -translate-y-1/2 z-0"></div>
-                <div 
+                <div
                   className="absolute top-1/2 left-0 h-0.5 bg-primary -translate-y-1/2 z-0 transition-all duration-500 ease-in-out"
                   style={{ width: `${(step - 1) * 50}%` }}
                 ></div>
-                
-                {/* Step 1: Personal */}
+
                 <div className="z-10 flex flex-col items-center">
                   <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold shadow-sm transition-all duration-300 ${
                     step >= 1 ? 'bg-primary text-on-primary ring-4 ring-primary-container/20' : 'bg-surface-container-high text-on-surface-variant'
@@ -269,7 +284,6 @@ export default function StudentRequestForm({ onNavigate }) {
                   <span className={`font-label-md text-label-md mt-2 ${step >= 1 ? 'text-primary font-bold' : 'text-on-surface-variant'}`}>Personal</span>
                 </div>
 
-                {/* Step 2: Documents */}
                 <div className="z-10 flex flex-col items-center">
                   <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold shadow-sm transition-all duration-300 ${
                     step >= 2 ? 'bg-primary text-on-primary ring-4 ring-primary-container/20' : 'bg-surface-container-high text-on-surface-variant'
@@ -279,7 +293,6 @@ export default function StudentRequestForm({ onNavigate }) {
                   <span className={`font-label-md text-label-md mt-2 ${step >= 2 ? 'text-primary font-bold' : 'text-on-surface-variant'}`}>Documents</span>
                 </div>
 
-                {/* Step 3: Pickup */}
                 <div className="z-10 flex flex-col items-center">
                   <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold shadow-sm transition-all duration-300 ${
                     step >= 3 ? 'bg-primary text-on-primary ring-4 ring-primary-container/20' : 'bg-surface-container-high text-on-surface-variant'
@@ -291,10 +304,9 @@ export default function StudentRequestForm({ onNavigate }) {
               </div>
             </div>
 
-            {/* Form Canvas */}
             <form onSubmit={step === 3 ? handleSubmit : handleNextStep}>
               <section className="bg-surface-container-lowest rounded-lg border border-outline-variant p-6 md:p-10 mb-8 shadow-sm">
-                
+
                 {/* STEP 1: Personal Info */}
                 {step === 1 && (
                   <div className="animate-fade-in-up">
@@ -302,66 +314,66 @@ export default function StudentRequestForm({ onNavigate }) {
                       <h2 className="font-headline-md text-headline-md text-primary mb-2">Personal Information</h2>
                       <p className="font-body-md text-body-md text-on-surface-variant">Provide your registry details to identify your academic records.</p>
                     </header>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <label className="block font-label-md text-label-md text-on-surface-variant mb-2">Full Name (Last, First, Middle Name)</label>
-                        <input 
+                        <input
                           required
-                          type="text" 
+                          type="text"
                           name="fullName"
                           value={personalInfo.fullName}
                           onChange={handlePersonalChange}
                           className="w-full rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-3 text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none"
-                          placeholder="e.g. Dela Cruz, Juan" 
+                          placeholder="e.g. Dela Cruz, Juan"
                         />
                       </div>
                       <div>
                         <label className="block font-label-md text-label-md text-on-surface-variant mb-2">Student ID Number</label>
-                        <input 
+                        <input
                           required
-                          type="text" 
+                          type="text"
                           name="studentId"
                           value={personalInfo.studentId}
                           onChange={handlePersonalChange}
                           className="w-full rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-3 text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none"
-                          placeholder="e.g. TLGC-2022-0941" 
+                          placeholder="e.g. TLGC-2022-0941"
                         />
                       </div>
                       <div>
                         <label className="block font-label-md text-label-md text-on-surface-variant mb-2">Contact Number</label>
-                        <input 
+                        <input
                           required
-                          type="tel" 
+                          type="tel"
                           name="contactNo"
                           value={personalInfo.contactNo}
                           onChange={handlePersonalChange}
                           className="w-full rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-3 text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none"
-                          placeholder="e.g. +63 917 123 4567" 
+                          placeholder="e.g. +63 917 123 4567"
                         />
                       </div>
                       <div>
                         <label className="block font-label-md text-label-md text-on-surface-variant mb-2">Email Address</label>
-                        <input 
+                        <input
                           required
-                          type="email" 
+                          type="email"
                           name="email"
                           value={personalInfo.email}
                           onChange={handlePersonalChange}
                           className="w-full rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-3 text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none"
-                          placeholder="e.g. juan.delacruz@example.com" 
+                          placeholder="e.g. juan.delacruz@example.com"
                         />
                       </div>
                       <div>
                         <label className="block font-label-md text-label-md text-on-surface-variant mb-2">Course / Program</label>
-                        <input 
+                        <input
                           required
-                          type="text" 
+                          type="text"
                           name="course"
                           value={personalInfo.course}
                           onChange={handlePersonalChange}
                           className="w-full rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-3 text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none"
-                          placeholder="e.g. BS in Information Technology" 
+                          placeholder="e.g. BS in Information Technology"
                         />
                       </div>
                     </div>
@@ -373,7 +385,7 @@ export default function StudentRequestForm({ onNavigate }) {
                   <div className="animate-fade-in-up">
                     <header className="mb-8">
                       <h2 className="font-headline-md text-headline-md text-primary mb-2">Document Selection</h2>
-                      <p className="font-body-md text-body-md text-on-surface-variant">Choose the official credentials you wish to request from the Registrar's Office.</p>
+                      <p className="font-body-md text-body-md text-on-surface-variant">Choose the official credentials you wish to request from the Registrar's Office. You may select multiple documents.</p>
                     </header>
 
                     {docsLoading ? (
@@ -385,19 +397,19 @@ export default function StudentRequestForm({ onNavigate }) {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {documents.map((doc) => {
                           const meta = DOCUMENT_META[doc.code] || {};
-                          const isChecked = selectedDoc === doc.code;
+                          const isChecked = selectedDocs.includes(doc.code);
                           return (
-                            <div 
+                            <div
                               key={doc.code}
-                              onClick={() => selectDocument(doc.code)}
+                              onClick={() => toggleDocument(doc.code)}
                               className={`relative flex flex-col p-6 rounded-lg border-2 cursor-pointer transition-all duration-300 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95 group ${
                                 isChecked ? 'border-primary bg-surface-container-low shadow-sm' : 'border-outline-variant bg-surface-container-lowest'
                               }`}
                             >
-                              <div className={`absolute top-6 right-6 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                                isChecked ? 'border-primary' : 'border-outline'
+                              <div className={`absolute top-6 right-6 w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                                isChecked ? 'border-primary bg-primary' : 'border-outline'
                               }`}>
-                                {isChecked && <div className="w-2.5 h-2.5 rounded-full bg-primary"></div>}
+                                {isChecked && <span className="material-symbols-outlined text-[14px] text-white" style={{fontSize:'14px'}}>check</span>}
                               </div>
                               <div className="flex items-center gap-3 mb-3">
                                 <span className={`material-symbols-outlined p-2 rounded-lg transition-transform duration-300 group-hover:rotate-6 ${
@@ -425,11 +437,11 @@ export default function StudentRequestForm({ onNavigate }) {
                       </div>
                     )}
 
-                    {/* Semester Selection — year + semester combos for Certificate of Grades */}
-                    {selectedDoc === 'grades' && (
+                    {/* Semester Selection for per-semester documents */}
+                    {hasSemesterDoc && (
                       <div className="mt-8">
                         <label className="block font-label-md text-label-md text-on-surface-variant mb-4">
-                          Semester/s Needed <span className="font-normal">(₱50 per year-semester combination)</span>
+                          Semester/s Needed <span className="font-normal">(₱{Number(gradesPrice).toFixed(2)} per year-semester combination)</span>
                         </label>
                         <div className="space-y-4">
                           {GRADE_YEARS.map(year => (
@@ -474,9 +486,28 @@ export default function StudentRequestForm({ onNavigate }) {
                         )}
                         {selectedSemesters.length > 0 && (
                           <p className="font-body-sm text-body-sm text-on-surface-variant mt-3">
-                            {selectedSemesters.length} combination(s) × ₱{Number(selectedDocument?.price || 50).toFixed(2)} = <span className="font-bold text-primary">₱{(Number(selectedDocument?.price || 50) * selectedSemesters.length).toFixed(2)}</span>
+                            {selectedSemesters.length} combination(s) × ₱{Number(gradesPrice).toFixed(2)} = <span className="font-bold text-primary">₱{(Number(gradesPrice) * selectedSemesters.length).toFixed(2)}</span>
                           </p>
                         )}
+                      </div>
+                    )}
+
+                    {/* Page count for per-page documents */}
+                    {hasPerPageDoc && (
+                      <div className="mt-8">
+                        <label className="block font-label-md text-label-md text-on-surface-variant mb-4">
+                          Number of Pages <span className="font-normal">(₱{Number(torPrice).toFixed(2)} per page)</span>
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={pages}
+                          onChange={(e) => setPages(Math.max(1, parseInt(e.target.value) || 1))}
+                          className="w-32 rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-3 text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                        />
+                        <p className="font-body-sm text-body-sm text-on-surface-variant mt-3">
+                          {pages} page(s) × ₱{Number(torPrice).toFixed(2)} = <span className="font-bold text-primary">₱{(Number(torPrice) * pages).toFixed(2)}</span>
+                        </p>
                       </div>
                     )}
 
@@ -490,12 +521,12 @@ export default function StudentRequestForm({ onNavigate }) {
                     {/* Purpose Field */}
                     <div className="mt-8">
                       <label className="block font-label-md text-label-md text-on-surface-variant mb-2">Purpose of Request</label>
-                      <textarea 
+                      <textarea
                         required
                         value={purpose}
                         onChange={(e) => setPurpose(e.target.value)}
-                        className="w-full rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-3 text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none" 
-                        placeholder="e.g., Employment, Graduate School Application, Board Exam..." 
+                        className="w-full rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-3 text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                        placeholder="e.g., Employment, Graduate School Application, Board Exam..."
                         rows="3"
                       />
                     </div>
@@ -524,10 +555,53 @@ export default function StudentRequestForm({ onNavigate }) {
                       </div>
                     </div>
 
+                    {/* Payment Method */}
+                    <div className="max-w-lg mx-auto mb-8">
+                      <h3 className="font-headline-sm text-headline-sm text-on-surface mb-4">Payment Method</h3>
+                      <div className="space-y-3">
+                        <div
+                          onClick={() => setPaymentMethod('cash')}
+                          className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                            paymentMethod === 'cash' ? 'border-primary bg-surface-container-low' : 'border-outline-variant bg-surface-container-lowest'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                              paymentMethod === 'cash' ? 'border-primary' : 'border-outline'
+                            }`}>
+                              {paymentMethod === 'cash' && <div className="w-2.5 h-2.5 rounded-full bg-primary"></div>}
+                            </div>
+                            <div>
+                              <p className="font-label-md font-bold text-on-surface">Cash Payment</p>
+                              <p className="text-body-sm text-on-surface-variant">Pay at the Registrar Office during claiming.</p>
+                            </div>
+                          </div>
+                        </div>
+                        <div
+                          onClick={() => setPaymentMethod('online')}
+                          className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                            paymentMethod === 'online' ? 'border-primary bg-surface-container-low' : 'border-outline-variant bg-surface-container-lowest'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                              paymentMethod === 'online' ? 'border-primary' : 'border-outline'
+                            }`}>
+                              {paymentMethod === 'online' && <div className="w-2.5 h-2.5 rounded-full bg-primary"></div>}
+                            </div>
+                            <div>
+                              <p className="font-label-md font-bold text-on-surface">Online Payment</p>
+                              <p className="text-body-sm text-on-surface-variant">Pay online and wait for payment verification.</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
                     {/* Summary Review */}
                     <div className="border border-outline-variant rounded-xl p-6 bg-surface-container-low">
                       <h3 className="font-headline-sm text-lg text-on-surface mb-4">Request Summary</h3>
-                      
+
                       <div className="space-y-3 mb-6">
                         <div className="flex justify-between border-b border-outline-variant pb-2">
                           <span className="text-on-surface-variant font-medium">Student Name:</span>
@@ -538,12 +612,12 @@ export default function StudentRequestForm({ onNavigate }) {
                           <span className="font-bold text-on-surface">{personalInfo.studentId}</span>
                         </div>
                         <div className="flex justify-between border-b border-outline-variant pb-2">
-                          <span className="text-on-surface-variant font-medium">Selected Document:</span>
+                          <span className="text-on-surface-variant font-medium">Selected Documents:</span>
                           <span className="font-bold text-on-surface text-right">
-                            {selectedDocument?.name || ''}
+                            {selectedDocObjects.map(d => d.name).join(', ')}
                           </span>
                         </div>
-                        {selectedDoc === 'grades' && selectedSemesters.length > 0 && (
+                        {hasSemesterDoc && selectedSemesters.length > 0 && (
                           <div className="flex justify-between border-b border-outline-variant pb-2">
                             <span className="text-on-surface-variant font-medium">Semester/s:</span>
                             <span className="font-bold text-on-surface text-right">
@@ -551,9 +625,23 @@ export default function StudentRequestForm({ onNavigate }) {
                             </span>
                           </div>
                         )}
+                        {hasPerPageDoc && (
+                          <div className="flex justify-between border-b border-outline-variant pb-2">
+                            <span className="text-on-surface-variant font-medium">Pages:</span>
+                            <span className="font-bold text-on-surface text-right">{pages}</span>
+                          </div>
+                        )}
                         <div className="flex justify-between pb-2">
                           <span className="text-on-surface-variant font-medium">Pickup Method:</span>
                           <span className="font-bold text-on-surface">Registrar Office Claim</span>
+                        </div>
+                        <div className="flex justify-between border-b border-outline-variant pb-2">
+                          <span className="text-on-surface-variant font-medium">Payment Method:</span>
+                          <span className="font-bold text-on-surface">{paymentMethod === 'cash' ? 'Cash Payment' : paymentMethod === 'online' ? 'Online Payment' : ''}</span>
+                        </div>
+                        <div className="flex justify-between pb-2">
+                          <span className="text-on-surface-variant font-medium">Payment Status:</span>
+                          <span className="font-bold text-on-surface">{paymentMethod === 'cash' ? 'Unpaid' : paymentMethod === 'online' ? 'Pending Verification' : ''}</span>
                         </div>
                       </div>
 
@@ -576,7 +664,7 @@ export default function StudentRequestForm({ onNavigate }) {
               {/* Navigation Buttons */}
               <div className="flex items-center justify-between gap-6">
                 {step > 1 ? (
-                  <button 
+                  <button
                     type="button"
                     onClick={handleBackStep}
                     className="flex-1 flex items-center justify-center gap-2 px-8 py-5 rounded-xl bg-surface-container-high text-primary font-bold hover:bg-surface-container-highest transition-all duration-300 active:scale-95 group cursor-pointer"
@@ -585,7 +673,7 @@ export default function StudentRequestForm({ onNavigate }) {
                     Back
                   </button>
                 ) : (
-                  <button 
+                  <button
                     type="button"
                     onClick={(e) => { e.preventDefault(); onNavigate('/'); }}
                     className="flex-1 flex items-center justify-center gap-2 px-8 py-5 rounded-xl bg-surface-container-high text-primary font-bold hover:bg-surface-container-highest transition-all duration-300 active:scale-95 group cursor-pointer"
@@ -595,7 +683,7 @@ export default function StudentRequestForm({ onNavigate }) {
                 )}
 
                 {step < 3 ? (
-                  <button 
+                  <button
                     type="submit"
                     className="flex-1 flex items-center justify-center gap-2 px-8 py-5 rounded-xl bg-primary text-on-primary font-bold hover:opacity-90 shadow-lg transition-all duration-300 active:scale-95 group cursor-pointer"
                   >
@@ -603,7 +691,7 @@ export default function StudentRequestForm({ onNavigate }) {
                     <span className="material-symbols-outlined transition-transform duration-300 group-hover:translate-x-1">arrow_forward</span>
                   </button>
                 ) : (
-                  <button 
+                  <button
                     type="submit"
                     disabled={isSubmitting}
                     className="flex-1 flex items-center justify-center gap-2 px-8 py-5 rounded-xl bg-primary text-on-primary font-bold hover:opacity-90 shadow-lg transition-all duration-300 active:scale-95 disabled:opacity-50 cursor-pointer"
@@ -632,9 +720,9 @@ export default function StudentRequestForm({ onNavigate }) {
         <div className="max-w-container-max mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-10">
           <div className="flex flex-col gap-4">
             <div className="flex items-center gap-3">
-              <img 
-                alt="Logo" 
-                className="h-10 w-auto opacity-70 grayscale hover:grayscale-0 transition-all" 
+              <img
+                alt="Logo"
+                className="h-10 w-auto opacity-70 grayscale hover:grayscale-0 transition-all"
                 src="/images/logo.png"
                 onError={(e) => {
                   e.target.src = "https://lh3.googleusercontent.com/aida-public/AB6AXuCyMyPRtdQPf2Gskza0ayx5mNzvWT4tgO9yFmfXXsefaddaBTwUvTgYlWlWRJkMJmmvz8ueNr0ogEN2P3H9HlduWN59CLbmCUS-Sava7XzZ85xXL2CXpbHeZ0FpohCD3LoojhIz4lDxRmFgceThTZVWO6RfIXoDw4QNe2vrVGvik2DcE1oj_OWCLI48o-x9viGfWL_686ah978VK6oQwGAEr9tMroLasRlhWDJDWxYGQz9TEGby0kxKxKjHRF67jCUf3ZPlQhEzadk";
@@ -643,9 +731,9 @@ export default function StudentRequestForm({ onNavigate }) {
               <span className="font-headline-sm text-xl text-on-surface">Top Link Global College</span>
             </div>
             <p className="font-body-sm text-on-surface-variant">Empowering students through accessible academic records since 2018.</p>
-            <p className="font-label-sm text-outline">© {new Date().getFullYear()} Top Link Global College. All Rights Reserved.</p>
+            <p className="font-label-sm text-outline">&copy; {new Date().getFullYear()} Top Link Global College. All Rights Reserved.</p>
           </div>
-          
+
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-12">
             <div className="flex flex-col gap-4">
               <span className="font-label-md font-bold text-primary uppercase">Quick Links</span>
@@ -681,21 +769,21 @@ export default function StudentRequestForm({ onNavigate }) {
 
       {/* BottomNavBar (Mobile Only) */}
       <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-16 md:hidden px-2 pb-safe bg-surface border-t border-outline-variant shadow-lg">
-        <button 
+        <button
           onClick={(e) => { e.preventDefault(); onNavigate('/'); }}
           className="flex flex-col items-center justify-center text-on-surface-variant px-5 py-1.5 active:scale-95 transition-transform cursor-pointer"
         >
           <span className="material-symbols-outlined">home</span>
           <span className="font-label-sm text-[10px] font-bold">HOME</span>
         </button>
-        <button 
+        <button
           onClick={(e) => e.preventDefault()}
           className="flex flex-col items-center justify-center text-primary bg-primary-fixed rounded-full px-5 py-1.5 active:scale-95 transition-transform cursor-pointer"
         >
           <span className="material-symbols-outlined">add_circle</span>
           <span className="font-label-sm text-[10px] font-bold">REQUEST</span>
         </button>
-        <button 
+        <button
           onClick={(e) => { e.preventDefault(); onNavigate('/track'); }}
           className="flex flex-col items-center justify-center text-on-surface-variant px-5 py-1.5 active:scale-95 transition-transform cursor-pointer"
         >
