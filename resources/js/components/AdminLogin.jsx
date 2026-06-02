@@ -1,29 +1,61 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
-// Debug log for component mount
-console.log('AdminLogin component rendered');
-import { Mail, Lock, Eye, EyeOff, ArrowRight, ShieldAlert, Loader2, CheckCircle } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowRight, ShieldAlert, Loader2, CheckCircle, Clock } from 'lucide-react';
 
 export default function AdminLogin({ onLoginSuccess }) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [rememberMe, setRememberMe] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
-    const [status, setStatus] = useState('idle'); // 'idle' | 'loading' | 'success'
+    const [status, setStatus] = useState('idle'); // 'idle' | 'loading' | 'success' | 'error'
+    const [errorMessage, setErrorMessage] = useState('');
+    const [sessionExpired, setSessionExpired] = useState(false);
+
+    useEffect(() => {
+        if (window.location.search.includes('expired=1')) {
+            setSessionExpired(true);
+            window.history.replaceState({}, '', '/admin-login');
+        }
+    }, []);
 
     const handleSubmit = (e) => {
         e.preventDefault();
         if (!email || !password) return;
 
         setStatus('loading');
+        setErrorMessage('');
 
-        // Simulate API check
-        setTimeout(() => {
-            setStatus('success');
-            setTimeout(() => {
-                onLoginSuccess();
-            }, 1000);
-        }, 1500);
+        // Real API call to Laravel backend
+        fetch('/admin/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+            },
+            body: JSON.stringify({ email, password, remember_me: rememberMe })
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => {
+                    throw new Error(err.message || 'Login failed');
+                }).catch(() => {
+                    throw new Error('Server error. Please try again.');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.status === 'success') {
+                setStatus('success');
+                onLoginSuccess(data.user);
+            } else {
+                throw new Error(data.message || 'Login failed');
+            }
+        })
+        .catch(error => {
+            setStatus('error');
+            setErrorMessage(error.message || 'An error occurred during login');
+        });
     };
 
     return (
@@ -130,11 +162,29 @@ export default function AdminLogin({ onLoginSuccess }) {
                             </a>
                         </div>
 
+                        {/* Session Expired Message */}
+                        {sessionExpired && (
+                            <div className="text-amber-800 bg-amber-50 border border-amber-200 px-4 py-3 rounded-lg text-body-sm font-body-sm flex items-center gap-2">
+                                <Clock className="size-4 shrink-0" />
+                                Your session has expired. Please sign in again.
+                            </div>
+                        )}
+
+                        {/* Error Message */}
+                        {status === 'error' && (
+                            <div className="text-error bg-error-container/20 px-4 py-3 rounded-lg text-body-sm font-body-sm">
+                                {errorMessage}
+                            </div>
+                        )}
+
                         {/* Submit Button */}
                         <button
-                            className={`mt-4 w-full py-4 px-6 rounded-lg font-headline-sm text-headline-sm hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer ${status === 'success'
-                                ? 'bg-on-primary-container text-primary font-semibold'
-                                : 'bg-primary text-on-primary'
+                            className={`mt-4 w-full py-4 px-6 rounded-lg font-headline-sm text-headline-sm hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer 
+                                ${status === 'success' 
+                                    ? 'bg-on-primary-container text-primary font-semibold' 
+                                    : status === 'error'
+                                        ? 'bg-error text-on-error'
+                                        : 'bg-primary text-on-primary'
                                 }`}
                             type="submit"
                             disabled={status !== 'idle'}
@@ -155,6 +205,12 @@ export default function AdminLogin({ onLoginSuccess }) {
                                 <>
                                     <CheckCircle className="size-5" />
                                     Verified
+                                </>
+                            )}
+                            {status === 'error' && (
+                                <>
+                                    <ShieldAlert className="size-5" />
+                                    Try Again
                                 </>
                             )}
                         </button>

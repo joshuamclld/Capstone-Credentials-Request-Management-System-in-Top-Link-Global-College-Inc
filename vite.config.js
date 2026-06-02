@@ -16,11 +16,10 @@ export default defineConfig({
             ],
         }),
         tailwindcss(),
-        react({ fastRefresh: false })
+        react()
     ],
     server: {
-        // Use alternative port if default 5173 is unavailable
-        // Use a high-numbered port unlikely to be restricted
+        hmr: false,
         port: 8000,
         watch: {
             ignored: ['**/storage/framework/views/**'],
