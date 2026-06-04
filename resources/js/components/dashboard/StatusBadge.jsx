@@ -7,12 +7,13 @@ const requestStatusStyle = {
     'Processing': 'bg-blue-100 text-blue-800 border-blue-200',
     'Ready for Release': 'bg-purple-100 text-purple-800 border-purple-200',
     'Claimed': 'bg-slate-200 text-slate-700 border-slate-300',
+    'Cancelled': 'bg-red-100 text-red-800 border-red-200',
 };
 
 const paymentStatusStyle = {
-    'Paid': 'text-green-700 bg-green-50',
-    'Unpaid': 'text-amber-700 bg-amber-50',
-    'Pending Verification': 'text-yellow-700 bg-yellow-50',
+    'paid': 'text-green-700 bg-green-50',
+    'unpaid': 'text-red-700 bg-red-50',
+    'pending_verification': 'text-orange-700 bg-orange-50',
 };
 
 const baseClassByType = {

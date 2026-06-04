@@ -5,6 +5,7 @@ import DashboardSearch from '../DashboardSearch';
 import DashboardTable from '../DashboardTable';
 import StatusBadge from '../StatusBadge';
 import EmptyState from '../EmptyState';
+import DashboardPagination from '../DashboardPagination';
 
 const tableHeaders = ['Reference No.', 'Student Name', 'Documents', 'Current Status', 'Date Requested', 'Action'];
 
@@ -21,22 +22,69 @@ export default function ProcessRequests({ user, onLogout, onNavigate }) {
     const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [page, setPage] = useState(1);
+    const [pagination, setPagination] = useState(null);
+    const [processingId, setProcessingId] = useState(null);
+    const [message, setMessage] = useState(null);
 
-    useEffect(() => {
-        fetch('/admin/requests-data', { credentials: 'same-origin' })
+    const getCsrfToken = () =>
+        document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+    const fetchData = (p) => {
+        setLoading(true);
+        fetch(`/admin/requests-data?page=${p}`, { credentials: 'same-origin' })
             .then((res) => {
                 if (!res.ok) throw new Error('Failed to fetch');
                 return res.json();
             })
             .then((json) => {
                 setRequests(json.requests);
+                setPagination(json.pagination);
                 setLoading(false);
             })
             .catch((err) => {
                 setError(err.message);
                 setLoading(false);
             });
-    }, []);
+    };
+
+    useEffect(() => {
+        fetchData(page);
+    }, [page]);
+
+    const handlePageChange = (newPage) => {
+        if (newPage < 1 || (pagination && newPage > pagination.last_page)) return;
+        setPage(newPage);
+    };
+
+    const handleProcess = (id) => {
+        setProcessingId(id);
+        setMessage(null);
+
+        fetch(`/admin/requests/${id}`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': getCsrfToken(),
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({ status: 'Processing' }),
+        })
+            .then((res) => res.json())
+            .then((data) => {
+                if (data.message && data.request) {
+                    setMessage({ type: 'success', text: 'Request moved to Processing.' });
+                    fetchData(page);
+                } else {
+                    setMessage({ type: 'error', text: data.message || 'Failed to process request.' });
+                }
+                setProcessingId(null);
+            })
+            .catch(() => {
+                setMessage({ type: 'error', text: 'An error occurred.' });
+                setProcessingId(null);
+            });
+    };
 
     const processable = requests.filter(
         (req) => req.payment_status === 'paid' || req.status === 'Processing'
@@ -55,8 +103,12 @@ export default function ProcessRequests({ user, onLogout, onNavigate }) {
             <td className="px-6 py-4"><StatusBadge status={req.status} /></td>
             <td className="px-6 py-4 text-slate-500 text-xs">{req.created_at}</td>
             <td className="px-6 py-4">
-                <button className="px-3 py-1.5 text-xs font-medium text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg transition-colors cursor-pointer">
-                    Process Request
+                <button
+                    onClick={() => handleProcess(req.id)}
+                    disabled={processingId === req.id}
+                    className="px-3 py-1.5 text-xs font-medium text-white bg-emerald-700 hover:bg-emerald-800 disabled:bg-emerald-400 rounded-lg transition-colors cursor-pointer disabled:cursor-not-allowed"
+                >
+                    {processingId === req.id ? 'Processing...' : 'Process Request'}
                 </button>
             </td>
         </tr>
@@ -89,6 +141,15 @@ export default function ProcessRequests({ user, onLogout, onNavigate }) {
             onNavigate={onNavigate}
         >
             <section className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                {message && (
+                    <div className={`mx-6 mt-5 px-4 py-3 rounded-lg text-sm font-medium border ${
+                        message.type === 'success'
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                            : 'bg-red-50 text-red-800 border-red-200'
+                    }`}>
+                        {message.text}
+                    </div>
+                )}
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-6 py-5 border-b border-slate-200">
                     <div>
                         <h2 className="text-base font-bold text-slate-900">Processing Queue</h2>
@@ -113,6 +174,11 @@ export default function ProcessRequests({ user, onLogout, onNavigate }) {
                 >
                     {filtered.map(renderRow)}
                 </DashboardTable>
+                <DashboardPagination
+                    currentPage={pagination?.current_page || 1}
+                    lastPage={pagination?.last_page || 1}
+                    onPageChange={handlePageChange}
+                />
             </section>
         </DashboardLayout>
     );

@@ -23,6 +23,7 @@ class StudentRequest extends Model
         'status',
         'remarks',
         'verified_by',
+        'verified_by_user_id',
         'verified_at',
     ];
 

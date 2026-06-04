@@ -15,21 +15,28 @@ import CashierDashboard from './components/dashboard/pages/CashierDashboard';
 import PaymentQueue from './components/dashboard/pages/PaymentQueue';
 import PaymentDetails from './components/dashboard/pages/PaymentDetails';
 import PaidTransactions from './components/dashboard/pages/PaidTransactions';
+import AdminDashboard from './components/dashboard/pages/AdminDashboard';
+import UserManagement from './components/dashboard/pages/UserManagement';
+import UserDetails from './components/dashboard/pages/UserDetails';
+import CredentialTypes from './components/dashboard/pages/CredentialTypes';
+import CredentialTypeDetails from './components/dashboard/pages/CredentialTypeDetails';
+import Reports from './components/dashboard/pages/Reports';
+import Settings from './components/dashboard/pages/Settings';
+import SystemAdminDashboard from './components/dashboard/pages/system-admin/SystemAdminDashboard';
+import SystemAdminUserManagement from './components/dashboard/pages/system-admin/SystemAdminUserManagement';
+import SystemAdminUserDetails from './components/dashboard/pages/system-admin/SystemAdminUserDetails';
+import SystemAdminCredentialTypes from './components/dashboard/pages/system-admin/SystemAdminCredentialTypes';
+import SystemAdminReportsAnalytics from './components/dashboard/pages/system-admin/SystemAdminReportsAnalytics';
+import SystemAdminAuditLogs from './components/dashboard/pages/system-admin/SystemAdminAuditLogs';
+import SystemAdminSettings from './components/dashboard/pages/system-admin/SystemAdminSettings';
 import '../css/app.css';
 
 function App() {
-  console.log('App component rendered');
-  
-  // Auth state - now based on backend session
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [authChecked, setAuthChecked] = useState(false);
-  const [user, setUser] = useState(null);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [authChecked, setAuthChecked] = useState(false);
+    const [user, setUser] = useState(null);
 
-  // Current path state for client-side routing
-  const [currentPath, setCurrentPath] = useState(window.location.pathname);
-
-  // Health check state
-  const [backendStatus, setBackendStatus] = useState('Checking');
+    const [currentPath, setCurrentPath] = useState(window.location.pathname);
 
   // Check authentication status on app load
   useEffect(() => {
@@ -45,13 +52,6 @@ function App() {
       .catch(() => {
         setAuthChecked(true);
       });
-  }, []);
-
-  useEffect(() => {
-    fetch('/api/health')
-      .then((response) => response.json())
-      .then((data) => setBackendStatus(data.status ?? 'Online'))
-      .catch(() => setBackendStatus('Unavailable'));
   }, []);
 
   // Listen to popstate event (browser back/forward buttons)
@@ -79,7 +79,11 @@ function App() {
   const handleLoginSuccess = (userData) => {
     setIsAuthenticated(true);
     setUser(userData);
-    const dashboard = userData.role === 'cashier' ? '/cashier-dashboard' : '/admin-dashboard';
+    const dashboard = userData.role === 'cashier'
+      ? '/cashier-dashboard'
+      : userData.role === 'system_admin'
+        ? '/system-admin-dashboard'
+        : '/admin-dashboard';
     navigate(dashboard);
   };
 
@@ -126,7 +130,11 @@ function App() {
   // Route resolver
   if (currentPath === '/admin-login') {
     if (isAuthenticated && authChecked) {
-      const dashboard = user?.role === 'cashier' ? '/cashier-dashboard' : '/admin-dashboard';
+      const dashboard = user?.role === 'cashier'
+        ? '/cashier-dashboard'
+        : user?.role === 'system_admin'
+          ? '/system-admin-dashboard'
+          : '/admin-dashboard';
       setTimeout(() => navigate(dashboard), 0);
       return null;
     }
@@ -140,7 +148,7 @@ function App() {
   }
 
   // Auth check helper for all admin/cashier routes
-  if (currentPath.startsWith('/admin-') || currentPath.startsWith('/admin/') || currentPath.startsWith('/cashier-') || currentPath.startsWith('/cashier/')) {
+  if (currentPath.startsWith('/admin-') || currentPath.startsWith('/admin/') || currentPath.startsWith('/cashier-') || currentPath.startsWith('/cashier/') || currentPath.startsWith('/system-') || currentPath.startsWith('/system/') || currentPath.startsWith('/system-admin-') || currentPath.startsWith('/system-admin/')) {
     if (!isAuthenticated && authChecked) {
       setTimeout(() => navigate('/admin-login'), 0);
       return null;
@@ -167,8 +175,22 @@ function App() {
       return null;
     }
 
+    const isSystemAdminPath = currentPath.startsWith('/system-admin-') || currentPath.startsWith('/system-admin/');
+    if (isSystemAdminPath && user.role !== 'system_admin') {
+      window.history.pushState({}, '', '/admin-dashboard');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+      return null;
+    }
+
+    const isSystemPath = currentPath.startsWith('/system-') || currentPath.startsWith('/system/');
+    if (isSystemPath && user.role !== 'admin') {
+      window.history.pushState({}, '', '/admin-dashboard');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+      return null;
+    }
+
     // Unknown role — redirect to login
-    if (user.role !== 'admin' && user.role !== 'cashier') {
+    if (user.role !== 'admin' && user.role !== 'cashier' && user.role !== 'system_admin') {
       setTimeout(() => navigate('/admin-login'), 0);
       return null;
     }
@@ -221,6 +243,64 @@ function App() {
 
   if (currentPath === '/track') {
     return <StudentTrackDashboard onNavigate={navigate} />;
+  }
+
+  // System Administrator routes
+  if (currentPath === '/system-dashboard') {
+    return <AdminDashboard user={user} onLogout={handleLogout} onNavigate={navigate} />;
+  }
+
+  if (currentPath === '/system/users') {
+    return <UserManagement user={user} onLogout={handleLogout} onNavigate={navigate} />;
+  }
+
+  if (currentPath.startsWith('/system/users/')) {
+    return <UserDetails user={user} onLogout={handleLogout} onNavigate={navigate} />;
+  }
+
+  if (currentPath === '/system/credentials') {
+    return <CredentialTypes user={user} onLogout={handleLogout} onNavigate={navigate} />;
+  }
+
+  if (currentPath.startsWith('/system/credentials/')) {
+    return <CredentialTypeDetails user={user} onLogout={handleLogout} onNavigate={navigate} />;
+  }
+
+  if (currentPath === '/system/reports') {
+    return <Reports user={user} onLogout={handleLogout} onNavigate={navigate} />;
+  }
+
+  if (currentPath === '/system/settings') {
+    return <Settings user={user} onLogout={handleLogout} onNavigate={navigate} />;
+  }
+
+  // System Administrator routes (new /system-admin-* prefix)
+  if (currentPath === '/system-admin-dashboard') {
+    return <SystemAdminDashboard user={user} onLogout={handleLogout} onNavigate={navigate} />;
+  }
+
+  if (currentPath === '/system-admin/users') {
+    return <SystemAdminUserManagement user={user} onLogout={handleLogout} onNavigate={navigate} />;
+  }
+
+  if (currentPath.startsWith('/system-admin/users/')) {
+    return <SystemAdminUserDetails user={user} onLogout={handleLogout} onNavigate={navigate} />;
+  }
+
+  if (currentPath === '/system-admin/credentials') {
+    return <SystemAdminCredentialTypes user={user} onLogout={handleLogout} onNavigate={navigate} />;
+  }
+
+  if (currentPath === '/system-admin/reports') {
+    return <SystemAdminReportsAnalytics user={user} onLogout={handleLogout} onNavigate={navigate} />;
+  }
+
+  if (currentPath === '/system-admin/audit-logs') {
+    return <SystemAdminAuditLogs user={user} onLogout={handleLogout} onNavigate={navigate} />;
+  }
+
+  if (currentPath === '/system-admin/settings') {
+    return <SystemAdminSettings user={user} onLogout={handleLogout} onNavigate={navigate} />;
   }
 
   // Fallback: Default to Student Landing Page

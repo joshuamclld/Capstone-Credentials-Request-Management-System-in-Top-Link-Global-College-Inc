@@ -1,0 +1,230 @@
+import React, { useState, useEffect } from 'react';
+import { LayoutDashboard, Users, FileText, Settings, Eye, Edit, ToggleLeft, Plus, ChartColumn, RefreshCw, X, Check } from 'lucide-react';
+import DashboardLayout from '../../DashboardLayout';
+import DashboardSearch from '../../DashboardSearch';
+import DashboardTable from '../../DashboardTable';
+import DashboardPagination from '../../DashboardPagination';
+import StatusBadge from '../../StatusBadge';
+import EmptyState from '../../EmptyState';
+
+const tableHeaders = ['Name', 'Email', 'Role', 'Status', 'Date Created', 'Action'];
+
+const roleColors = {
+    admin: 'bg-blue-100 text-blue-800 border-blue-300',
+    cashier: 'bg-emerald-100 text-emerald-800 border-emerald-300',
+    system_admin: 'bg-purple-100 text-purple-800 border-purple-300',
+};
+
+const sidebarItems = [
+    { label: 'Dashboard', icon: LayoutDashboard, path: '/system-admin-dashboard' },
+    { label: 'User Management', icon: Users, path: '/system-admin/users' },
+    { label: 'Credential Types', icon: FileText, path: '/system-admin/credentials' },
+    { label: 'Reports & Analytics', icon: ChartColumn, path: '/system-admin/reports' },
+    { label: 'Audit Logs', icon: RefreshCw, path: '/system-admin/audit-logs' },
+    { label: 'Settings', icon: Settings, path: '/system-admin/settings' },
+];
+
+const roleFilterOptions = ['All', 'admin', 'cashier', 'system_admin'];
+
+export default function SystemAdminUserManagement({ user, onLogout, onNavigate }) {
+    const [query, setQuery] = useState('');
+    const [roleFilter, setRoleFilter] = useState('All');
+    const [users, setUsers] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [page, setPage] = useState(1);
+    const [pagination, setPagination] = useState(null);
+
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [editingUser, setEditingUser] = useState(null);
+    const [formData, setFormData] = useState({ name: '', email: '', password: '', role: 'cashier', contact_number: '' });
+    const [formError, setFormError] = useState('');
+    const [formLoading, setFormLoading] = useState(false);
+
+    const fetchUsers = (p) => {
+        setLoading(true);
+        const params = new URLSearchParams({ page: p });
+        if (query) params.append('search', query);
+        if (roleFilter !== 'All') params.append('role', roleFilter);
+
+        fetch(`/admin/system/users?${params}`, { credentials: 'same-origin' })
+            .then((r) => { if (!r.ok) throw new Error('Failed to fetch'); return r.json(); })
+            .then((j) => { setUsers(j.data); setPagination(j.pagination); setLoading(false); })
+            .catch((e) => { setUsers([]); setLoading(false); });
+    };
+
+    useEffect(() => { fetchUsers(page); }, [page, query, roleFilter]);
+
+    const handlePageChange = (np) => { if (np >= 1 && pagination && np <= pagination.last_page) setPage(np); };
+
+    const openAddModal = () => {
+        setFormData({ name: '', email: '', password: '', role: 'cashier', contact_number: '' });
+        setFormError('');
+        setShowAddModal(true);
+    };
+
+    const openEditModal = (u) => {
+        setEditingUser(u);
+        setFormData({ name: u.name, email: u.email, password: '', role: u.role, contact_number: u.contact_number || '' });
+        setFormError('');
+        setShowEditModal(true);
+    };
+
+    const handleSubmit = (isEdit) => {
+        setFormLoading(true);
+        setFormError('');
+
+        const url = isEdit ? `/admin/system/users/${editingUser.id}` : '/admin/system/users';
+        const method = isEdit ? 'PUT' : 'POST';
+        const body = isEdit
+            ? { name: formData.name, role: formData.role, contact_number: formData.contact_number, ...(formData.password ? { password: formData.password } : {}) }
+            : formData;
+
+        fetch(url, {
+            method,
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
+            },
+            body: JSON.stringify(body),
+            credentials: 'same-origin',
+        })
+            .then(async (r) => { const d = await r.json(); if (!r.ok) throw new Error(d.message || 'Request failed'); return d; })
+            .then(() => {
+                setShowAddModal(false);
+                setShowEditModal(false);
+                setEditingUser(null);
+                fetchUsers(page);
+            })
+            .catch((e) => { setFormError(e.message); })
+            .finally(() => { setFormLoading(false); });
+    };
+
+    const handleToggleActive = (u) => {
+        fetch(`/admin/system/users/${u.id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
+            },
+            body: JSON.stringify({ is_active: !u.is_active }),
+            credentials: 'same-origin',
+        })
+            .then((r) => { if (r.ok) fetchUsers(page); });
+    };
+
+    const renderRow = (u) => (
+        <tr key={u.id} className="hover:bg-slate-50 transition-colors">
+            <td className="px-6 py-4 font-medium text-slate-900">{u.name}</td>
+            <td className="px-6 py-4 text-slate-700">{u.email}</td>
+            <td className="px-6 py-4">
+                <span className={`inline-block text-xs font-bold px-2.5 py-1 rounded-full border ${roleColors[u.role] || 'bg-slate-100 text-slate-700 border-slate-200'}`}>
+                    {u.role.replace('_', ' ')}
+                </span>
+            </td>
+            <td className="px-6 py-4"><StatusBadge status={u.is_active ? 'active' : 'inactive'} /></td>
+            <td className="px-6 py-4 text-slate-500 text-xs">{new Date(u.created_at).toLocaleDateString()}</td>
+            <td className="px-6 py-4">
+                <div className="flex items-center gap-1.5">
+                    <button onClick={() => onNavigate(`/system-admin/users/${u.id}`)} className="p-1.5 text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer" title="View User">
+                        <Eye className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => openEditModal(u)} className="p-1.5 text-slate-400 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer" title="Edit User">
+                        <Edit className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => handleToggleActive(u)} className={`p-1.5 rounded-lg transition-colors cursor-pointer ${u.is_active ? 'text-slate-400 hover:text-red-700 hover:bg-red-50' : 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50'}`} title={u.is_active ? 'Deactivate' : 'Activate'}>
+                        {u.is_active ? <ToggleLeft className="w-4 h-4" /> : <Check className="w-4 h-4" />}
+                    </button>
+                </div>
+            </td>
+        </tr>
+    );
+
+    const renderModal = (isEdit) => (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={(e) => { if (e.target === e.currentTarget) { setShowAddModal(false); setShowEditModal(false); } }}>
+            <div className="bg-white rounded-xl border border-slate-200 w-full max-w-md shadow-xl">
+                <div className="flex items-center justify-between px-6 py-5 border-b border-slate-200">
+                    <h3 className="text-base font-bold text-slate-900">{isEdit ? 'Edit User' : 'Add User'}</h3>
+                    <button onClick={() => { setShowAddModal(false); setShowEditModal(false); }} className="p-1 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 cursor-pointer">
+                        <X className="w-4 h-4" />
+                    </button>
+                </div>
+                <div className="p-6 space-y-4">
+                    {formError && <p className="text-xs text-red-600 bg-red-50 px-3 py-2 rounded-lg">{formError}</p>}
+                    <div>
+                        <label className="block text-xs font-medium text-slate-600 mb-1">Name</label>
+                        <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-500" placeholder="Full name" />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-medium text-slate-600 mb-1">Email</label>
+                        <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-500" placeholder="Email address" />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-medium text-slate-600 mb-1">Password {isEdit && <span className="text-slate-400">(leave blank to keep current)</span>}</label>
+                        <input type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-500" placeholder={isEdit ? 'New password...' : 'Password'} />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-medium text-slate-600 mb-1">Role</label>
+                        <select value={formData.role} onChange={(e) => setFormData({ ...formData, role: e.target.value })} className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer">
+                            <option value="admin">Admin (Registrar)</option>
+                            <option value="cashier">Cashier</option>
+                            <option value="system_admin">System Administrator</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-xs font-medium text-slate-600 mb-1">Contact Number</label>
+                        <input type="text" value={formData.contact_number} onChange={(e) => setFormData({ ...formData, contact_number: e.target.value })} className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-500" placeholder="Optional" />
+                    </div>
+                </div>
+                <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-200">
+                    <button onClick={() => { setShowAddModal(false); setShowEditModal(false); }} className="px-4 py-2 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer">Cancel</button>
+                    <button onClick={() => handleSubmit(isEdit)} disabled={formLoading} className="px-4 py-2 text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 rounded-lg transition-colors cursor-pointer">
+                        {formLoading ? 'Saving...' : isEdit ? 'Update User' : 'Create User'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+
+    const filtered = users;
+
+    return (
+        <DashboardLayout
+            title="User Management"
+            subtitle="Manage system users and their roles."
+            sidebarItems={sidebarItems}
+            currentUser={user}
+            roleLabel="System Administrator"
+            onLogout={onLogout}
+            onNavigate={onNavigate}
+        >
+            <section className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-6 py-5 border-b border-slate-200">
+                    <div className="flex items-center gap-4">
+                        <DashboardSearch value={query} onChange={(e) => { setQuery(e.target.value); setPage(1); }} placeholder="Search users..." />
+                        <select value={roleFilter} onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }} className="text-xs font-medium text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer">
+                            {roleFilterOptions.map((opt) => (<option key={opt} value={opt}>{opt === 'All' ? 'All Roles' : opt.replace('_', ' ')}</option>))}
+                        </select>
+                    </div>
+                    <button onClick={openAddModal} className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg transition-colors cursor-pointer">
+                        <Plus className="w-3.5 h-3.5" />
+                        Add User
+                    </button>
+                </div>
+                {loading ? (
+                    <div className="p-6 text-center text-sm text-slate-400">Loading users...</div>
+                ) : (
+                    <>
+                        <DashboardTable headers={tableHeaders} emptyState={<EmptyState icon={Users} title="No Users Found" subtitle="Registered system users will appear here." />}>
+                            {filtered.map(renderRow)}
+                        </DashboardTable>
+                        {pagination && <DashboardPagination currentPage={pagination.current_page} lastPage={pagination.last_page} onPageChange={handlePageChange} />}
+                    </>
+                )}
+            </section>
+
+            {showAddModal && renderModal(false)}
+            {showEditModal && renderModal(true)}
+        </DashboardLayout>
+    );
+}

@@ -28,7 +28,7 @@ class AdminAuthController extends Controller
         if (Auth::attempt($credentials, $remember)) {
             $user = Auth::user();
 
-            if (!in_array($user->role, ['admin', 'cashier'])) {
+            if (!in_array($user->role, ['admin', 'cashier', 'system_admin'])) {
                 Auth::logout();
                 return response()->json([
                     'status' => 'error',
@@ -77,7 +77,7 @@ class AdminAuthController extends Controller
      */
     public function checkAuth(Request $request): JsonResponse
     {
-        if (Auth::check() && in_array(Auth::user()->role, ['admin', 'cashier'])) {
+        if (Auth::check() && in_array(Auth::user()->role, ['admin', 'cashier', 'system_admin'])) {
             return response()->json([
                 'status' => 'authenticated',
                 'user' => Auth::user()

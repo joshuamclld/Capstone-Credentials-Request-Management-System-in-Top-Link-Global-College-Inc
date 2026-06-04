@@ -5,6 +5,7 @@ import DashboardSearch from '../DashboardSearch';
 import DashboardTable from '../DashboardTable';
 import StatusBadge from '../StatusBadge';
 import EmptyState from '../EmptyState';
+import DashboardPagination from '../DashboardPagination';
 
 const tableHeaders = ['Reference No.', 'Student Name', 'Documents', 'Status', 'Date Requested', 'Action'];
 
@@ -21,22 +22,69 @@ export default function ReleaseCredentials({ user, onLogout, onNavigate }) {
     const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [page, setPage] = useState(1);
+    const [pagination, setPagination] = useState(null);
+    const [claimingId, setClaimingId] = useState(null);
+    const [message, setMessage] = useState(null);
 
-    useEffect(() => {
-        fetch('/admin/requests-data', { credentials: 'same-origin' })
+    const getCsrfToken = () =>
+        document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+    const fetchData = (p) => {
+        setLoading(true);
+        fetch(`/admin/requests-data?page=${p}`, { credentials: 'same-origin' })
             .then((res) => {
                 if (!res.ok) throw new Error('Failed to fetch');
                 return res.json();
             })
             .then((json) => {
                 setRequests(json.requests);
+                setPagination(json.pagination);
                 setLoading(false);
             })
             .catch((err) => {
                 setError(err.message);
                 setLoading(false);
             });
-    }, []);
+    };
+
+    useEffect(() => {
+        fetchData(page);
+    }, [page]);
+
+    const handlePageChange = (newPage) => {
+        if (newPage < 1 || (pagination && newPage > pagination.last_page)) return;
+        setPage(newPage);
+    };
+
+    const handleClaim = (id) => {
+        setClaimingId(id);
+        setMessage(null);
+
+        fetch(`/admin/requests/${id}`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': getCsrfToken(),
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({ status: 'Claimed' }),
+        })
+            .then((res) => res.json())
+            .then((data) => {
+                if (data.message && data.request) {
+                    setMessage({ type: 'success', text: 'Credentials marked as Claimed.' });
+                    fetchData(page);
+                } else {
+                    setMessage({ type: 'error', text: data.message || 'Failed to mark as claimed.' });
+                }
+                setClaimingId(null);
+            })
+            .catch(() => {
+                setMessage({ type: 'error', text: 'An error occurred.' });
+                setClaimingId(null);
+            });
+    };
 
     const releasable = requests.filter((req) => req.status === 'Ready for Release');
 
@@ -53,8 +101,12 @@ export default function ReleaseCredentials({ user, onLogout, onNavigate }) {
             <td className="px-6 py-4"><StatusBadge status={req.status} /></td>
             <td className="px-6 py-4 text-slate-500 text-xs">{req.created_at}</td>
             <td className="px-6 py-4">
-                <button className="px-3 py-1.5 text-xs font-medium text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg transition-colors cursor-pointer">
-                    Mark as Claimed
+                <button
+                    onClick={() => handleClaim(req.id)}
+                    disabled={claimingId === req.id}
+                    className="px-3 py-1.5 text-xs font-medium text-white bg-emerald-700 hover:bg-emerald-800 disabled:bg-emerald-400 rounded-lg transition-colors cursor-pointer disabled:cursor-not-allowed"
+                >
+                    {claimingId === req.id ? 'Claiming...' : 'Mark as Claimed'}
                 </button>
             </td>
         </tr>
@@ -87,6 +139,15 @@ export default function ReleaseCredentials({ user, onLogout, onNavigate }) {
             onNavigate={onNavigate}
         >
             <section className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                {message && (
+                    <div className={`mx-6 mt-5 px-4 py-3 rounded-lg text-sm font-medium border ${
+                        message.type === 'success'
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                            : 'bg-red-50 text-red-800 border-red-200'
+                    }`}>
+                        {message.text}
+                    </div>
+                )}
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-6 py-5 border-b border-slate-200">
                     <div>
                         <h2 className="text-base font-bold text-slate-900">Ready for Release</h2>
@@ -111,6 +172,11 @@ export default function ReleaseCredentials({ user, onLogout, onNavigate }) {
                 >
                     {filtered.map(renderRow)}
                 </DashboardTable>
+                <DashboardPagination
+                    currentPage={pagination?.current_page || 1}
+                    lastPage={pagination?.last_page || 1}
+                    onPageChange={handlePageChange}
+                />
             </section>
         </DashboardLayout>
     );

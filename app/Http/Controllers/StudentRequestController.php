@@ -86,6 +86,33 @@ class StudentRequestController extends Controller
         ]);
     }
 
+    public function cancel(string $trackingNumber)
+    {
+        $request = StudentRequest::where('tracking_number', $trackingNumber)->first();
+
+        if (!$request) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tracking number not found.',
+            ], 404);
+        }
+
+        if ($request->status !== 'Pending') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only pending requests can be cancelled.',
+            ], 422);
+        }
+
+        $request->status = 'Cancelled';
+        $request->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Request cancelled successfully.',
+        ]);
+    }
+
     private function calculateFee($documents, array $semesters, ?int $pages): float
     {
         $total = 0;

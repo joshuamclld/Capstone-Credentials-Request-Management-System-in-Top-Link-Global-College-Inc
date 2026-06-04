@@ -6,6 +6,7 @@ import DashboardSearch from '../DashboardSearch';
 import DashboardTable from '../DashboardTable';
 import StatusBadge from '../StatusBadge';
 import EmptyState from '../EmptyState';
+import DashboardPagination from '../DashboardPagination';
 
 const statDefs = [
     { label: 'Pending Payments', key: 'pending_payments', icon: Clock, iconBg: 'bg-red-50', iconColor: 'text-red-700' },
@@ -33,22 +34,35 @@ export default function CashierDashboard({ user, onLogout, onNavigate }) {
     const [data, setData] = useState({ stats: null, requests: [] });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [page, setPage] = useState(1);
+    const [pagination, setPagination] = useState(null);
 
-    useEffect(() => {
-        fetch('/admin/payments-data', { credentials: 'same-origin' })
+    const fetchData = (p) => {
+        setLoading(true);
+        fetch(`/admin/payments-data?page=${p}`, { credentials: 'same-origin' })
             .then((res) => {
                 if (!res.ok) throw new Error('Failed to fetch');
                 return res.json();
             })
             .then((json) => {
                 setData(json);
+                setPagination(json.pagination);
                 setLoading(false);
             })
             .catch((err) => {
                 setError(err.message);
                 setLoading(false);
             });
-    }, []);
+    };
+
+    useEffect(() => {
+        fetchData(page);
+    }, [page]);
+
+    const handlePageChange = (newPage) => {
+        if (newPage < 1 || (pagination && newPage > pagination.last_page)) return;
+        setPage(newPage);
+    };
 
     const filtered = data.requests.filter((req) =>
         req.student_name.toLowerCase().includes(query.toLowerCase()) ||
@@ -129,6 +143,11 @@ export default function CashierDashboard({ user, onLogout, onNavigate }) {
                         >
                             {filtered.map(renderRow)}
                         </DashboardTable>
+                        <DashboardPagination
+                            currentPage={pagination?.current_page || 1}
+                            lastPage={pagination?.last_page || 1}
+                            onPageChange={handlePageChange}
+                        />
                     </section>
                 </>
             )}
