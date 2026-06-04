@@ -22,6 +22,8 @@ class StudentRequest extends Model
         'total_fee',
         'status',
         'remarks',
+        'verified_by',
+        'verified_at',
     ];
 
     protected function casts(): array
@@ -30,6 +32,7 @@ class StudentRequest extends Model
             'document_ids' => 'array',
             'semesters' => 'array',
             'total_fee' => 'decimal:2',
+            'verified_at' => 'datetime',
         ];
     }
 }

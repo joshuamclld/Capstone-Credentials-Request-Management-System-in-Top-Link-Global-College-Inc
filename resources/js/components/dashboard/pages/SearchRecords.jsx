@@ -1,0 +1,150 @@
+import React, { useState, useEffect } from 'react';
+import { FileText, LayoutDashboard, Clock, CheckCircle, Search } from 'lucide-react';
+import DashboardLayout from '../DashboardLayout';
+import DashboardSearch from '../DashboardSearch';
+import DashboardTable from '../DashboardTable';
+import StatusBadge from '../StatusBadge';
+import EmptyState from '../EmptyState';
+
+const tableHeaders = ['Reference No.', 'Student Name', 'Documents', 'Payment Status', 'Request Status', 'Date Requested'];
+
+const searchOptions = ['Student Name', 'Student ID', 'Reference Number'];
+
+const sidebarItems = [
+    { label: 'Dashboard', icon: LayoutDashboard, path: '/admin-dashboard' },
+    { label: 'Request Management', icon: FileText, path: '/admin/requests' },
+    { label: 'Process Requests', icon: Clock, path: '/admin/process' },
+    { label: 'Release Credentials', icon: CheckCircle, path: '/admin/release' },
+    { label: 'Search Records', icon: Search, path: '/admin/search' },
+];
+
+export default function SearchRecords({ user, onLogout, onNavigate }) {
+    const [query, setQuery] = useState('');
+    const [searchBy, setSearchBy] = useState('Student Name');
+    const [records, setRecords] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        fetch('/admin/requests-data', { credentials: 'same-origin' })
+            .then((res) => {
+                if (!res.ok) throw new Error('Failed to fetch');
+                return res.json();
+            })
+            .then((json) => {
+                setRecords(json.requests);
+                setLoading(false);
+            })
+            .catch((err) => {
+                setError(err.message);
+                setLoading(false);
+            });
+    }, []);
+
+    const filtered = records.filter((rec) => {
+        const q = query.toLowerCase();
+        if (!q) return true;
+        switch (searchBy) {
+            case 'Student Name':
+                return rec.student_name.toLowerCase().includes(q);
+            case 'Student ID':
+                return rec.student_number?.toLowerCase().includes(q);
+            case 'Reference Number':
+                return rec.tracking_number.toLowerCase().includes(q);
+            default:
+                return true;
+        }
+    });
+
+    const renderRow = (rec) => (
+        <tr key={rec.id} className="hover:bg-slate-50 transition-colors">
+            <td className="px-6 py-4 font-mono text-xs font-medium text-emerald-700">{rec.tracking_number}</td>
+            <td className="px-6 py-4 font-medium text-slate-900">{rec.student_name}</td>
+            <td className="px-6 py-4 text-slate-700 max-w-[200px] truncate" title={rec.document_names.join(', ')}>{rec.document_names.join(', ')}</td>
+            <td className="px-6 py-4"><StatusBadge status={rec.payment_status} type="payment" /></td>
+            <td className="px-6 py-4"><StatusBadge status={rec.status} /></td>
+            <td className="px-6 py-4 text-slate-500 text-xs">{rec.created_at}</td>
+        </tr>
+    );
+
+    if (loading) {
+        return (
+            <DashboardLayout title="Search Records" subtitle="Search credential request records." sidebarItems={sidebarItems} currentUser={user} roleLabel="Administrator" onLogout={onLogout} onNavigate={onNavigate}>
+                <div className="flex items-center justify-center py-20 text-slate-500 text-sm">Loading records...</div>
+            </DashboardLayout>
+        );
+    }
+
+    if (error) {
+        return (
+            <DashboardLayout title="Search Records" subtitle="Search credential request records." sidebarItems={sidebarItems} currentUser={user} roleLabel="Administrator" onLogout={onLogout} onNavigate={onNavigate}>
+                <div className="flex items-center justify-center py-20 text-red-500 text-sm">Error: {error}</div>
+            </DashboardLayout>
+        );
+    }
+
+    return (
+        <DashboardLayout
+            title="Search Records"
+            subtitle="Search credential request records."
+            sidebarItems={sidebarItems}
+            currentUser={user}
+            roleLabel="Administrator"
+            onLogout={onLogout}
+            onNavigate={onNavigate}
+        >
+            <section className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                <div className="px-6 py-5 border-b border-slate-200">
+                    <h2 className="text-base font-bold text-slate-900 mb-3">Search Criteria</h2>
+                    <div className="flex flex-wrap items-center gap-3 mb-4">
+                        <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Search by:</span>
+                        {searchOptions.map((option) => (
+                            <label
+                                key={option}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium cursor-pointer transition-colors ${
+                                    searchBy === option
+                                        ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                                        : 'border-slate-300 bg-white text-slate-600 hover:bg-slate-50'
+                                }`}
+                            >
+                                <input
+                                    type="radio"
+                                    name="searchBy"
+                                    value={option}
+                                    checked={searchBy === option}
+                                    onChange={(e) => setSearchBy(e.target.value)}
+                                    className="sr-only"
+                                />
+                                {option}
+                            </label>
+                        ))}
+                    </div>
+                    <DashboardSearch
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        placeholder={`Search by ${searchBy.toLowerCase()}...`}
+                    />
+                </div>
+
+                <div className="px-6 py-3 bg-slate-50 border-b border-slate-200">
+                    <p className="text-xs text-slate-500">
+                        {filtered.length} record(s) found
+                    </p>
+                </div>
+
+                <DashboardTable
+                    headers={tableHeaders}
+                    emptyState={
+                        <EmptyState
+                            icon={Search}
+                            title="No Records Found"
+                            subtitle="Search for student credential requests using the criteria above."
+                        />
+                    }
+                >
+                    {filtered.map(renderRow)}
+                </DashboardTable>
+            </section>
+        </DashboardLayout>
+    );
+}

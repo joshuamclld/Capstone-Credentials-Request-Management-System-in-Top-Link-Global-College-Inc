@@ -4,7 +4,17 @@ import StudentLanding from './components/StudentLanding';
 import StudentRequestForm from './components/StudentRequestForm';
 import StudentTrackDashboard from './components/StudentTrackDashboard';
 import AdminLogin from './components/AdminLogin';
-import Dashboard from './components/Dashboard';
+
+import RegistrarDashboard from './components/dashboard/pages/RegistrarDashboard';
+import RequestManagement from './components/dashboard/pages/RequestManagement';
+import RequestDetails from './components/dashboard/pages/RequestDetails';
+import ProcessRequests from './components/dashboard/pages/ProcessRequests';
+import ReleaseCredentials from './components/dashboard/pages/ReleaseCredentials';
+import SearchRecords from './components/dashboard/pages/SearchRecords';
+import CashierDashboard from './components/dashboard/pages/CashierDashboard';
+import PaymentQueue from './components/dashboard/pages/PaymentQueue';
+import PaymentDetails from './components/dashboard/pages/PaymentDetails';
+import PaidTransactions from './components/dashboard/pages/PaidTransactions';
 import '../css/app.css';
 
 function App() {
@@ -69,7 +79,8 @@ function App() {
   const handleLoginSuccess = (userData) => {
     setIsAuthenticated(true);
     setUser(userData);
-    navigate('/admin-dashboard');
+    const dashboard = userData.role === 'cashier' ? '/cashier-dashboard' : '/admin-dashboard';
+    navigate(dashboard);
   };
 
   // Poll auth status every 5 minutes to detect session expiry
@@ -115,8 +126,8 @@ function App() {
   // Route resolver
   if (currentPath === '/admin-login') {
     if (isAuthenticated && authChecked) {
-      // Auto-redirect to dashboard if authenticated
-      setTimeout(() => navigate('/admin-dashboard'), 0);
+      const dashboard = user?.role === 'cashier' ? '/cashier-dashboard' : '/admin-dashboard';
+      setTimeout(() => navigate(dashboard), 0);
       return null;
     }
     
@@ -128,24 +139,80 @@ function App() {
     return <AdminLogin onLoginSuccess={handleLoginSuccess} />;
   }
 
-  if (currentPath === '/admin-dashboard') {
+  // Auth check helper for all admin/cashier routes
+  if (currentPath.startsWith('/admin-') || currentPath.startsWith('/admin/') || currentPath.startsWith('/cashier-') || currentPath.startsWith('/cashier/')) {
     if (!isAuthenticated && authChecked) {
-      // Auto-redirect to login if unauthenticated
       setTimeout(() => navigate('/admin-login'), 0);
       return null;
     }
-    
-    // Show loading state while checking auth
+
     if (!authChecked) {
       return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
     }
-    
-    return (
-      <Dashboard 
-        backendStatus={backendStatus} 
-        onLogout={handleLogout} 
-      />
-    );
+
+    // Role-based route guarding
+    const registrarPaths = ['/admin-dashboard', '/admin/requests', '/admin/process', '/admin/release', '/admin/search'];
+    const isRegistrarPath = registrarPaths.some(p => currentPath === p || (currentPath.startsWith('/admin/requests/') && p === '/admin/requests'));
+    const isCashierPath = currentPath.startsWith('/cashier');
+
+    if (isRegistrarPath && user.role !== 'admin') {
+      window.history.pushState({}, '', '/cashier-dashboard');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+      return null;
+    }
+
+    if (isCashierPath && user.role !== 'cashier' && user.role !== 'admin') {
+      window.history.pushState({}, '', '/admin-dashboard');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+      return null;
+    }
+
+    // Unknown role — redirect to login
+    if (user.role !== 'admin' && user.role !== 'cashier') {
+      setTimeout(() => navigate('/admin-login'), 0);
+      return null;
+    }
+  }
+
+  if (currentPath === '/admin-dashboard') {
+    return <RegistrarDashboard user={user} onLogout={handleLogout} onNavigate={navigate} />;
+  }
+
+  if (currentPath === '/admin/requests') {
+    return <RequestManagement user={user} onLogout={handleLogout} onNavigate={navigate} />;
+  }
+
+  if (currentPath.startsWith('/admin/requests/')) {
+    return <RequestDetails user={user} onLogout={handleLogout} onNavigate={navigate} />;
+  }
+
+  if (currentPath === '/admin/process') {
+    return <ProcessRequests user={user} onLogout={handleLogout} onNavigate={navigate} />;
+  }
+
+  if (currentPath === '/admin/release') {
+    return <ReleaseCredentials user={user} onLogout={handleLogout} onNavigate={navigate} />;
+  }
+
+  if (currentPath === '/admin/search') {
+    return <SearchRecords user={user} onLogout={handleLogout} onNavigate={navigate} />;
+  }
+
+  // Cashier routes
+  if (currentPath === '/cashier-dashboard') {
+    return <CashierDashboard user={user} onLogout={handleLogout} onNavigate={navigate} />;
+  }
+
+  if (currentPath === '/cashier/payments') {
+    return <PaymentQueue user={user} onLogout={handleLogout} onNavigate={navigate} />;
+  }
+
+  if (currentPath.startsWith('/cashier/payments/')) {
+    return <PaymentDetails user={user} onLogout={handleLogout} onNavigate={navigate} />;
+  }
+
+  if (currentPath === '/cashier/transactions') {
+    return <PaidTransactions user={user} onLogout={handleLogout} onNavigate={navigate} />;
   }
 
   if (currentPath === '/request') {

@@ -24,9 +24,21 @@ class AdminUserSeeder extends Seeder
             ]
         );
         
+        // Create cashier user
+        User::updateOrCreate(
+            ['email' => 'cashier@tlgc.edu.ph'],
+            [
+                'name' => 'Cashier User',
+                'password' => Hash::make('password123'),
+                'role' => 'cashier',
+                'email_verified_at' => now(),
+            ]
+        );
+
         // Default credentials for development:
-        // Email:    admin@tlgc.edu.ph
-        // Password: password123
+        // Admin:  admin@tlgc.edu.ph / password123
+        // Cashier: cashier@tlgc.edu.ph / password123
         $this->command->info('Admin user created (admin@tlgc.edu.ph).');
+        $this->command->info('Cashier user created (cashier@tlgc.edu.ph).');
     }
 }

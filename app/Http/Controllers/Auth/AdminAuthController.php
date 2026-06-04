@@ -25,13 +25,23 @@ class AdminAuthController extends Controller
         $credentials = $request->only('email', 'password');
         $remember = $request->boolean('remember_me');
 
-        if (Auth::attempt(array_merge($credentials, ['role' => 'admin']), $remember)) {
+        if (Auth::attempt($credentials, $remember)) {
+            $user = Auth::user();
+
+            if (!in_array($user->role, ['admin', 'cashier'])) {
+                Auth::logout();
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Invalid credentials or insufficient permissions.',
+                ], 401);
+            }
+
             $request->session()->regenerate();
 
             return response()->json([
                 'status' => 'success',
                 'message' => 'Login successful',
-                'user' => Auth::user()
+                'user' => $user,
             ]);
         }
 
@@ -67,7 +77,7 @@ class AdminAuthController extends Controller
      */
     public function checkAuth(Request $request): JsonResponse
     {
-        if (Auth::check() && Auth::user()->role === 'admin') {
+        if (Auth::check() && in_array(Auth::user()->role, ['admin', 'cashier'])) {
             return response()->json([
                 'status' => 'authenticated',
                 'user' => Auth::user()

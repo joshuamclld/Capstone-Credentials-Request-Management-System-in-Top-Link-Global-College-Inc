@@ -1,0 +1,287 @@
+import React, { useState, useEffect } from 'react';
+import { LayoutDashboard, Clock, CheckCircle, Search, ArrowLeft, CreditCard, User, BookOpen, ShieldCheck } from 'lucide-react';
+import DashboardLayout from '../DashboardLayout';
+
+const sidebarItems = [
+    { label: 'Dashboard', icon: LayoutDashboard, path: '/cashier-dashboard' },
+    { label: 'Payment Queue', icon: Clock, path: '/cashier/payments' },
+    { label: 'Paid Transactions', icon: CheckCircle, path: '/cashier/transactions' },
+];
+
+const paymentBadgeStyle = {
+    'unpaid': 'bg-red-100 text-red-800 border-red-300',
+    'pending_verification': 'bg-orange-100 text-orange-800 border-orange-300',
+    'paid': 'bg-emerald-100 text-emerald-800 border-emerald-300',
+};
+
+export default function PaymentDetails({ user, onLogout, onNavigate }) {
+    const [request, setRequest] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [verifying, setVerifying] = useState(false);
+    const [message, setMessage] = useState(null);
+
+    const id = window.location.pathname.split('/').filter(Boolean).pop();
+
+    useEffect(() => {
+        if (!id || isNaN(Number(id))) {
+            setError('Invalid request ID.');
+            setLoading(false);
+            return;
+        }
+
+        fetch(`/admin/requests/${id}`, { credentials: 'same-origin' })
+            .then((res) => {
+                if (!res.ok) throw new Error('Request not found.');
+                return res.json();
+            })
+            .then((data) => {
+                setRequest(data);
+                setLoading(false);
+            })
+            .catch((err) => {
+                setError(err.message);
+                setLoading(false);
+            });
+    }, [id]);
+
+    const handleVerify = () => {
+        setVerifying(true);
+        setMessage(null);
+
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+        fetch(`/admin/payments/${id}/verify`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+            },
+            credentials: 'same-origin',
+        })
+            .then((res) => res.json())
+            .then((data) => {
+                if (data.message && data.request) {
+                    setMessage({ type: 'success', text: 'Payment verified successfully.' });
+                    setRequest(data.request);
+                } else {
+                    setMessage({ type: 'error', text: data.message || 'Failed to verify payment.' });
+                }
+                setVerifying(false);
+            })
+            .catch(() => {
+                setMessage({ type: 'error', text: 'An error occurred while verifying payment.' });
+                setVerifying(false);
+            });
+    };
+
+    const paymentBadgeClass = (s) => paymentBadgeStyle[s] || 'bg-slate-100 text-slate-700 border-slate-200';
+    const paymentLabel = (s) => s === 'pending_verification' ? 'Pending Verification' : s === 'unpaid' ? 'Unpaid' : 'Paid';
+
+    if (loading) {
+        return (
+            <DashboardLayout title="Payment Details" subtitle="View and verify payment." sidebarItems={sidebarItems} currentUser={user} roleLabel="Cashier / Accounting" onLogout={onLogout} onNavigate={onNavigate}>
+                <div className="flex items-center justify-center py-20 text-slate-500 text-sm">Loading payment details...</div>
+            </DashboardLayout>
+        );
+    }
+
+    if (error || !request) {
+        return (
+            <DashboardLayout title="Payment Details" subtitle="View and verify payment." sidebarItems={sidebarItems} currentUser={user} roleLabel="Cashier / Accounting" onLogout={onLogout} onNavigate={onNavigate}>
+                <div className="flex flex-col items-center justify-center py-20 text-red-500 text-sm">
+                    <p>{error || 'Request not found.'}</p>
+                    <button onClick={() => onNavigate('/cashier/payments')} className="mt-4 px-4 py-2 text-sm font-medium text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg transition-colors cursor-pointer">
+                        Back to Payment Queue
+                    </button>
+                </div>
+            </DashboardLayout>
+        );
+    }
+
+    return (
+        <DashboardLayout
+            title="Payment Details"
+            subtitle="View and verify payment."
+            sidebarItems={sidebarItems}
+            currentUser={user}
+            roleLabel="Cashier / Accounting"
+            onLogout={onLogout}
+            onNavigate={onNavigate}
+        >
+            <div className="max-w-6xl mx-auto">
+
+                {/* Compact Header */}
+                <div className="mb-6">
+                    <button
+                        onClick={() => onNavigate('/cashier/payments')}
+                        className="flex items-center gap-1.5 text-xs font-medium text-emerald-700 hover:text-emerald-800 transition-colors mb-3 cursor-pointer"
+                    >
+                        <ArrowLeft className="w-3.5 h-3.5" />
+                        Back to Payment Queue
+                    </button>
+                    <div className="flex items-start justify-between gap-4">
+                        <div>
+                            <h1 className="text-xl font-bold text-slate-900 font-mono tracking-tight">{request.tracking_number}</h1>
+                            <p className="text-xs text-slate-500 mt-0.5">Payment verification for credential request</p>
+                        </div>
+                        <span className={`inline-flex items-center px-3.5 py-1.5 text-sm font-bold rounded-full border-2 shadow-sm shrink-0 ${paymentBadgeClass(request.payment_status)}`}>
+                            {paymentLabel(request.payment_status)}
+                        </span>
+                    </div>
+                </div>
+
+                {message && (
+                    <div className={`mb-5 px-4 py-3 rounded-lg text-sm font-medium border ${
+                        message.type === 'success'
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                            : 'bg-red-50 text-red-800 border-red-200'
+                    }`}>
+                        {message.text}
+                    </div>
+                )}
+
+                {/* Two-Column Layout */}
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+
+                    {/* Left Column — 2/3 */}
+                    <div className="xl:col-span-2 space-y-5">
+
+                        {/* Student Information */}
+                        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                            <div className="flex items-center gap-2 px-5 py-3 bg-emerald-50 border-b border-emerald-100">
+                                <User className="w-3.5 h-3.5 text-emerald-700" />
+                                <h2 className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Student Information</h2>
+                            </div>
+                            <div className="p-5">
+                                <h3 className="text-base font-bold text-slate-900 mb-3">{request.student_name}</h3>
+                                <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+                                    <div>
+                                        <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Student ID</p>
+                                        <p className="text-sm font-medium text-slate-900 font-mono mt-0.5">{request.student_number}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Course</p>
+                                        <p className="text-sm font-medium text-slate-900 mt-0.5">{request.course}</p>
+                                    </div>
+                                    <div className="col-span-2">
+                                        <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Email</p>
+                                        <p className="text-sm text-slate-700 mt-0.5">{request.email}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Requested Documents */}
+                        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                            <div className="flex items-center gap-2 px-5 py-3 bg-emerald-50 border-b border-emerald-100">
+                                <BookOpen className="w-3.5 h-3.5 text-emerald-700" />
+                                <h2 className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Requested Documents</h2>
+                            </div>
+                            <div className="p-5">
+                                <div className="flex flex-wrap gap-2 mb-3">
+                                    {request.document_names.map((name, i) => (
+                                        <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-800">
+                                            <BookOpen className="w-3 h-3 text-emerald-600" />
+                                            {name}
+                                        </span>
+                                    ))}
+                                </div>
+                                <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
+                                    {request.semesters && request.semesters.length > 0 && (
+                                        <span className="flex items-center gap-1">
+                                            {request.semesters.map((sem, i) => (
+                                                <span key={i} className="bg-white text-slate-600 px-2 py-0.5 rounded-full border border-slate-200">{sem}</span>
+                                            ))}
+                                        </span>
+                                    )}
+                                    {request.pages && (
+                                        <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full border border-blue-200">{request.pages} page{request.pages > 1 ? 's' : ''}</span>
+                                    )}
+                                    <span className="ml-auto text-slate-400">Requested {request.created_at}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Right Column — 1/3 */}
+                    <div className="space-y-5">
+
+                        {/* Payment Summary */}
+                        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                            <div className="flex items-center gap-2 px-5 py-3 bg-emerald-50 border-b border-emerald-100">
+                                <CreditCard className="w-3.5 h-3.5 text-emerald-700" />
+                                <h2 className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Payment Summary</h2>
+                            </div>
+                            <div className="p-5 text-center">
+                                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Total Fee</p>
+                                <p className="text-3xl font-bold text-emerald-700 mb-4">
+                                    ₱{Number(request.total_fee).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </p>
+                                <div className="space-y-2.5 text-left">
+                                    <div className="flex items-center justify-between py-2 border-t border-slate-100">
+                                        <span className="text-xs text-slate-500">Payment Method</span>
+                                        <span className="text-xs font-medium text-slate-900 capitalize">{request.payment_method || 'N/A'}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between py-2 border-t border-slate-100">
+                                        <span className="text-xs text-slate-500">Status</span>
+                                        <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full border ${paymentBadgeClass(request.payment_status)}`}>
+                                            {paymentLabel(request.payment_status)}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center justify-between py-2 border-t border-slate-100">
+                                        <span className="text-xs text-slate-500">Date Requested</span>
+                                        <span className="text-xs text-slate-700">{request.created_at}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Cashier Action */}
+                        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                            <div className="flex items-center gap-2 px-5 py-3 bg-emerald-50 border-b border-emerald-100">
+                                <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
+                                <h2 className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Payment Verification</h2>
+                            </div>
+                            <div className="p-5">
+                                {request.payment_status === 'paid' ? (
+                                    <div className="flex flex-col items-center gap-3 p-4 bg-emerald-50 rounded-lg border border-emerald-200 text-center">
+                                        <CheckCircle className="w-8 h-8 text-emerald-600" />
+                                        <div>
+                                            <p className="text-sm font-bold text-emerald-800">Payment Verified</p>
+                                            {request.verified_by ? (
+                                                <div className="mt-2 space-y-1">
+                                                    <p className="text-xs text-emerald-600">Verified By: {request.verified_by}</p>
+                                                    <p className="text-xs text-emerald-600">Verified At: {new Date(request.verified_at).toLocaleString()}</p>
+                                                </div>
+                                            ) : (
+                                                <p className="text-xs text-emerald-600 mt-1">Payment verified successfully.</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        <p className="text-xs text-slate-500 leading-relaxed">
+                                            Verify payment after confirming student payment.
+                                        </p>
+                                        <button
+                                            onClick={handleVerify}
+                                            disabled={verifying}
+                                            className="w-full py-3 text-sm font-bold text-white bg-emerald-700 hover:bg-emerald-800 disabled:bg-emerald-400 rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-2"
+                                        >
+                                            {verifying ? (
+                                                <>Verifying...</>
+                                            ) : (
+                                                <><CheckCircle className="w-4 h-4" /> Mark as Paid</>
+                                            )}
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </DashboardLayout>
+    );
+}

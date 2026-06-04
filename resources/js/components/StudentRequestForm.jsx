@@ -28,6 +28,12 @@ export default function StudentRequestForm({ onNavigate }) {
   const [paymentMethod, setPaymentMethod] = useState('');
   const [purpose, setPurpose] = useState('');
 
+  const [confirmations, setConfirmations] = useState({
+    infoCorrect: false,
+    understandDelay: false,
+    agreeRules: false,
+  });
+
   const [documents, setDocuments] = useState([]);
   const [docsLoading, setDocsLoading] = useState(true);
 
@@ -58,6 +64,11 @@ export default function StudentRequestForm({ onNavigate }) {
     setPages(1);
     setPaymentMethod('');
     setPurpose('');
+    setConfirmations({
+      infoCorrect: false,
+      understandDelay: false,
+      agreeRules: false,
+    });
     setSubmitError('');
   };
 
@@ -68,6 +79,8 @@ export default function StudentRequestForm({ onNavigate }) {
 
   const gradesPrice = documents.find(d => d.code === 'grades')?.price ?? 50;
   const torPrice = documents.find(d => d.code === 'tor')?.price ?? 150;
+
+  const allConfirmed = confirmations.infoCorrect && confirmations.understandDelay && confirmations.agreeRules;
 
   const totalPrice = (() => {
     if (selectedDocObjects.length === 0) return 0;
@@ -102,6 +115,10 @@ export default function StudentRequestForm({ onNavigate }) {
     }
   };
 
+  const toggleConfirmation = (key) => {
+    setConfirmations(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
   const handleNextStep = (e) => {
     e.preventDefault();
     setStepError('');
@@ -123,7 +140,7 @@ export default function StudentRequestForm({ onNavigate }) {
         return;
       }
     }
-    if (step < 3) {
+    if (step < 4) {
       setStep(step + 1);
     }
   };
@@ -139,6 +156,12 @@ export default function StudentRequestForm({ onNavigate }) {
     e.preventDefault();
     setIsSubmitting(true);
     setSubmitError('');
+
+    if (!allConfirmed) {
+      setSubmitError('Please verify and confirm all required statements before submitting.');
+      setIsSubmitting(false);
+      return;
+    }
 
     if (!paymentMethod) {
       setSubmitError('Please select a payment method.');
@@ -269,42 +292,49 @@ export default function StudentRequestForm({ onNavigate }) {
             {/* Multi-step Progress Bar */}
             <div className="mb-10 w-full max-w-2xl mx-auto">
               <div className="flex justify-between items-center mb-4 relative">
-                <div className="absolute top-1/2 left-0 w-full h-0.5 bg-surface-container-high -translate-y-1/2 z-0"></div>
-                <div
-                  className="absolute top-1/2 left-0 h-0.5 bg-primary -translate-y-1/2 z-0 transition-all duration-500 ease-in-out"
-                  style={{ width: `${(step - 1) * 50}%` }}
-                ></div>
+                <div className="absolute top-1/2 left-[20px] right-[20px] h-0.5 -translate-y-1/2 z-0 overflow-hidden">
+                  <div className="absolute inset-0 bg-surface-container-high"></div>
+                  <div
+                    className="absolute top-0 left-0 h-full bg-primary transition-all duration-500 ease-in-out"
+                    style={{ width: `${(step - 1) * 33.33}%` }}
+                  ></div>
+                </div>
 
                 <div className="z-10 flex flex-col items-center">
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold shadow-sm transition-all duration-300 ${
-                    step >= 1 ? 'bg-primary text-on-primary ring-4 ring-primary-container/20' : 'bg-surface-container-high text-on-surface-variant'
-                  }`}>
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold shadow-sm transition-all duration-300 ${step >= 1 ? 'bg-primary text-on-primary ring-4 ring-primary-container/20' : 'bg-surface-container-high text-on-surface-variant'
+                    }`}>
                     <span className="material-symbols-outlined">person</span>
                   </div>
                   <span className={`font-label-md text-label-md mt-2 ${step >= 1 ? 'text-primary font-bold' : 'text-on-surface-variant'}`}>Personal</span>
                 </div>
 
                 <div className="z-10 flex flex-col items-center">
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold shadow-sm transition-all duration-300 ${
-                    step >= 2 ? 'bg-primary text-on-primary ring-4 ring-primary-container/20' : 'bg-surface-container-high text-on-surface-variant'
-                  }`}>
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold shadow-sm transition-all duration-300 ${step >= 2 ? 'bg-primary text-on-primary ring-4 ring-primary-container/20' : 'bg-surface-container-high text-on-surface-variant'
+                    }`}>
                     <span className="material-symbols-outlined">description</span>
                   </div>
                   <span className={`font-label-md text-label-md mt-2 ${step >= 2 ? 'text-primary font-bold' : 'text-on-surface-variant'}`}>Documents</span>
                 </div>
 
                 <div className="z-10 flex flex-col items-center">
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold shadow-sm transition-all duration-300 ${
-                    step >= 3 ? 'bg-primary text-on-primary ring-4 ring-primary-container/20' : 'bg-surface-container-high text-on-surface-variant'
-                  }`}>
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold shadow-sm transition-all duration-300 ${step >= 3 ? 'bg-primary text-on-primary ring-4 ring-primary-container/20' : 'bg-surface-container-high text-on-surface-variant'
+                    }`}>
                     <span className="material-symbols-outlined">store</span>
                   </div>
                   <span className={`font-label-md text-label-md mt-2 ${step >= 3 ? 'text-primary font-bold' : 'text-on-surface-variant'}`}>Pickup &amp; Pay</span>
                 </div>
+
+                <div className="z-10 flex flex-col items-center">
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold shadow-sm transition-all duration-300 ${step >= 4 ? 'bg-primary text-on-primary ring-4 ring-primary-container/20' : 'bg-surface-container-high text-on-surface-variant'
+                    }`}>
+                    <span className="material-symbols-outlined">checklist</span>
+                  </div>
+                  <span className={`font-label-md text-label-md mt-2 ${step >= 4 ? 'text-primary font-bold' : 'text-on-surface-variant'}`}>Verify</span>
+                </div>
               </div>
             </div>
 
-            <form onSubmit={step === 3 ? handleSubmit : handleNextStep}>
+            <form onSubmit={step === 4 ? handleSubmit : handleNextStep}>
               <section className="bg-surface-container-lowest rounded-lg border border-outline-variant p-6 md:p-10 mb-8 shadow-sm">
 
                 {/* STEP 1: Personal Info */}
@@ -402,19 +432,16 @@ export default function StudentRequestForm({ onNavigate }) {
                             <div
                               key={doc.code}
                               onClick={() => toggleDocument(doc.code)}
-                              className={`relative flex flex-col p-6 rounded-lg border-2 cursor-pointer transition-all duration-300 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95 group ${
-                                isChecked ? 'border-primary bg-surface-container-low shadow-sm' : 'border-outline-variant bg-surface-container-lowest'
-                              }`}
+                              className={`relative flex flex-col p-6 rounded-lg border-2 cursor-pointer transition-all duration-300 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95 group ${isChecked ? 'border-primary bg-surface-container-low shadow-sm' : 'border-outline-variant bg-surface-container-lowest'
+                                }`}
                             >
-                              <div className={`absolute top-6 right-6 w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
-                                isChecked ? 'border-primary bg-primary' : 'border-outline'
-                              }`}>
-                                {isChecked && <span className="material-symbols-outlined text-[14px] text-white" style={{fontSize:'14px'}}>check</span>}
+                              <div className={`absolute top-6 right-6 w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${isChecked ? 'border-primary bg-primary' : 'border-outline'
+                                }`}>
+                                {isChecked && <span className="material-symbols-outlined text-[14px] text-white" style={{ fontSize: '14px' }}>check</span>}
                               </div>
                               <div className="flex items-center gap-3 mb-3">
-                                <span className={`material-symbols-outlined p-2 rounded-lg transition-transform duration-300 group-hover:rotate-6 ${
-                                  isChecked ? 'bg-primary-fixed text-primary' : 'bg-surface-container text-on-surface-variant'
-                                }`}>
+                                <span className={`material-symbols-outlined p-2 rounded-lg transition-transform duration-300 group-hover:rotate-6 ${isChecked ? 'bg-primary-fixed text-primary' : 'bg-surface-container text-on-surface-variant'
+                                  }`}>
                                   {meta.icon || 'description'}
                                 </span>
                                 {meta.tag && (
@@ -456,16 +483,14 @@ export default function StudentRequestForm({ onNavigate }) {
                                       key={combo}
                                       type="button"
                                       onClick={() => toggleSemester(combo)}
-                                      className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 font-bold text-label-md transition-all duration-200 cursor-pointer ${
-                                        isSelected
+                                      className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 font-bold text-label-md transition-all duration-200 cursor-pointer ${isSelected
                                           ? 'border-primary bg-primary-fixed text-primary'
                                           : 'border-outline-variant bg-surface-container-lowest text-on-surface-variant hover:border-primary/50'
-                                      }`}
+                                        }`}
                                     >
-                                      <span className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                                        isSelected ? 'border-primary bg-primary' : 'border-outline'
-                                      }`}>
-                                        {isSelected && <span className="material-symbols-outlined text-[14px] text-white" style={{fontSize:'14px'}}>check</span>}
+                                      <span className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${isSelected ? 'border-primary bg-primary' : 'border-outline'
+                                        }`}>
+                                        {isSelected && <span className="material-symbols-outlined text-[14px] text-white" style={{ fontSize: '14px' }}>check</span>}
                                       </span>
                                       {sem}
                                     </button>
@@ -561,14 +586,12 @@ export default function StudentRequestForm({ onNavigate }) {
                       <div className="space-y-3">
                         <div
                           onClick={() => setPaymentMethod('cash')}
-                          className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                            paymentMethod === 'cash' ? 'border-primary bg-surface-container-low' : 'border-outline-variant bg-surface-container-lowest'
-                          }`}
+                          className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${paymentMethod === 'cash' ? 'border-primary bg-surface-container-low' : 'border-outline-variant bg-surface-container-lowest'
+                            }`}
                         >
                           <div className="flex items-center gap-3">
-                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                              paymentMethod === 'cash' ? 'border-primary' : 'border-outline'
-                            }`}>
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${paymentMethod === 'cash' ? 'border-primary' : 'border-outline'
+                              }`}>
                               {paymentMethod === 'cash' && <div className="w-2.5 h-2.5 rounded-full bg-primary"></div>}
                             </div>
                             <div>
@@ -579,14 +602,12 @@ export default function StudentRequestForm({ onNavigate }) {
                         </div>
                         <div
                           onClick={() => setPaymentMethod('online')}
-                          className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                            paymentMethod === 'online' ? 'border-primary bg-surface-container-low' : 'border-outline-variant bg-surface-container-lowest'
-                          }`}
+                          className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${paymentMethod === 'online' ? 'border-primary bg-surface-container-low' : 'border-outline-variant bg-surface-container-lowest'
+                            }`}
                         >
                           <div className="flex items-center gap-3">
-                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                              paymentMethod === 'online' ? 'border-primary' : 'border-outline'
-                            }`}>
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${paymentMethod === 'online' ? 'border-primary' : 'border-outline'
+                              }`}>
                               {paymentMethod === 'online' && <div className="w-2.5 h-2.5 rounded-full bg-primary"></div>}
                             </div>
                             <div>
@@ -652,12 +673,118 @@ export default function StudentRequestForm({ onNavigate }) {
                     </div>
                   </div>
                 )}
+
+                {/* STEP 4: Verify Request */}
+                {step === 4 && (
+                  <div className="animate-fade-in-up">
+                    <header className="mb-8">
+                      <h2 className="font-headline-md text-headline-md text-primary mb-2">Verify Your Request</h2>
+                      <p className="font-body-md text-body-md text-on-surface-variant">Please review your information carefully before submitting.</p>
+                    </header>
+
+                    {/* Request Summary */}
+                    <div className="border border-outline-variant rounded-xl p-6 bg-surface-container-low mb-8">
+                      <h3 className="font-headline-sm text-lg text-on-surface mb-4">Request Summary</h3>
+
+                      <div className="space-y-3 mb-6">
+                        <div className="flex justify-between border-b border-outline-variant pb-2">
+                          <span className="text-on-surface-variant font-medium">Student Name:</span>
+                          <span className="font-bold text-on-surface">{personalInfo.fullName}</span>
+                        </div>
+                        <div className="flex justify-between border-b border-outline-variant pb-2">
+                          <span className="text-on-surface-variant font-medium">Student ID:</span>
+                          <span className="font-bold text-on-surface">{personalInfo.studentId}</span>
+                        </div>
+                        <div className="flex justify-between border-b border-outline-variant pb-2">
+                          <span className="text-on-surface-variant font-medium">Selected Documents:</span>
+                          <span className="font-bold text-on-surface text-right">
+                            {selectedDocObjects.map(d => d.name).join(', ')}
+                          </span>
+                        </div>
+                        {hasSemesterDoc && selectedSemesters.length > 0 && (
+                          <div className="flex justify-between border-b border-outline-variant pb-2">
+                            <span className="text-on-surface-variant font-medium">Semester/s:</span>
+                            <span className="font-bold text-on-surface text-right">
+                              {selectedSemesters.join(', ')}
+                            </span>
+                          </div>
+                        )}
+                        {hasPerPageDoc && (
+                          <div className="flex justify-between border-b border-outline-variant pb-2">
+                            <span className="text-on-surface-variant font-medium">Pages:</span>
+                            <span className="font-bold text-on-surface text-right">{pages}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between pb-2">
+                          <span className="text-on-surface-variant font-medium">Pickup Method:</span>
+                          <span className="font-bold text-on-surface">Registrar Office Claim</span>
+                        </div>
+                        <div className="flex justify-between border-b border-outline-variant pb-2">
+                          <span className="text-on-surface-variant font-medium">Payment Method:</span>
+                          <span className="font-bold text-on-surface">{paymentMethod === 'cash' ? 'Cash Payment' : paymentMethod === 'online' ? 'Online Payment' : ''}</span>
+                        </div>
+                        <div className="flex justify-between pb-2">
+                          <span className="text-on-surface-variant font-medium">Payment Status:</span>
+                          <span className="font-bold text-on-surface">{paymentMethod === 'cash' ? 'Unpaid' : paymentMethod === 'online' ? 'Pending Verification' : ''}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-between items-center pt-4 border-t-2 border-primary/20">
+                        <span className="text-headline-sm text-xl font-bold text-on-surface">Total Processing Fee:</span>
+                        <span className="text-2xl font-bold text-primary">₱ {totalPrice.toFixed(2)}</span>
+                      </div>
+                    </div>
+
+                    {/* Verification Section */}
+                    <div className="mb-8">
+                      <h3 className="font-headline-sm text-headline-sm text-on-surface mb-2">Confirm Your Information</h3>
+                      <p className="font-body-sm text-body-sm text-on-surface-variant mb-5">Please review your information carefully before submitting.</p>
+                      <div className="space-y-3">
+                        <label onClick={() => toggleConfirmation('infoCorrect')} className={`flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${confirmations.infoCorrect ? 'border-primary bg-surface-container-low' : 'border-outline-variant bg-surface-container-lowest'}`}>
+                          <div className={`mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${confirmations.infoCorrect ? 'border-primary bg-primary' : 'border-outline'}`}>
+                            {confirmations.infoCorrect && <span className="material-symbols-outlined text-[14px] text-white" style={{ fontSize: '14px' }}>check</span>}
+                          </div>
+                          <span className="font-body-sm text-body-sm text-on-surface">I confirm that all information provided is true and correct.</span>
+                        </label>
+                        <label onClick={() => toggleConfirmation('understandDelay')} className={`flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${confirmations.understandDelay ? 'border-primary bg-surface-container-low' : 'border-outline-variant bg-surface-container-lowest'}`}>
+                          <div className={`mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${confirmations.understandDelay ? 'border-primary bg-primary' : 'border-outline'}`}>
+                            {confirmations.understandDelay && <span className="material-symbols-outlined text-[14px] text-white" style={{ fontSize: '14px' }}>check</span>}
+                          </div>
+                          <span className="font-body-sm text-body-sm text-on-surface">I understand that incorrect information may delay the processing of my request.</span>
+                        </label>
+                        <label onClick={() => toggleConfirmation('agreeRules')} className={`flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${confirmations.agreeRules ? 'border-primary bg-surface-container-low' : 'border-outline-variant bg-surface-container-lowest'}`}>
+                          <div className={`mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${confirmations.agreeRules ? 'border-primary bg-primary' : 'border-outline'}`}>
+                            {confirmations.agreeRules && <span className="material-symbols-outlined text-[14px] text-white" style={{ fontSize: '14px' }}>check</span>}
+                          </div>
+                          <span className="font-body-sm text-body-sm text-on-surface">I agree to follow the registrar office requirements.</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Step Error */}
+                    {stepError && (
+                      <div className="mb-6 p-4 rounded-lg bg-error/10 border border-error/30">
+                        <p className="font-body-sm text-body-sm text-error">{stepError}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </section>
 
               {/* Submit Error */}
               {submitError && (
                 <div className="mb-6 p-4 rounded-lg bg-error/10 border border-error/30">
                   <p className="font-body-sm text-body-sm text-error">{submitError}</p>
+                </div>
+              )}
+
+              {/* Warning Box */}
+              {step === 4 && (
+                <div className="mb-6 p-4 rounded-lg bg-amber-50 border border-amber-200">
+                  <p className="font-body-sm text-body-sm text-amber-800 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-amber-600 text-[20px]">info</span>
+                    Please review all details carefully. Submitted requests cannot be edited.
+                  </p>
                 </div>
               )}
 
@@ -682,7 +809,7 @@ export default function StudentRequestForm({ onNavigate }) {
                   </button>
                 )}
 
-                {step < 3 ? (
+                {step < 4 ? (
                   <button
                     type="submit"
                     className="flex-1 flex items-center justify-center gap-2 px-8 py-5 rounded-xl bg-primary text-on-primary font-bold hover:opacity-90 shadow-lg transition-all duration-300 active:scale-95 group cursor-pointer"
@@ -693,8 +820,8 @@ export default function StudentRequestForm({ onNavigate }) {
                 ) : (
                   <button
                     type="submit"
-                    disabled={isSubmitting}
-                    className="flex-1 flex items-center justify-center gap-2 px-8 py-5 rounded-xl bg-primary text-on-primary font-bold hover:opacity-90 shadow-lg transition-all duration-300 active:scale-95 disabled:opacity-50 cursor-pointer"
+                    disabled={isSubmitting || !allConfirmed}
+                    className="flex-1 flex items-center justify-center gap-2 px-8 py-5 rounded-xl bg-primary text-on-primary font-bold hover:opacity-90 shadow-lg transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                   >
                     {isSubmitting ? (
                       <>
