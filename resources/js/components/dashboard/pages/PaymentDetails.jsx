@@ -30,7 +30,7 @@ export default function PaymentDetails({ user, onLogout, onNavigate }) {
             return;
         }
 
-        fetch(`/admin/requests/${id}`, { credentials: 'same-origin' })
+        fetch(`/admin/api/requests/${id}`, { credentials: 'same-origin' })
             .then((res) => {
                 if (!res.ok) throw new Error('Request not found.');
                 return res.json();

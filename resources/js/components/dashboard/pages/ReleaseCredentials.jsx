@@ -62,7 +62,7 @@ export default function ReleaseCredentials({ user, onLogout, onNavigate }) {
         setClaimingId(id);
         setMessage(null);
 
-        fetch(`/admin/requests/${id}`, {
+        fetch(`/admin/api/requests/${id}`, {
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { FileText, LayoutDashboard, Clock, CheckCircle, Search, ArrowLeft, ChevronRight, CreditCard, User, BookOpen, MessageSquare, ShieldAlert, ShieldCheck } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { FileText, LayoutDashboard, Clock, CheckCircle, Search, ArrowLeft, ChevronRight, ChevronDown, CreditCard, User, BookOpen, MessageSquare, ShieldAlert, ShieldCheck } from 'lucide-react';
 import DashboardLayout from '../DashboardLayout';
 
 const sidebarItems = [
@@ -37,6 +37,17 @@ export default function RequestDetails({ user, onLogout, onNavigate }) {
     const [error, setError] = useState(null);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState(null);
+    const [statusOpen, setStatusOpen] = useState(false);
+    const [statusMenuPos, setStatusMenuPos] = useState({ top: 0, left: 0, width: 0 });
+    const statusButtonRef = useRef(null);
+
+    const openStatusMenu = () => {
+        if (statusButtonRef.current) {
+            const rect = statusButtonRef.current.getBoundingClientRect();
+            setStatusMenuPos({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+        }
+        setStatusOpen(true);
+    };
 
     const id = window.location.pathname.split('/').filter(Boolean).pop();
 
@@ -47,7 +58,7 @@ export default function RequestDetails({ user, onLogout, onNavigate }) {
             return;
         }
 
-        fetch(`/admin/requests/${id}`, { credentials: 'same-origin' })
+        fetch(`/admin/api/requests/${id}`, { credentials: 'same-origin' })
             .then((res) => {
                 if (!res.ok) throw new Error('Request not found.');
                 return res.json();
@@ -64,13 +75,29 @@ export default function RequestDetails({ user, onLogout, onNavigate }) {
             });
     }, [id]);
 
+    useEffect(() => {
+        if (!statusOpen) return;
+        const close = (e) => {
+            if (statusButtonRef.current && !statusButtonRef.current.contains(e.target)) {
+                setStatusOpen(false);
+            }
+        };
+        const onScroll = () => setStatusOpen(false);
+        document.addEventListener('mousedown', close);
+        document.addEventListener('scroll', onScroll, true);
+        return () => {
+            document.removeEventListener('mousedown', close);
+            document.removeEventListener('scroll', onScroll, true);
+        };
+    }, [statusOpen]);
+
     const doSave = (newStatus, newRemarks) => {
         setSaving(true);
         setMessage(null);
 
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
-        fetch(`/admin/requests/${id}`, {
+        fetch(`/admin/api/requests/${id}`, {
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
@@ -314,7 +341,7 @@ export default function RequestDetails({ user, onLogout, onNavigate }) {
                             </div>
 
                             {/* Registrar Action */}
-                            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-visible md:overflow-hidden">
                                 <div className="flex items-center gap-2 px-6 py-4 bg-emerald-50 border-b border-emerald-100">
                                     <ChevronRight className="w-4 h-4 text-emerald-700" />
                                     <h2 className="text-sm font-bold text-emerald-800">Registrar Action</h2>
@@ -333,20 +360,44 @@ export default function RequestDetails({ user, onLogout, onNavigate }) {
 
                                     <div>
                                         <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Request Status</label>
-                                        <select
-                                            value={status}
-                                            onChange={(e) => setStatus(e.target.value)}
-                                            className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
-                                        >
-                                            {statusOptions.map((opt) => {
-                                                const locked = !paymentPaid && paymentLockedStatuses.includes(opt);
-                                                return (
-                                                    <option key={opt} value={opt} disabled={locked}>
-                                                        {opt}{locked ? ' (payment required)' : ''}
-                                                    </option>
-                                                );
-                                            })}
-                                        </select>
+                                        <div ref={statusButtonRef} className="relative">
+                                            <button
+                                                type="button"
+                                                onClick={openStatusMenu}
+                                                className="w-full border border-slate-300 rounded-lg px-3 pr-10 py-3 sm:py-2.5 text-base sm:text-sm bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 text-left cursor-pointer"
+                                            >
+                                                {status}
+                                            </button>
+                                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+
+                                            {statusOpen && (
+                                                <div
+                                                    style={{ position: 'fixed', top: `${statusMenuPos.top}px`, left: `${statusMenuPos.left}px`, width: `${statusMenuPos.width}px`, zIndex: 9999 }}
+                                                    className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden"
+                                                >
+                                                    {statusOptions.map((opt) => {
+                                                        const locked = !paymentPaid && paymentLockedStatuses.includes(opt);
+                                                        return (
+                                                            <button
+                                                                key={opt}
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    if (!locked) {
+                                                                        setStatus(opt);
+                                                                        setStatusOpen(false);
+                                                                    }
+                                                                }}
+                                                                disabled={locked}
+                                                                className={`w-full px-3 py-2.5 text-sm text-left transition-colors ${opt === status ? 'bg-emerald-50 text-emerald-800 font-medium' : 'text-slate-700 hover:bg-slate-50'} ${locked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
+                                                            >
+                                                                {opt}
+                                                                {locked && <span className="text-xs text-slate-400 ml-1">(payment required)</span>}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
 
                                     <button

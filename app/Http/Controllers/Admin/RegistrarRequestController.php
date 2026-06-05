@@ -61,7 +61,7 @@ class RegistrarRequestController extends Controller
     public function show(int $id): JsonResponse
     {
         $user = auth()->user();
-        if (!in_array($user->role, ['admin', 'system_admin'])) {
+        if (!in_array($user->role, ['admin', 'system_admin', 'cashier']) && !$user->hasRole('registrar')) {
             return response()->json(['message' => 'Unauthorized access.'], 403);
         }
 

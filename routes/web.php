@@ -44,14 +44,6 @@ Route::prefix('admin')->group(function () {
     Route::get('/requests-data', [RegistrarRequestController::class, 'getRequestsData'])
         ->middleware('admin');
 
-    Route::get('/requests/{id}', [RegistrarRequestController::class, 'show'])
-        ->middleware('auth')
-        ->whereNumber('id');
-
-    Route::patch('/requests/{id}', [RegistrarRequestController::class, 'update'])
-        ->middleware('admin')
-        ->whereNumber('id');
-
     // Cashier / Payment Routes
     Route::get('/payments-data', [CashierPaymentController::class, 'getPaymentsData'])
         ->middleware('cashier');
@@ -88,7 +80,23 @@ Route::prefix('admin')->group(function () {
         Route::get('/system/settings', [SystemAdminController::class, 'getSettings']);
         Route::post('/system/settings', [SystemAdminController::class, 'updateSettings']);
     });
+
+    // API routes — moved out of SPA page path to avoid hard-refresh conflict
+    Route::prefix('api')->group(function () {
+        Route::get('/requests/{id}', [RegistrarRequestController::class, 'show'])
+            ->middleware('auth')
+            ->whereNumber('id');
+
+        Route::patch('/requests/{id}', [RegistrarRequestController::class, 'update'])
+            ->middleware('admin')
+            ->whereNumber('id');
+    });
 });
+
+// SPA catch-all — serve React app for all admin/cashier/system-admin sub-paths
+Route::get('/admin/{any?}', function () { return view('welcome'); })->where('any', '.*');
+Route::get('/cashier/{any?}', function () { return view('welcome'); })->where('any', '.*');
+Route::get('/system-admin/{any?}', function () { return view('welcome'); })->where('any', '.*');
 
 // Student Request Submission & Tracking
 Route::post('/requests', [StudentRequestController::class, 'store'])
