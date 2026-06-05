@@ -3,6 +3,7 @@ import { LayoutDashboard, Users, FileText, Settings, Eye, Edit, ToggleLeft, Plus
 import DashboardLayout from '../../DashboardLayout';
 import DashboardSearch from '../../DashboardSearch';
 import DashboardTable from '../../DashboardTable';
+import DashboardMobileCard from '../../DashboardMobileCard';
 import DashboardPagination from '../../DashboardPagination';
 import StatusBadge from '../../StatusBadge';
 import EmptyState from '../../EmptyState';
@@ -246,10 +247,52 @@ export default function SystemAdminUserManagement({ user, onLogout, onNavigate }
                     <div className="p-6 text-center text-sm text-slate-400">Loading users...</div>
                 ) : (
                     <>
-                        <DashboardTable headers={tableHeaders} emptyState={<EmptyState icon={Users} title="No Users Found" subtitle="Registered system users will appear here." />}>
-                            {filtered.map(renderRow)}
-                        </DashboardTable>
-                        {pagination && <DashboardPagination currentPage={pagination.current_page} lastPage={pagination.last_page} onPageChange={handlePageChange} />}
+                        <div className="hidden md:block">
+                            <DashboardTable headers={tableHeaders} emptyState={<EmptyState icon={Users} title="No Users Found" subtitle="Registered system users will appear here." />}>
+                                {filtered.map(renderRow)}
+                            </DashboardTable>
+                        </div>
+
+                        <div className="md:hidden">
+                            {filtered.length > 0 ? (
+                                <div className="divide-y divide-slate-100">
+                                    {filtered.map((item) => (
+                                        <DashboardMobileCard
+                                            key={item.id}
+                                            title={item.name}
+                                            subtitle={item.email}
+                                            metadata={[
+                                                { label: 'Role', value: <span className={`inline-block text-xs font-bold px-2 py-0.5 rounded-full border ${roleColors[item.role] || 'bg-slate-100 text-slate-700 border-slate-200'}`}>{item.role.replace('_', ' ')}</span> },
+                                                { label: 'Status', value: <StatusBadge status={item.is_active ? 'active' : 'inactive'} /> },
+                                                { label: 'Created', value: new Date(item.created_at).toLocaleDateString() },
+                                            ]}
+                                            actions={[
+                                                { icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>, label: 'View User', onClick: () => onNavigate(`/system-admin/users/${item.id}`) },
+                                                { icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>, label: 'Edit User', onClick: () => openEditModal(item) },
+                                                { icon: item.is_active
+                                                    ? <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 12h2v2h-2z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3a9 9 0 100 18 9 9 0 000-18z" /></svg>
+                                                    : <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+                                                  label: item.is_active ? 'Deactivate' : 'Activate',
+                                                  onClick: () => handleToggleActive(item) },
+                                            ]}
+                                        />
+                                    ))}
+                                </div>
+                            ) : (
+                                <EmptyState icon={Users} title="No Users Found" subtitle="Registered system users will appear here." />
+                            )}
+                        </div>
+
+                        {pagination && (
+                            <div className="hidden md:block px-6 py-4 border-t border-slate-100">
+                                <DashboardPagination currentPage={pagination.current_page} lastPage={pagination.last_page} onPageChange={handlePageChange} />
+                            </div>
+                        )}
+                        {pagination && (
+                            <div className="md:hidden px-4 py-3 border-t border-slate-100">
+                                <DashboardPagination currentPage={pagination.current_page} lastPage={pagination.last_page} onPageChange={handlePageChange} />
+                            </div>
+                        )}
                     </>
                 )}
             </section>

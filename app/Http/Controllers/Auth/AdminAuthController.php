@@ -28,7 +28,7 @@ class AdminAuthController extends Controller
         if (Auth::attempt($credentials, $remember)) {
             $user = Auth::user();
 
-            if (!$user->is_active) {
+            if (isset($user->is_active) && !$user->is_active) {
                 Auth::logout();
                 $request->session()->invalidate();
                 return response()->json([
@@ -86,7 +86,7 @@ class AdminAuthController extends Controller
      */
     public function checkAuth(Request $request): JsonResponse
     {
-        if (Auth::check() && Auth::user()->is_active && in_array(Auth::user()->role, ['admin', 'cashier', 'system_admin'])) {
+        if (Auth::check() && (Auth::user()->is_active ?? true) && in_array(Auth::user()->role, ['admin', 'cashier', 'system_admin'])) {
             return response()->json([
                 'status' => 'authenticated',
                 'user' => Auth::user()

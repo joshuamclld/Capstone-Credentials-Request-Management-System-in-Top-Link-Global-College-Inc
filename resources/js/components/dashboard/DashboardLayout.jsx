@@ -35,9 +35,9 @@ export default function DashboardLayout({ title, subtitle, sidebarItems, current
                                 <Menu className="w-5 h-5" />
                             </button>
                             <div>
-                                <h1 className="text-lg font-bold text-slate-900">{title}</h1>
+                                <h1 className="text-sm sm:text-lg md:text-lg font-bold text-slate-900">{title}</h1>
                                 {subtitle && (
-                                    <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>
+                                    <p className="text-[10px] sm:text-xs text-slate-500 mt-0 sm:mt-0.5">{subtitle}</p>
                                 )}
                             </div>
                         </div>

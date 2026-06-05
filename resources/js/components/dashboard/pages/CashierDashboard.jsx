@@ -4,6 +4,7 @@ import DashboardLayout from '../DashboardLayout';
 import DashboardStatCard from '../DashboardStatCard';
 import DashboardSearch from '../DashboardSearch';
 import DashboardTable from '../DashboardTable';
+import DashboardMobileCard from '../DashboardMobileCard';
 import StatusBadge from '../StatusBadge';
 import EmptyState from '../EmptyState';
 import DashboardPagination from '../DashboardPagination';
@@ -131,23 +132,62 @@ export default function CashierDashboard({ user, onLogout, onNavigate }) {
                             />
                         </div>
 
-                        <DashboardTable
-                            headers={tableHeaders}
-                            emptyState={
-                                <EmptyState
-                                    icon={CreditCard}
-                                    title="No Payment Requests"
-                                    subtitle="Student payment requests will appear here."
+                <div className="hidden md:block">
+                    <DashboardTable
+                        headers={tableHeaders}
+                        emptyState={
+                            <EmptyState
+                                icon={CreditCard}
+                                title="No Payment Requests"
+                                subtitle="Student payment requests will appear here."
+                            />
+                        }
+                    >
+                        {filtered.map(renderRow)}
+                    </DashboardTable>
+                </div>
+
+                <div className="md:hidden">
+                    {filtered.length > 0 ? (
+                        <div className="divide-y divide-slate-100">
+                            {filtered.map((item) => (
+                                <DashboardMobileCard
+                                    key={item.id}
+                                    title={item.tracking_number}
+                                    subtitle={item.student_name}
+                                    metadata={[
+                                        { label: 'Method', value: item.payment_method || 'N/A' },
+                                        { label: 'Fee', value: `₱${Number(item.total_fee).toFixed(2)}` },
+                                        { label: 'Status', value: <span className={`inline-block text-[11px] font-bold px-2.5 py-1 rounded-full border ${paymentBadgeClass(item.payment_status)}`}>{item.payment_status === 'pending_verification' ? 'Pending Verification' : item.payment_status === 'unpaid' ? 'Unpaid' : 'Paid'}</span> },
+                                    ]}
+                                    actionLabel="View Payment"
+                                    onAction={() => onNavigate(`/cashier/payments/${item.id}`)}
                                 />
-                            }
-                        >
-                            {filtered.map(renderRow)}
-                        </DashboardTable>
-                        <DashboardPagination
-                            currentPage={pagination?.current_page || 1}
-                            lastPage={pagination?.last_page || 1}
-                            onPageChange={handlePageChange}
+                            ))}
+                        </div>
+                    ) : (
+                        <EmptyState
+                            icon={CreditCard}
+                            title="No Payment Requests"
+                            subtitle="Student payment requests will appear here."
                         />
+                    )}
+                </div>
+
+                <div className="hidden md:block px-6 py-4 border-t border-slate-100">
+                    <DashboardPagination
+                        currentPage={pagination?.current_page || 1}
+                        lastPage={pagination?.last_page || 1}
+                        onPageChange={handlePageChange}
+                    />
+                </div>
+                <div className="md:hidden px-4 py-3 border-t border-slate-100">
+                    <DashboardPagination
+                        currentPage={pagination?.current_page || 1}
+                        lastPage={pagination?.last_page || 1}
+                        onPageChange={handlePageChange}
+                    />
+                </div>
                     </section>
                 </>
             )}

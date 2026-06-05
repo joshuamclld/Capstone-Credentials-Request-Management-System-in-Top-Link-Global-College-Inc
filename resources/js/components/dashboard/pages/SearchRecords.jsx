@@ -3,6 +3,7 @@ import { FileText, LayoutDashboard, Clock, CheckCircle, Search } from 'lucide-re
 import DashboardLayout from '../DashboardLayout';
 import DashboardSearch from '../DashboardSearch';
 import DashboardTable from '../DashboardTable';
+import DashboardMobileCard from '../DashboardMobileCard';
 import StatusBadge from '../StatusBadge';
 import EmptyState from '../EmptyState';
 import DashboardPagination from '../DashboardPagination';
@@ -146,23 +147,54 @@ export default function SearchRecords({ user, onLogout, onNavigate }) {
                     </p>
                 </div>
 
-                <DashboardTable
-                    headers={tableHeaders}
-                    emptyState={
+                <div className="hidden md:block">
+                    <DashboardTable
+                        headers={tableHeaders}
+                        emptyState={
+                            <EmptyState
+                                icon={Search}
+                                title="No Records Found"
+                                subtitle="Search for student credential requests using the criteria above."
+                            />
+                        }
+                    >
+                        {filtered.map(renderRow)}
+                    </DashboardTable>
+                </div>
+
+                <div className="md:hidden">
+                    {filtered.length > 0 ? (
+                        <div className="divide-y divide-slate-100">
+                            {filtered.map((item) => (
+                                <DashboardMobileCard
+                                    key={item.id}
+                                    title={item.tracking_number}
+                                    subtitle={item.student_name}
+                                    metadata={[
+                                        { label: 'Documents', value: item.document_names.join(', ') },
+                                        { label: 'Payment', value: <StatusBadge status={item.payment_status} type="payment" /> },
+                                        { label: 'Status', value: <StatusBadge status={item.status} /> },
+                                        { label: 'Date', value: item.created_at },
+                                    ]}
+                                />
+                            ))}
+                        </div>
+                    ) : (
                         <EmptyState
                             icon={Search}
                             title="No Records Found"
                             subtitle="Search for student credential requests using the criteria above."
                         />
-                    }
-                >
-                    {filtered.map(renderRow)}
-                </DashboardTable>
-                <DashboardPagination
-                    currentPage={pagination?.current_page || 1}
-                    lastPage={pagination?.last_page || 1}
-                    onPageChange={handlePageChange}
-                />
+                    )}
+                </div>
+
+                <div className="px-6 py-4 border-t border-slate-100">
+                    <DashboardPagination
+                        currentPage={pagination?.current_page || 1}
+                        lastPage={pagination?.last_page || 1}
+                        onPageChange={handlePageChange}
+                    />
+                </div>
             </section>
         </DashboardLayout>
     );

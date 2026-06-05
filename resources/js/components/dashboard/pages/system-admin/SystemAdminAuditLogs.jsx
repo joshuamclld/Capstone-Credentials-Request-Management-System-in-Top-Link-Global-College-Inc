@@ -3,6 +3,7 @@ import { LayoutDashboard, FileText, Users, Settings, RefreshCw, ChartColumn } fr
 import DashboardLayout from '../../DashboardLayout';
 import DashboardSearch from '../../DashboardSearch';
 import DashboardTable from '../../DashboardTable';
+import DashboardMobileCard from '../../DashboardMobileCard';
 import DashboardPagination from '../../DashboardPagination';
 import EmptyState from '../../EmptyState';
 
@@ -104,10 +105,43 @@ export default function SystemAdminAuditLogs({ user, onLogout, onNavigate }) {
                     <div className="p-6 text-center text-sm text-slate-400">Loading audit logs...</div>
                 ) : (
                     <>
-                        <DashboardTable headers={tableHeaders} emptyState={<EmptyState icon={RefreshCw} title="No Audit Logs" subtitle="System activity will appear here." />}>
-                            {filtered.map(renderRow)}
-                        </DashboardTable>
-                        {pagination && <DashboardPagination currentPage={pagination.current_page} lastPage={pagination.last_page} onPageChange={handlePageChange} />}
+                        <div className="hidden md:block">
+                            <DashboardTable headers={tableHeaders} emptyState={<EmptyState icon={RefreshCw} title="No Audit Logs" subtitle="System activity will appear here." />}>
+                                {filtered.map(renderRow)}
+                            </DashboardTable>
+                        </div>
+
+                        <div className="md:hidden">
+                            {filtered.length > 0 ? (
+                                <div className="divide-y divide-slate-100">
+                                    {filtered.map((item) => (
+                                        <DashboardMobileCard
+                                            key={item.id}
+                                            title={item.action.replace(/_/g, ' ')}
+                                            subtitle={item.performed_by}
+                                            metadata={[
+                                                { label: 'Target', value: item.target_type ? `${item.target_type}#${item.target_id}` : 'System' },
+                                                { label: 'Description', value: item.description || '-' },
+                                                { label: 'Date & Time', value: new Date(item.created_at).toLocaleString() },
+                                            ]}
+                                        />
+                                    ))}
+                                </div>
+                            ) : (
+                                <EmptyState icon={RefreshCw} title="No Audit Logs" subtitle="System activity will appear here." />
+                            )}
+                        </div>
+
+                        {pagination && (
+                            <div className="hidden md:block px-6 py-4 border-t border-slate-100">
+                                <DashboardPagination currentPage={pagination.current_page} lastPage={pagination.last_page} onPageChange={handlePageChange} />
+                            </div>
+                        )}
+                        {pagination && (
+                            <div className="md:hidden px-4 py-3 border-t border-slate-100">
+                                <DashboardPagination currentPage={pagination.current_page} lastPage={pagination.last_page} onPageChange={handlePageChange} />
+                            </div>
+                        )}
                     </>
                 )}
             </section>

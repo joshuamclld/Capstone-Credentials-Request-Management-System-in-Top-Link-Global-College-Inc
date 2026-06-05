@@ -3,6 +3,7 @@ import { LayoutDashboard, FileText, Users, Settings, Plus, X, RefreshCw, ChartCo
 import DashboardLayout from '../../DashboardLayout';
 import DashboardSearch from '../../DashboardSearch';
 import DashboardTable from '../../DashboardTable';
+import DashboardMobileCard from '../../DashboardMobileCard';
 import DashboardPagination from '../../DashboardPagination';
 import StatusBadge from '../../StatusBadge';
 import EmptyState from '../../EmptyState';
@@ -201,10 +202,49 @@ export default function SystemAdminCredentialTypes({ user, onLogout, onNavigate 
                     <div className="p-6 text-center text-sm text-slate-400">Loading credential types...</div>
                 ) : (
                     <>
-                        <DashboardTable headers={tableHeaders} emptyState={<EmptyState icon={FileText} title="No Credential Types" subtitle="Credential types will appear here once created." />}>
-                            {filtered.map(renderRow)}
-                        </DashboardTable>
-                        {pagination && <DashboardPagination currentPage={pagination.current_page} lastPage={pagination.last_page} onPageChange={handlePageChange} />}
+                        <div className="hidden md:block">
+                            <DashboardTable headers={tableHeaders} emptyState={<EmptyState icon={FileText} title="No Credential Types" subtitle="Credential types will appear here once created." />}>
+                                {filtered.map(renderRow)}
+                            </DashboardTable>
+                        </div>
+
+                        <div className="md:hidden">
+                            {filtered.length > 0 ? (
+                                <div className="divide-y divide-slate-100">
+                                    {filtered.map((item) => (
+                                        <DashboardMobileCard
+                                            key={item.id}
+                                            title={item.code}
+                                            subtitle={item.name}
+                                            metadata={[
+                                                { label: 'Price', value: `₱${parseFloat(item.price).toFixed(2)}` },
+                                                { label: 'Processing', value: `${item.processing_days} day${item.processing_days !== 1 ? 's' : ''}` },
+                                                { label: 'Per Semester', value: item.is_per_semester ? <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">Yes</span> : <span className="text-xs text-slate-400">No</span> },
+                                                { label: 'Per Page', value: item.is_per_page ? <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full">Yes</span> : <span className="text-xs text-slate-400">No</span> },
+                                                { label: 'Status', value: <StatusBadge status={item.is_active ? 'active' : 'inactive'} /> },
+                                            ]}
+                                            actions={[
+                                                { icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>, label: 'Edit', onClick: () => openEditModal(item) },
+                                                ...(item.is_active ? [{ icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>, label: 'Deactivate', onClick: () => handleDelete(item) }] : []),
+                                            ]}
+                                        />
+                                    ))}
+                                </div>
+                            ) : (
+                                <EmptyState icon={FileText} title="No Credential Types" subtitle="Credential types will appear here once created." />
+                            )}
+                        </div>
+
+                        {pagination && (
+                            <div className="hidden md:block px-6 py-4 border-t border-slate-100">
+                                <DashboardPagination currentPage={pagination.current_page} lastPage={pagination.last_page} onPageChange={handlePageChange} />
+                            </div>
+                        )}
+                        {pagination && (
+                            <div className="md:hidden px-4 py-3 border-t border-slate-100">
+                                <DashboardPagination currentPage={pagination.current_page} lastPage={pagination.last_page} onPageChange={handlePageChange} />
+                            </div>
+                        )}
                     </>
                 )}
             </section>

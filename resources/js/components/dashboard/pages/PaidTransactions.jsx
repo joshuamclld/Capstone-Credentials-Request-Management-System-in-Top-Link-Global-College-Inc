@@ -3,6 +3,7 @@ import { LayoutDashboard, Clock, CheckCircle, Search, CreditCard } from 'lucide-
 import DashboardLayout from '../DashboardLayout';
 import DashboardSearch from '../DashboardSearch';
 import DashboardTable from '../DashboardTable';
+import DashboardMobileCard from '../DashboardMobileCard';
 import EmptyState from '../EmptyState';
 import DashboardPagination from '../DashboardPagination';
 
@@ -113,23 +114,62 @@ export default function PaidTransactions({ user, onLogout, onNavigate }) {
                     />
                 </div>
 
-                <DashboardTable
-                    headers={tableHeaders}
-                    emptyState={
+                <div className="hidden md:block">
+                    <DashboardTable
+                        headers={tableHeaders}
+                        emptyState={
+                            <EmptyState
+                                icon={CheckCircle}
+                                title="No Paid Transactions"
+                                subtitle="Verified payments will appear here."
+                            />
+                        }
+                    >
+                        {filtered.map(renderRow)}
+                    </DashboardTable>
+                </div>
+
+                <div className="md:hidden">
+                    {filtered.length > 0 ? (
+                        <div className="divide-y divide-slate-100">
+                            {filtered.map((item) => (
+                                <DashboardMobileCard
+                                    key={item.id}
+                                    title={item.tracking_number}
+                                    subtitle={item.student_name}
+                                    metadata={[
+                                        { label: 'Amount', value: `₱${Number(item.total_fee).toFixed(2)}` },
+                                        { label: 'Method', value: item.payment_method || 'N/A' },
+                                        { label: 'Date', value: item.created_at },
+                                    ]}
+                                    actionLabel="View"
+                                    onAction={() => onNavigate(`/cashier/payments/${item.id}`)}
+                                />
+                            ))}
+                        </div>
+                    ) : (
                         <EmptyState
                             icon={CheckCircle}
                             title="No Paid Transactions"
                             subtitle="Verified payments will appear here."
                         />
-                    }
-                >
-                    {filtered.map(renderRow)}
-                </DashboardTable>
-                <DashboardPagination
-                    currentPage={pagination?.current_page || 1}
-                    lastPage={pagination?.last_page || 1}
-                    onPageChange={handlePageChange}
-                />
+                    )}
+                </div>
+
+                <div className="hidden md:block px-6 py-4 border-t border-slate-100">
+                    <DashboardPagination
+                        currentPage={pagination?.current_page || 1}
+                        lastPage={pagination?.last_page || 1}
+                        onPageChange={handlePageChange}
+                    />
+                </div>
+                <div className="md:hidden px-4 py-3 border-t border-slate-100">
+                    <DashboardPagination
+                        currentPage={pagination?.current_page || 1}
+                        lastPage={pagination?.last_page || 1}
+                        onPageChange={handlePageChange}
+                    />
+                </div>
             </section>
         </DashboardLayout>
     );
