@@ -21,7 +21,7 @@ class CashierMiddleware
             return redirect('/admin-login');
         }
 
-        if (!in_array(Auth::user()->role, ['cashier', 'admin'])) {
+        if (!in_array(Auth::user()->role, ['cashier', 'admin']) && !Auth::user()->hasAnyRole(['cashier', 'registrar'])) {
             if ($request->expectsJson()) {
                 return response()->json([
                     'status' => 'error',

@@ -20,6 +20,7 @@ const sidebarItems = [
 
 export default function SystemAdminCredentialTypes({ user, onLogout, onNavigate }) {
     const [query, setQuery] = useState('');
+    const [debouncedQuery, setDebouncedQuery] = useState('');
     const [docs, setDocs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
@@ -31,10 +32,15 @@ export default function SystemAdminCredentialTypes({ user, onLogout, onNavigate 
     const [formError, setFormError] = useState('');
     const [formLoading, setFormLoading] = useState(false);
 
+    useEffect(() => {
+        const timer = setTimeout(() => setDebouncedQuery(query), 300);
+        return () => clearTimeout(timer);
+    }, [query]);
+
     const fetchDocs = (p) => {
         setLoading(true);
         const params = new URLSearchParams({ page: p });
-        if (query) params.append('search', query);
+        if (debouncedQuery) params.append('search', debouncedQuery);
 
         fetch(`/admin/system/documents?${params}`, { credentials: 'same-origin' })
             .then((r) => { if (!r.ok) throw new Error('Failed to fetch'); return r.json(); })
@@ -42,7 +48,7 @@ export default function SystemAdminCredentialTypes({ user, onLogout, onNavigate 
             .catch(() => { setDocs([]); setLoading(false); });
     };
 
-    useEffect(() => { fetchDocs(page); }, [page, query]);
+    useEffect(() => { fetchDocs(page); }, [page, debouncedQuery]);
 
     const handlePageChange = (np) => { if (np >= 1 && pagination && np <= pagination.last_page) setPage(np); };
 

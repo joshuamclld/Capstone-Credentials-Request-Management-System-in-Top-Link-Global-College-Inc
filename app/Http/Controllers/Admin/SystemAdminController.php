@@ -128,6 +128,14 @@ class SystemAdminController extends Controller
     public function updateUser(UpdateUserRequest $request, int $id): JsonResponse
     {
         $user = User::findOrFail($id);
+
+        if ($user->id === auth()->id() && $request->has('is_active') && !$request->input('is_active')) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'You cannot deactivate your own account.',
+            ], 422);
+        }
+
         $data = $request->validated();
 
         if (!empty($data['password'])) {

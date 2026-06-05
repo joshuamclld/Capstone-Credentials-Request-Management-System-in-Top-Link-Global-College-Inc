@@ -28,6 +28,7 @@ const roleFilterOptions = ['All', 'admin', 'cashier', 'system_admin'];
 
 export default function SystemAdminUserManagement({ user, onLogout, onNavigate }) {
     const [query, setQuery] = useState('');
+    const [debouncedQuery, setDebouncedQuery] = useState('');
     const [roleFilter, setRoleFilter] = useState('All');
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -41,10 +42,24 @@ export default function SystemAdminUserManagement({ user, onLogout, onNavigate }
     const [formError, setFormError] = useState('');
     const [formLoading, setFormLoading] = useState(false);
 
+    const [toggleMessage, setToggleMessage] = useState(null);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setDebouncedQuery(query), 300);
+        return () => clearTimeout(timer);
+    }, [query]);
+
+    useEffect(() => {
+        if (toggleMessage) {
+            const timer = setTimeout(() => setToggleMessage(null), 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [toggleMessage]);
+
     const fetchUsers = (p) => {
         setLoading(true);
         const params = new URLSearchParams({ page: p });
-        if (query) params.append('search', query);
+        if (debouncedQuery) params.append('search', debouncedQuery);
         if (roleFilter !== 'All') params.append('role', roleFilter);
 
         fetch(`/admin/system/users?${params}`, { credentials: 'same-origin' })
@@ -53,7 +68,7 @@ export default function SystemAdminUserManagement({ user, onLogout, onNavigate }
             .catch((e) => { setUsers([]); setLoading(false); });
     };
 
-    useEffect(() => { fetchUsers(page); }, [page, query, roleFilter]);
+    useEffect(() => { fetchUsers(page); }, [page, debouncedQuery, roleFilter]);
 
     const handlePageChange = (np) => { if (np >= 1 && pagination && np <= pagination.last_page) setPage(np); };
 
@@ -110,7 +125,18 @@ export default function SystemAdminUserManagement({ user, onLogout, onNavigate }
             body: JSON.stringify({ is_active: !u.is_active }),
             credentials: 'same-origin',
         })
-            .then((r) => { if (r.ok) fetchUsers(page); });
+            .then(async (r) => {
+                const d = await r.json();
+                if (r.ok) {
+                    setToggleMessage({ type: 'success', text: 'User status updated successfully.' });
+                    fetchUsers(page);
+                } else {
+                    setToggleMessage({ type: 'error', text: d.message || 'Failed to update status.' });
+                }
+            })
+            .catch(() => {
+                setToggleMessage({ type: 'error', text: 'Network error. Please try again.' });
+            });
     };
 
     const renderRow = (u) => (
@@ -211,6 +237,11 @@ export default function SystemAdminUserManagement({ user, onLogout, onNavigate }
                         Add User
                     </button>
                 </div>
+                {toggleMessage && (
+                    <div className={`mx-6 mt-4 text-xs px-3 py-2 rounded-lg ${toggleMessage.type === 'success' ? 'text-emerald-700 bg-emerald-50' : 'text-red-600 bg-red-50'}`}>
+                        {toggleMessage.text}
+                    </div>
+                )}
                 {loading ? (
                     <div className="p-6 text-center text-sm text-slate-400">Loading users...</div>
                 ) : (

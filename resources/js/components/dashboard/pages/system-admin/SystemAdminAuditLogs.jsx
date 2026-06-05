@@ -21,11 +21,17 @@ const actionFilterOptions = ['All', 'update_status', 'update_remarks', 'verify_p
 
 export default function SystemAdminAuditLogs({ user, onLogout, onNavigate }) {
     const [query, setQuery] = useState('');
+    const [debouncedQuery, setDebouncedQuery] = useState('');
     const [actionFilter, setActionFilter] = useState('All');
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [pagination, setPagination] = useState(null);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setDebouncedQuery(query), 300);
+        return () => clearTimeout(timer);
+    }, [query]);
 
     const fetchLogs = (p) => {
         setLoading(true);
@@ -44,7 +50,7 @@ export default function SystemAdminAuditLogs({ user, onLogout, onNavigate }) {
         };
 
         const params = new URLSearchParams({ page: p });
-        if (query) params.append('search', query);
+        if (debouncedQuery) params.append('search', debouncedQuery);
         if (actionFilter !== 'All') params.append('action', actionFilter);
 
         fetch(`/admin/system/audit-logs?${params}`, { credentials: 'same-origin' })
@@ -53,7 +59,7 @@ export default function SystemAdminAuditLogs({ user, onLogout, onNavigate }) {
             .catch(() => { setLogs([]); setLoading(false); });
     };
 
-    useEffect(() => { fetchLogs(page); }, [page, query, actionFilter]);
+    useEffect(() => { fetchLogs(page); }, [page, debouncedQuery, actionFilter]);
 
     const handlePageChange = (np) => { if (np >= 1 && pagination && np <= pagination.last_page) setPage(np); };
 

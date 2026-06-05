@@ -21,7 +21,7 @@ class AdminMiddleware
             return redirect('/admin-login');
         }
 
-        if (Auth::user()->role !== 'admin') {
+        if (Auth::user()->role !== 'admin' && !Auth::user()->hasRole('registrar')) {
             if ($request->expectsJson()) {
                 return response()->json([
                     'status' => 'error',

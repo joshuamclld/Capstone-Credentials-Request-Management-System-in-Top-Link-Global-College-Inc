@@ -23,7 +23,7 @@ export default function SystemAdminUserDetails({ user, onLogout, onNavigate }) {
         if (!userId || userId === 'users') { setLoading(false); return; }
         fetch(`/admin/system/users/${userId}`, { credentials: 'same-origin' })
             .then((r) => { if (!r.ok) throw new Error('Not found'); return r.json(); })
-            .then((j) => { setUserData(j.data); setLoading(false); })
+            .then((j) => { setUserData({ ...j.data, request_count: j.request_count }); setLoading(false); })
             .catch(() => setLoading(false));
     }, [userId]);
 
@@ -86,6 +86,13 @@ export default function SystemAdminUserDetails({ user, onLogout, onNavigate }) {
                                 <div>
                                     <p className="text-xs text-slate-500">Status</p>
                                     <div><StatusBadge status={userData.is_active ? 'active' : 'inactive'} /></div>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <FileText className="w-4 h-4 text-slate-400" />
+                                <div>
+                                    <p className="text-xs text-slate-500">Requests Submitted</p>
+                                    <p className="text-sm font-medium text-slate-900">{userData.request_count ?? 0}</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-3">

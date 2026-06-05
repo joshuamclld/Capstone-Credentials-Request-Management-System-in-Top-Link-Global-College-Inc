@@ -21,7 +21,7 @@ class SystemAdminMiddleware
             return redirect('/admin-login');
         }
 
-        if (Auth::user()->role !== 'system_admin') {
+        if (Auth::user()->role !== 'system_admin' && !Auth::user()->hasRole('system_admin')) {
             if ($request->expectsJson()) {
                 return response()->json([
                     'status' => 'error',

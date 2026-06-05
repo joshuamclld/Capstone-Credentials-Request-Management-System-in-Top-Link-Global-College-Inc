@@ -13,7 +13,7 @@ class AdminUserSeeder extends Seeder
      */
     public function run(): void
     {
-        User::updateOrCreate(
+        $admin = User::updateOrCreate(
             ['email' => 'admin@tlgc.edu.ph'],
             [
                 'name' => 'Admin User',
@@ -22,8 +22,9 @@ class AdminUserSeeder extends Seeder
                 'email_verified_at' => now(),
             ]
         );
+        $admin->assignRole('registrar');
 
-        User::updateOrCreate(
+        $cashier = User::updateOrCreate(
             ['email' => 'cashier@tlgc.edu.ph'],
             [
                 'name' => 'Cashier User',
@@ -32,8 +33,9 @@ class AdminUserSeeder extends Seeder
                 'email_verified_at' => now(),
             ]
         );
+        $cashier->assignRole('cashier');
 
-        User::updateOrCreate(
+        $sysAdmin = User::updateOrCreate(
             ['email' => 'sysadmin@tlgc.edu.ph'],
             [
                 'name' => 'System Administrator',
@@ -42,6 +44,7 @@ class AdminUserSeeder extends Seeder
                 'email_verified_at' => now(),
             ]
         );
+        $sysAdmin->assignRole('system_admin');
 
         $this->command->info('Admin user created (admin@tlgc.edu.ph).');
         $this->command->info('Cashier user created (cashier@tlgc.edu.ph).');
