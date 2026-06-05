@@ -164,28 +164,28 @@ function App() {
     const isCashierPath = currentPath.startsWith('/cashier');
 
     if (isRegistrarPath && user.role !== 'admin') {
-      window.history.pushState({}, '', '/cashier-dashboard');
-      window.dispatchEvent(new PopStateEvent('popstate'));
+      const fallback = user.role === 'system_admin' ? '/system-admin-dashboard' : '/cashier-dashboard';
+      setTimeout(() => navigate(fallback), 0);
       return null;
     }
 
     if (isCashierPath && user.role !== 'cashier' && user.role !== 'admin') {
-      window.history.pushState({}, '', '/admin-dashboard');
-      window.dispatchEvent(new PopStateEvent('popstate'));
+      const fallback = user.role === 'system_admin' ? '/system-admin-dashboard' : '/admin-dashboard';
+      setTimeout(() => navigate(fallback), 0);
       return null;
     }
 
     const isSystemAdminPath = currentPath.startsWith('/system-admin-') || currentPath.startsWith('/system-admin/');
     if (isSystemAdminPath && user.role !== 'system_admin') {
-      window.history.pushState({}, '', '/admin-dashboard');
-      window.dispatchEvent(new PopStateEvent('popstate'));
+      const fallback = user.role === 'admin' ? '/admin-dashboard' : '/cashier-dashboard';
+      setTimeout(() => navigate(fallback), 0);
       return null;
     }
 
-    const isSystemPath = currentPath.startsWith('/system-') || currentPath.startsWith('/system/');
+    const isSystemPath = !isSystemAdminPath && (currentPath.startsWith('/system-') || currentPath.startsWith('/system/'));
     if (isSystemPath && user.role !== 'admin') {
-      window.history.pushState({}, '', '/admin-dashboard');
-      window.dispatchEvent(new PopStateEvent('popstate'));
+      const fallback = user.role === 'system_admin' ? '/system-admin-dashboard' : '/cashier-dashboard';
+      setTimeout(() => navigate(fallback), 0);
       return null;
     }
 
