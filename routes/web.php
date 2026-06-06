@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Auth\AdminAuthController;
 use App\Http\Controllers\Admin\RegistrarRequestController;
 use App\Http\Controllers\Admin\CashierPaymentController;
@@ -41,6 +42,11 @@ Route::prefix('admin')->group(function () {
 
     Route::get('/check-auth', [AdminAuthController::class, 'checkAuth']);
 
+    // Notification routes
+    Route::get('/notifications', [NotificationController::class, 'index'])->middleware('auth');
+    Route::patch('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->middleware('auth')->whereNumber('id');
+    Route::patch('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->middleware('auth');
+
     Route::get('/requests-data', [RegistrarRequestController::class, 'getRequestsData'])
         ->middleware('admin');
 
@@ -72,6 +78,9 @@ Route::prefix('admin')->group(function () {
 
         // Reports
         Route::get('/system/reports', [SystemAdminController::class, 'getReports']);
+        Route::get('/system/reports/export/excel', [SystemAdminController::class, 'exportExcel']);
+        Route::get('/system/reports/export/csv', [SystemAdminController::class, 'exportCsv']);
+        Route::get('/system/reports/export/pdf', [SystemAdminController::class, 'exportPdf']);
 
         // Audit logs
         Route::get('/system/audit-logs', [SystemAdminController::class, 'getAuditLogs']);

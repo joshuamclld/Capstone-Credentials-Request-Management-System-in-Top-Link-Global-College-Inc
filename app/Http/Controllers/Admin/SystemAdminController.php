@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exports\ReportsExport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreDocumentRequest;
 use App\Http\Requests\StoreUserRequest;
@@ -12,9 +13,11 @@ use App\Models\Document;
 use App\Models\StudentRequest;
 use App\Models\SystemSetting;
 use App\Models\User;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Maatwebsite\Excel\Facades\Excel;
 
 class SystemAdminController extends Controller
 {
@@ -284,6 +287,25 @@ class SystemAdminController extends Controller
             ->whereRaw("DATE_FORMAT(created_at, '%Y-%m') = ?", [$month])
             ->sum('total_fee');
 
+        $documents = Document::where('is_active', true)->get()->keyBy('code');
+
+        $monthlyRequestsByType = StudentRequest::selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month, document_ids")
+            ->get()
+            ->groupBy('month')
+            ->map(function ($requests, $month) use ($documents) {
+                $typeCounts = [];
+                foreach ($requests as $req) {
+                    $ids = $req->document_ids ?? [];
+                    foreach ($ids as $code) {
+                        $name = $documents->get($code)?->name ?? $code;
+                        $typeCounts[$name] = ($typeCounts[$name] ?? 0) + 1;
+                    }
+                }
+                arsort($typeCounts);
+                $topTypes = array_slice($typeCounts, 0, 6);
+                return array_merge(['month' => $month], $topTypes);
+            })->values();
+
         return response()->json([
             'status' => 'success',
             'data' => [
@@ -293,11 +315,105 @@ class SystemAdminController extends Controller
                 'average_fee' => round($avgFee ?? 0, 2),
                 'monthly_requests' => $monthlyRequests,
                 'monthly_revenue' => $monthlyRevenue,
+                'monthly_requests_by_type' => $monthlyRequestsByType,
                 'status_breakdown' => $statusBreakdown,
                 'this_month' => $thisMonth,
                 'this_month_revenue' => $thisMonthRevenue,
             ],
         ]);
+    }
+
+    public function exportExcel(Request $request)
+    {
+        return Excel::download(
+            new ReportsExport(
+                $request->input('month', 'all'),
+                $request->input('year', 'all'),
+                $request->input('status'),
+                $request->input('payment_status')
+            ),
+            'crms-report-' . now()->format('Y-m-d') . '.xlsx'
+        );
+    }
+
+    public function exportCsv(Request $request)
+    {
+        $filename = 'crms-report-' . now()->format('Y-m-d') . '.csv';
+        $handle = fopen('php://temp', 'w+');
+        fputs($handle, "\xEF\xBB\xBF");
+
+        $headers = [
+            'Request ID', 'Tracking Number', 'Student Name', 'Student Number',
+            'Course', 'Requested Documents', 'Payment Method', 'Payment Status',
+            'Request Status', 'Total Fee', 'Verified By', 'Verified At', 'Created Date',
+        ];
+        fputcsv($handle, $headers);
+
+        $query = StudentRequest::query();
+        if (($m = $request->input('month')) && $m !== 'all') $query->whereMonth('created_at', $m);
+        if (($y = $request->input('year')) && $y !== 'all') $query->whereYear('created_at', $y);
+        if (($s = $request->input('status')) && $s !== 'all') $query->where('status', $s);
+        if (($p = $request->input('payment_status')) && $p !== 'all') $query->where('payment_status', $p);
+
+        $allDocs = Document::all()->keyBy('code');
+
+        $query->latest()->chunk(100, function ($requests) use ($handle, $allDocs) {
+            foreach ($requests as $req) {
+                $names = collect($req->document_ids ?? [])
+                    ->map(fn ($c) => $allDocs->get($c)?->name ?? $c)
+                    ->implode(', ');
+                fputcsv($handle, [
+                    $req->id,
+                    $req->tracking_number,
+                    $req->full_name,
+                    $req->student_number,
+                    $req->course,
+                    $names,
+                    ucfirst(str_replace('_', ' ', $req->payment_method)),
+                    ucfirst(str_replace('_', ' ', $req->payment_status)),
+                    $req->status,
+                    number_format((float) $req->total_fee, 2),
+                    $req->verified_by ?? 'N/A',
+                    $req->verified_at ? $req->verified_at->format('Y-m-d H:i:s') : 'N/A',
+                    $req->created_at->format('Y-m-d'),
+                ]);
+            }
+        });
+
+        rewind($handle);
+        $content = stream_get_contents($handle);
+        fclose($handle);
+
+        return response($content, 200, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ]);
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $query = StudentRequest::query();
+        if (($m = $request->input('month')) && $m !== 'all') $query->whereMonth('created_at', $m);
+        if (($y = $request->input('year')) && $y !== 'all') $query->whereYear('created_at', $y);
+        if (($s = $request->input('status')) && $s !== 'all') $query->where('status', $s);
+        if (($p = $request->input('payment_status')) && $p !== 'all') $query->where('payment_status', $p);
+
+        $requests = $query->latest()->get();
+        $allDocs = Document::all()->keyBy('code');
+
+        $totalRevenue = $requests->where('payment_status', 'paid')->sum('total_fee');
+        $totalPaid = $requests->where('payment_status', 'paid')->count();
+
+        $pdf = Pdf::loadView('reports.pdf', [
+            'requests' => $requests,
+            'allDocs' => $allDocs,
+            'totalRequests' => $requests->count(),
+            'totalPaid' => $totalPaid,
+            'totalRevenue' => $totalRevenue,
+            'generatedAt' => now()->format('F d, Y h:i A'),
+        ])->setPaper('a4', 'landscape');
+
+        return $pdf->download('crms-report-' . now()->format('Y-m-d') . '.pdf');
     }
 
     // ─── Audit Logs ──────────────────────────────────────────────────────────

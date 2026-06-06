@@ -7,6 +7,7 @@ import DashboardMobileCard from '../../DashboardMobileCard';
 import DashboardPagination from '../../DashboardPagination';
 import StatusBadge from '../../StatusBadge';
 import EmptyState from '../../EmptyState';
+import DashboardDropdown from '../../../common/DashboardDropdown';
 
 const tableHeaders = ['Name', 'Email', 'Role', 'Status', 'Date Created', 'Action'];
 
@@ -27,7 +28,7 @@ const sidebarItems = [
 
 const roleFilterOptions = ['All', 'admin', 'cashier', 'system_admin'];
 
-export default function SystemAdminUserManagement({ user, onLogout, onNavigate }) {
+export default function SystemAdminUserManagement({ user, onLogout, onNavigate, onUserUpdate }) {
     const [query, setQuery] = useState('');
     const [debouncedQuery, setDebouncedQuery] = useState('');
     const [roleFilter, setRoleFilter] = useState('All');
@@ -111,6 +112,9 @@ export default function SystemAdminUserManagement({ user, onLogout, onNavigate }
                 setShowEditModal(false);
                 setEditingUser(null);
                 fetchUsers(page);
+                if (isEdit && editingUser.id === user.id && onUserUpdate) {
+                    onUserUpdate();
+                }
             })
             .catch((e) => { setFormError(e.message); })
             .finally(() => { setFormLoading(false); });
@@ -229,9 +233,13 @@ export default function SystemAdminUserManagement({ user, onLogout, onNavigate }
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-6 py-5 border-b border-slate-200">
                     <div className="flex items-center gap-4">
                         <DashboardSearch value={query} onChange={(e) => { setQuery(e.target.value); setPage(1); }} placeholder="Search users..." />
-                        <select value={roleFilter} onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }} className="text-xs font-medium text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer">
-                            {roleFilterOptions.map((opt) => (<option key={opt} value={opt}>{opt === 'All' ? 'All Roles' : opt.replace('_', ' ')}</option>))}
-                        </select>
+                        <DashboardDropdown
+                            options={roleFilterOptions.map(o => ({ label: o === 'All' ? 'All Roles' : o.replace('_', ' '), value: o }))}
+                            value={roleFilter}
+                            onChange={(v) => { setRoleFilter(v); setPage(1); }}
+                            placeholder="All Roles"
+                            className="w-40"
+                        />
                     </div>
                     <button onClick={openAddModal} className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg transition-colors cursor-pointer">
                         <Plus className="w-3.5 h-3.5" />

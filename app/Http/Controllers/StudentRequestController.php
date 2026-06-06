@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreStudentRequest;
+use App\Models\Notification;
 use App\Models\StudentRequest;
 use App\Models\Document;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 class StudentRequestController extends Controller
@@ -27,7 +29,7 @@ class StudentRequestController extends Controller
             $paymentMethod = $validated['paymentMethod'];
             $paymentStatus = $paymentMethod === 'online' ? 'pending_verification' : 'unpaid';
 
-            StudentRequest::create([
+            $studentRequest = StudentRequest::create([
                 'tracking_number' => $trackingNumber,
                 'student_number' => $validated['studentId'],
                 'full_name' => $validated['fullName'],
@@ -43,6 +45,8 @@ class StudentRequestController extends Controller
                 'total_fee' => $totalFee,
                 'status' => 'Pending',
             ]);
+
+            Notification::notifyRole('admin', 'new_request', 'New Credential Request', "{$validated['fullName']} submitted a request", (string) $studentRequest->id, "/admin/requests/{$studentRequest->id}");
 
             return response()->json([
                 'success' => true,

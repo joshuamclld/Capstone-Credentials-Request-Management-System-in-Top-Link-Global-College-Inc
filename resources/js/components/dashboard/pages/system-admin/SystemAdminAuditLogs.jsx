@@ -6,6 +6,7 @@ import DashboardTable from '../../DashboardTable';
 import DashboardMobileCard from '../../DashboardMobileCard';
 import DashboardPagination from '../../DashboardPagination';
 import EmptyState from '../../EmptyState';
+import DashboardDropdown from '../../../common/DashboardDropdown';
 
 const tableHeaders = ['Action', 'Performed By', 'Target', 'Description', 'Date & Time'];
 
@@ -96,9 +97,13 @@ export default function SystemAdminAuditLogs({ user, onLogout, onNavigate }) {
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-6 py-5 border-b border-slate-200">
                     <div className="flex items-center gap-4">
                         <DashboardSearch value={query} onChange={(e) => { setQuery(e.target.value); setPage(1); }} placeholder="Search logs..." />
-                        <select value={actionFilter} onChange={(e) => { setActionFilter(e.target.value); setPage(1); }} className="text-xs font-medium text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer">
-                            {actionFilterOptions.map((opt) => (<option key={opt} value={opt}>{opt === 'All' ? 'All Actions' : opt.replace(/_/g, ' ')}</option>))}
-                        </select>
+                        <DashboardDropdown
+                            options={actionFilterOptions.map(o => ({ label: o === 'All' ? 'All Actions' : o.replace(/_/g, ' '), value: o }))}
+                            value={actionFilter}
+                            onChange={(v) => { setActionFilter(v); setPage(1); }}
+                            placeholder="All Actions"
+                            className="w-44"
+                        />
                     </div>
                 </div>
                 {loading ? (

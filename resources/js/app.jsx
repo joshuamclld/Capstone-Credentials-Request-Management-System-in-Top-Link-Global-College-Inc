@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 import StudentLanding from './components/StudentLanding';
 import StudentRequestForm from './components/StudentRequestForm';
@@ -75,6 +75,17 @@ function App() {
     setIsAuthenticated(false);
     setUser(null);
   };
+
+  const refreshCurrentUser = useCallback(() => {
+    fetch('/admin/check-auth')
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === 'authenticated') {
+          setUser(data.user);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleLoginSuccess = (userData) => {
     setIsAuthenticated(true);
@@ -280,7 +291,7 @@ function App() {
   }
 
   if (currentPath === '/system-admin/users') {
-    return <SystemAdminUserManagement user={user} onLogout={handleLogout} onNavigate={navigate} />;
+    return <SystemAdminUserManagement user={user} onLogout={handleLogout} onNavigate={navigate} onUserUpdate={refreshCurrentUser} />;
   }
 
   if (currentPath.startsWith('/system-admin/users/')) {

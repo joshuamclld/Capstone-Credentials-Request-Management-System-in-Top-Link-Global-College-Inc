@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\Document;
+use App\Models\Notification;
 use App\Models\StudentRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -141,6 +142,10 @@ class RegistrarRequestController extends Controller
         }
 
         $studentRequest->save();
+
+        if ($currentStatus !== $newStatus) {
+            Notification::notifyRole('admin', 'status_update', 'Request Status Updated', "Request {$studentRequest->tracking_number} moved to {$newStatus}", (string) $studentRequest->id, "/admin/requests/{$studentRequest->id}");
+        }
 
         AuditLog::create([
             'action' => $currentStatus !== $newStatus ? 'update_status' : 'update_remarks',

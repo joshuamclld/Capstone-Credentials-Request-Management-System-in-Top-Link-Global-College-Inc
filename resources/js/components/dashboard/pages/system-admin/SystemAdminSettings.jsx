@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { LayoutDashboard, FileText, Users, Settings, RefreshCw, Save, ChartColumn } from 'lucide-react';
 import DashboardLayout from '../../DashboardLayout';
 import EmptyState from '../../EmptyState';
+import DashboardDropdown from '../../../common/DashboardDropdown';
 
 const sidebarItems = [
     { label: 'Dashboard', icon: LayoutDashboard, path: '/system-admin-dashboard' },
@@ -88,15 +89,11 @@ export default function SystemAdminSettings({ user, onLogout, onNavigate }) {
                             <div key={field.key}>
                                 <label className="block text-xs font-medium text-slate-600 mb-1">{field.label}</label>
                                 {field.type === 'select' ? (
-                                    <select
+                                    <DashboardDropdown
+                                        options={field.options.map(o => ({ label: o === 'true' ? 'Enabled' : 'Disabled', value: o }))}
                                         value={settings[field.key] || 'true'}
-                                        onChange={(e) => handleChange(field.key, e.target.value)}
-                                        className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer"
-                                    >
-                                        {field.options.map((opt) => (
-                                            <option key={opt} value={opt}>{opt === 'true' ? 'Enabled' : 'Disabled'}</option>
-                                        ))}
-                                    </select>
+                                        onChange={(v) => handleChange(field.key, v)}
+                                    />
                                 ) : (
                                     <input
                                         type={field.type}

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Bell, Menu, LogOut } from 'lucide-react';
+import { Menu, LogOut } from 'lucide-react';
 import DashboardSidebar from './DashboardSidebar';
+import NotificationBell from '../common/NotificationBell';
 
 export default function DashboardLayout({ title, subtitle, sidebarItems, currentUser, roleLabel, onLogout, onNavigate, children }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -42,10 +43,7 @@ export default function DashboardLayout({ title, subtitle, sidebarItems, current
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
-                            <button className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 relative cursor-pointer">
-                                <Bell className="w-5 h-5" />
-                                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500"></span>
-                            </button>
+                            <NotificationBell onNavigate={onNavigate} />
                             <div className="hidden sm:flex items-center gap-2">
                                 <div className="w-8 h-8 rounded-full bg-emerald-700 text-white flex items-center justify-center text-xs font-bold">
                                     {adminName.charAt(0)}

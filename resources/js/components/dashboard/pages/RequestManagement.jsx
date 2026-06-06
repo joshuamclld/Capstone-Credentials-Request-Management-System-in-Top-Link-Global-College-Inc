@@ -7,6 +7,7 @@ import DashboardMobileCard from '../DashboardMobileCard';
 import StatusBadge from '../StatusBadge';
 import EmptyState from '../EmptyState';
 import DashboardPagination from '../DashboardPagination';
+import DashboardDropdown from '../../common/DashboardDropdown';
 
 const tableHeaders = ['Reference No.', 'Student Name', 'Requested Documents', 'Payment Method', 'Payment Status', 'Request Status', 'Date Requested', 'Action'];
 
@@ -127,15 +128,13 @@ export default function RequestManagement({ user, onLogout, onNavigate }) {
                         <p className="text-xs text-slate-500 mt-0.5">View and manage all credential requests.</p>
                     </div>
                     <div className="flex items-center gap-3 w-full sm:w-auto">
-                        <select
+                        <DashboardDropdown
+                            options={filterOptions.map(o => ({ label: o, value: o }))}
                             value={filter}
-                            onChange={(e) => setFilter(e.target.value)}
-                            className="border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
-                        >
-                            {filterOptions.map((option) => (
-                                <option key={option} value={option}>{option}</option>
-                            ))}
-                        </select>
+                            onChange={setFilter}
+                            placeholder="All"
+                            className="w-44"
+                        />
                         <DashboardSearch
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}

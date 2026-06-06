@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\Document;
+use App\Models\Notification;
 use App\Models\StudentRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -79,6 +80,8 @@ class CashierPaymentController extends Controller
         $studentRequest->verified_by_user_id = auth()->id();
         $studentRequest->verified_at = now();
         $studentRequest->save();
+
+        Notification::notifyRole('admin', 'payment_verified', 'Payment Verified', "Payment verified for {$studentRequest->tracking_number}", (string) $studentRequest->id, "/admin/requests/{$studentRequest->id}");
 
         AuditLog::create([
             'action' => 'verify_payment',
