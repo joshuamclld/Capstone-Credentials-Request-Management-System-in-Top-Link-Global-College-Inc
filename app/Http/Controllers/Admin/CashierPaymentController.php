@@ -15,7 +15,7 @@ class CashierPaymentController extends Controller
 {
     public function getPaymentsData(Request $request): JsonResponse
     {
-        $perPage = (int) $request->query('per_page', 10);
+        $perPage = min(max((int) $request->query('per_page', 10), 1), 50);
 
         $stats = [
             'pending_payments' => StudentRequest::where('payment_status', 'unpaid')->count(),

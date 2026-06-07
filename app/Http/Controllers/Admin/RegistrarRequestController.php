@@ -14,7 +14,7 @@ class RegistrarRequestController extends Controller
 {
     public function getRequestsData(Request $request): JsonResponse
     {
-        $perPage = (int) $request->query('per_page', 10);
+        $perPage = min(max((int) $request->query('per_page', 10), 1), 50);
 
         $stats = [
             'total' => StudentRequest::count(),

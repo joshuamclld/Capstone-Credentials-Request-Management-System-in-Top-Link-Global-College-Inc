@@ -15,12 +15,6 @@ import CashierDashboard from './components/dashboard/pages/CashierDashboard';
 import PaymentQueue from './components/dashboard/pages/PaymentQueue';
 import PaymentDetails from './components/dashboard/pages/PaymentDetails';
 import PaidTransactions from './components/dashboard/pages/PaidTransactions';
-import AdminDashboard from './components/dashboard/pages/AdminDashboard';
-import UserManagement from './components/dashboard/pages/UserManagement';
-import UserDetails from './components/dashboard/pages/UserDetails';
-import CredentialTypes from './components/dashboard/pages/CredentialTypes';
-import CredentialTypeDetails from './components/dashboard/pages/CredentialTypeDetails';
-import Reports from './components/dashboard/pages/Reports';
 import SystemAdminDashboard from './components/dashboard/pages/system-admin/SystemAdminDashboard';
 import SystemAdminUserManagement from './components/dashboard/pages/system-admin/SystemAdminUserManagement';
 import SystemAdminUserDetails from './components/dashboard/pages/system-admin/SystemAdminUserDetails';
@@ -157,7 +151,7 @@ function App() {
   }
 
   // Auth check helper for all admin/cashier routes
-  if (currentPath.startsWith('/admin-') || currentPath.startsWith('/admin/') || currentPath.startsWith('/cashier-') || currentPath.startsWith('/cashier/') || currentPath.startsWith('/system-') || currentPath.startsWith('/system/') || currentPath.startsWith('/system-admin-') || currentPath.startsWith('/system-admin/')) {
+  if (currentPath.startsWith('/admin-') || currentPath.startsWith('/admin/') || currentPath.startsWith('/cashier-') || currentPath.startsWith('/cashier/') || currentPath.startsWith('/system-') || currentPath.startsWith('/system-admin-') || currentPath.startsWith('/system-admin/')) {
     if (!isAuthenticated && authChecked) {
       setTimeout(() => navigate('/admin-login'), 0);
       return null;
@@ -187,13 +181,6 @@ function App() {
     const isSystemAdminPath = currentPath.startsWith('/system-admin-') || currentPath.startsWith('/system-admin/');
     if (isSystemAdminPath && user.role !== 'system_admin') {
       const fallback = user.role === 'admin' ? '/admin-dashboard' : '/cashier-dashboard';
-      setTimeout(() => navigate(fallback), 0);
-      return null;
-    }
-
-    const isSystemPath = !isSystemAdminPath && (currentPath.startsWith('/system-') || currentPath.startsWith('/system/'));
-    if (isSystemPath && user.role !== 'admin') {
-      const fallback = user.role === 'system_admin' ? '/system-admin-dashboard' : '/cashier-dashboard';
       setTimeout(() => navigate(fallback), 0);
       return null;
     }
@@ -254,32 +241,13 @@ function App() {
     return <StudentTrackDashboard onNavigate={navigate} />;
   }
 
+  // Legacy redirect — /system/* and /system-* → /system-admin/*
+  if ((currentPath.startsWith('/system/') || currentPath.startsWith('/system-')) && !currentPath.startsWith('/system-admin')) {
+    setTimeout(() => navigate(currentPath.replace('/system', '/system-admin')), 0);
+    return null;
+  }
+
   // System Administrator routes
-  if (currentPath === '/system-dashboard') {
-    return <AdminDashboard user={user} onLogout={handleLogout} onNavigate={navigate} />;
-  }
-
-  if (currentPath === '/system/users') {
-    return <UserManagement user={user} onLogout={handleLogout} onNavigate={navigate} />;
-  }
-
-  if (currentPath.startsWith('/system/users/')) {
-    return <UserDetails user={user} onLogout={handleLogout} onNavigate={navigate} />;
-  }
-
-  if (currentPath === '/system/credentials') {
-    return <CredentialTypes user={user} onLogout={handleLogout} onNavigate={navigate} />;
-  }
-
-  if (currentPath.startsWith('/system/credentials/')) {
-    return <CredentialTypeDetails user={user} onLogout={handleLogout} onNavigate={navigate} />;
-  }
-
-  if (currentPath === '/system/reports') {
-    return <Reports user={user} onLogout={handleLogout} onNavigate={navigate} />;
-  }
-
-  // System Administrator routes (new /system-admin-* prefix)
   if (currentPath === '/system-admin-dashboard') {
     return <SystemAdminDashboard user={user} onLogout={handleLogout} onNavigate={navigate} />;
   }

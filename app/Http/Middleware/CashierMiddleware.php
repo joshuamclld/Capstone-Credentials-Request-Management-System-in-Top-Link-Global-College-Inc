@@ -21,7 +21,14 @@ class CashierMiddleware
             return redirect('/admin-login');
         }
 
-        if (!in_array(Auth::user()->role, ['cashier', 'admin']) && !Auth::user()->hasAnyRole(['cashier', 'registrar'])) {
+        $user = Auth::user();
+
+        // Admin (registrar) has intentional oversight access to cashier routes.
+        // Cashier requires both the role column and matching Spatie role.
+        $hasOversightAccess = $user->role === 'admin';
+        $hasCashierAccess = $user->role === 'cashier' && $user->hasRole('cashier');
+
+        if (!$hasOversightAccess && !$hasCashierAccess) {
             if ($request->expectsJson()) {
                 return response()->json([
                     'status' => 'error',

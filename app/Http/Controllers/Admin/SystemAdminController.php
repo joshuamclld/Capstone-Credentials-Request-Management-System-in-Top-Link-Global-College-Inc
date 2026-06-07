@@ -33,6 +33,21 @@ class SystemAdminController extends Controller
         ]);
     }
 
+    private function syncRole(User $user): void
+    {
+        $map = [
+            'admin' => 'registrar',
+            'cashier' => 'cashier',
+            'system_admin' => 'system_admin',
+        ];
+
+        $spatieRole = $map[$user->role] ?? null;
+
+        if ($spatieRole) {
+            $user->syncRoles([$spatieRole]);
+        }
+    }
+
     // ─── Dashboard ───────────────────────────────────────────────────────────
 
     public function dashboard(): JsonResponse
@@ -101,12 +116,11 @@ class SystemAdminController extends Controller
     public function showUser(int $id): JsonResponse
     {
         $user = User::findOrFail($id);
-        $requestCount = StudentRequest::where('student_number', $user->student_number ?? '')->count();
 
         return response()->json([
             'status' => 'success',
             'data' => $user,
-            'request_count' => $requestCount,
+            'request_count' => null,
         ]);
     }
 
@@ -117,6 +131,8 @@ class SystemAdminController extends Controller
         $data['email_verified_at'] = now();
 
         $user = User::create($data);
+
+        $this->syncRole($user);
 
         $this->audit('create_user', 'User', $user->id, "Created user {$user->name} ({$user->email})");
 
@@ -147,6 +163,8 @@ class SystemAdminController extends Controller
         }
 
         $user->update($data);
+
+        $this->syncRole($user);
 
         $this->audit('update_user', 'User', $user->id, "Updated user {$user->name} ({$user->email})");
 
