@@ -82,7 +82,7 @@ export default function PaymentQueue({ user, onLogout, onNavigate }) {
             <td className="px-6 py-4 font-medium text-slate-900">{req.student_name}</td>
             <td className="px-6 py-4 text-slate-700 max-w-[180px] truncate" title={(req.document_names || []).join(', ')}>{(req.document_names || []).join(', ')}</td>
             <td className="px-6 py-4 text-xs text-slate-600 capitalize">{req.payment_method || 'N/A'}</td>
-            <td className="px-6 py-4 text-sm font-medium text-slate-900">₱{Number(req.total_fee).toFixed(2)}</td>
+            <td className="px-6 py-4 text-sm font-medium text-slate-900">₱{(Number(req.total_fee) || 0).toFixed(2)}</td>
             <td className="px-6 py-4"><span className={`inline-block text-[11px] font-bold px-2.5 py-1 rounded-full border ${paymentBadgeClass(req.payment_status)}`}>{req.payment_status === 'pending_verification' ? 'Pending Verification' : 'Unpaid'}</span></td>
             <td className="px-6 py-4 text-slate-500 text-xs">{req.created_at}</td>
             <td className="px-6 py-4">
@@ -170,7 +170,7 @@ export default function PaymentQueue({ user, onLogout, onNavigate }) {
                                     metadata={[
                                         { label: 'Documents', value: (item.document_names || []).join(', ') },
                                         { label: 'Method', value: item.payment_method || 'N/A' },
-                                        { label: 'Fee', value: `₱${Number(item.total_fee).toFixed(2)}` },
+                                        { label: 'Fee', value: `₱${(Number(item.total_fee) || 0).toFixed(2)}` },
                                         { label: 'Status', value: <span className={`inline-block text-[11px] font-bold px-2.5 py-1 rounded-full border ${paymentBadgeClass(item.payment_status)}`}>{item.payment_status === 'pending_verification' ? 'Pending Verification' : 'Unpaid'}</span> },
                                         { label: 'Date', value: item.created_at },
                                     ]}

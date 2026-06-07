@@ -28,9 +28,13 @@ class Notification extends Model
         return $this->belongsTo(User::class);
     }
 
-    public static function notifyRole(string $role, string $type, string $title, string $message, ?string $referenceId = null, ?string $actionUrl = null): void
+    public static function notifyRole(string $role, string $type, string $title, string $message, ?string $referenceId = null, ?string $actionUrl = null, ?int $excludeUserId = null): void
     {
-        $users = User::where('role', $role)->get();
+        $query = User::where('role', $role);
+        if ($excludeUserId !== null) {
+            $query->where('id', '!=', $excludeUserId);
+        }
+        $users = $query->get();
         foreach ($users as $user) {
             self::create([
                 'user_id' => $user->id,

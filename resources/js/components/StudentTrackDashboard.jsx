@@ -266,7 +266,7 @@ export default function StudentTrackDashboard({ onNavigate }) {
 
                     <div className="mt-6 pt-4 border-t-2 border-primary/20 flex justify-between items-center">
                       <span className="font-headline-sm text-lg font-bold text-on-surface">Total Processing Fee:</span>
-                      <span className="text-2xl font-bold text-primary">₱ {Number(request.total_fee).toFixed(2)}</span>
+                      <span className="text-2xl font-bold text-primary">₱ {(Number(request.total_fee) || 0).toFixed(2)}</span>
                     </div>
 
                     {request.status === 'Pending' && (

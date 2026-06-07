@@ -15,6 +15,7 @@ const sidebarItems = [
 export default function SystemAdminUserDetails({ user, onLogout, onNavigate }) {
     const [userData, setUserData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     const userId = window.location.pathname.split('/').pop();
 
@@ -23,7 +24,7 @@ export default function SystemAdminUserDetails({ user, onLogout, onNavigate }) {
         fetch(`/admin/system/users/${userId}`, { credentials: 'same-origin' })
             .then((r) => { if (!r.ok) throw new Error('Not found'); return r.json(); })
             .then((j) => { setUserData({ ...j.data, request_count: j.request_count }); setLoading(false); })
-            .catch(() => setLoading(false));
+            .catch((e) => { setError(e.message); setLoading(false); });
     }, [userId]);
 
     return (
@@ -42,6 +43,8 @@ export default function SystemAdminUserDetails({ user, onLogout, onNavigate }) {
 
             {loading ? (
                 <div className="text-center py-20 text-sm text-slate-400">Loading user details...</div>
+            ) : error ? (
+                <div className="text-center py-20 text-sm text-red-500">Error: {error}</div>
             ) : !userData ? (
                 <EmptyState icon={Users} title="User Not Found" subtitle="The requested user could not be found." />
             ) : (

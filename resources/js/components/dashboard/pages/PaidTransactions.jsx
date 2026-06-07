@@ -61,7 +61,7 @@ export default function PaidTransactions({ user, onLogout, onNavigate }) {
         <tr key={req.id} className="hover:bg-slate-50 transition-colors">
             <td className="px-6 py-4 font-mono text-xs font-medium text-emerald-700">{req.tracking_number}</td>
             <td className="px-6 py-4 font-medium text-slate-900">{req.student_name}</td>
-            <td className="px-6 py-4 text-sm font-medium text-emerald-700">₱{Number(req.total_fee).toFixed(2)}</td>
+            <td className="px-6 py-4 text-sm font-medium text-emerald-700">₱{(Number(req.total_fee) || 0).toFixed(2)}</td>
             <td className="px-6 py-4 text-xs text-slate-600 capitalize">{req.payment_method || 'N/A'}</td>
             <td className="px-6 py-4 text-slate-500 text-xs">{req.created_at}</td>
             <td className="px-6 py-4">
@@ -138,7 +138,7 @@ export default function PaidTransactions({ user, onLogout, onNavigate }) {
                                     title={item.tracking_number}
                                     subtitle={item.student_name}
                                     metadata={[
-                                        { label: 'Amount', value: `₱${Number(item.total_fee).toFixed(2)}` },
+                                        { label: 'Amount', value: `₱${(Number(item.total_fee) || 0).toFixed(2)}` },
                                         { label: 'Method', value: item.payment_method || 'N/A' },
                                         { label: 'Date', value: item.created_at },
                                     ]}

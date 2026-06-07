@@ -23,6 +23,7 @@ export default function SystemAdminCredentialTypes({ user, onLogout, onNavigate 
     const [debouncedQuery, setDebouncedQuery] = useState('');
     const [docs, setDocs] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [page, setPage] = useState(1);
     const [pagination, setPagination] = useState(null);
 
@@ -39,13 +40,14 @@ export default function SystemAdminCredentialTypes({ user, onLogout, onNavigate 
 
     const fetchDocs = (p) => {
         setLoading(true);
+        setError(null);
         const params = new URLSearchParams({ page: p });
         if (debouncedQuery) params.append('search', debouncedQuery);
 
         fetch(`/admin/system/documents?${params}`, { credentials: 'same-origin' })
             .then((r) => { if (!r.ok) throw new Error('Failed to fetch'); return r.json(); })
             .then((j) => { setDocs(j.data); setPagination(j.pagination); setLoading(false); })
-            .catch(() => { setDocs([]); setLoading(false); });
+            .catch((e) => { setError(e.message); setDocs([]); setLoading(false); });
     };
 
     useEffect(() => { fetchDocs(page); }, [page, debouncedQuery]);
@@ -67,6 +69,7 @@ export default function SystemAdminCredentialTypes({ user, onLogout, onNavigate 
     };
 
     const handleSubmit = () => {
+        if (formLoading) return;
         setFormLoading(true);
         setFormError('');
 
@@ -199,6 +202,8 @@ export default function SystemAdminCredentialTypes({ user, onLogout, onNavigate 
                 </div>
                 {loading ? (
                     <div className="p-6 text-center text-sm text-slate-400">Loading credential types...</div>
+                ) : error ? (
+                    <div className="p-6 text-center text-sm text-red-500">Error: {error}</div>
                 ) : (
                     <>
                         <div className="hidden md:block">

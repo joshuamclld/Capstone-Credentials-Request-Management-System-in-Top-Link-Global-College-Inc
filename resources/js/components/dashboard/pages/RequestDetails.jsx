@@ -27,6 +27,7 @@ const requestBadgeStyle = {
     'Processing': 'bg-blue-100 text-blue-800 border-blue-300',
     'Ready for Release': 'bg-purple-100 text-purple-800 border-purple-300',
     'Claimed': 'bg-slate-200 text-slate-700 border-slate-300',
+    'Cancelled': 'bg-red-100 text-red-800 border-red-300',
 };
 
 const paymentBadgeStyle = {
@@ -70,6 +71,7 @@ export default function RequestDetails({ user, onLogout, onNavigate }) {
     }, [id]);
 
     const doSave = (newStatus, newRemarks) => {
+        if (saving) return;
         setSaving(true);
         setMessage(null);
 
@@ -307,7 +309,7 @@ export default function RequestDetails({ user, onLogout, onNavigate }) {
                                     </div>
                                     <div className="pt-3 border-t border-slate-100">
                                         <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Total Fee</p>
-                                        <p className="text-2xl font-bold text-emerald-700">₱ {Number(request.total_fee).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                                        <p className="text-2xl font-bold text-emerald-700">₱ {Number(request.total_fee ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                                     </div>
                                     <div className="pt-3 border-t border-slate-100">
                                         <div className="flex items-start gap-2 text-[11px] text-slate-400">

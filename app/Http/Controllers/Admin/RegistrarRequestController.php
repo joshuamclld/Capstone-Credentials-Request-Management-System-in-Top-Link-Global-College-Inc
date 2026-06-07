@@ -144,7 +144,7 @@ class RegistrarRequestController extends Controller
         $studentRequest->save();
 
         if ($currentStatus !== $newStatus) {
-            Notification::notifyRole('admin', 'status_update', 'Request Status Updated', "Request {$studentRequest->tracking_number} moved to {$newStatus}", (string) $studentRequest->id, "/admin/requests/{$studentRequest->id}");
+            Notification::notifyRole('admin', 'status_update', 'Request Status Updated', "Request {$studentRequest->tracking_number} moved to {$newStatus}", (string) $studentRequest->id, "/admin/requests/{$studentRequest->id}", auth()->id());
         }
 
         AuditLog::create([

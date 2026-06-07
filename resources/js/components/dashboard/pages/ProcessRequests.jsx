@@ -59,6 +59,7 @@ export default function ProcessRequests({ user, onLogout, onNavigate }) {
     };
 
     const handleProcess = (id) => {
+        if (processingId) return;
         setProcessingId(id);
         setMessage(null);
 

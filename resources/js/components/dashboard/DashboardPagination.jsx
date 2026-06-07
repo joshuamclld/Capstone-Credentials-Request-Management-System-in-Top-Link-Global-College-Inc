@@ -4,7 +4,7 @@ export default function DashboardPagination({ currentPage, lastPage, onPageChang
     if (lastPage <= 1) return null;
 
     return (
-        <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200 bg-white">
+        <div className="flex items-center justify-between">
             <p className="text-xs text-slate-500">
                 Page {currentPage} of {lastPage}
             </p>

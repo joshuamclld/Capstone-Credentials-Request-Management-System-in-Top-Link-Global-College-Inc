@@ -59,6 +59,7 @@ export default function ReleaseCredentials({ user, onLogout, onNavigate }) {
     };
 
     const handleClaim = (id) => {
+        if (claimingId) return;
         setClaimingId(id);
         setMessage(null);
 

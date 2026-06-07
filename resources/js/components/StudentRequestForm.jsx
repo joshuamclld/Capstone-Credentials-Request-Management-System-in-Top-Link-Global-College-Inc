@@ -154,6 +154,7 @@ export default function StudentRequestForm({ onNavigate }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
     setIsSubmitting(true);
     setSubmitError('');
 
@@ -455,7 +456,7 @@ export default function StudentRequestForm({ onNavigate }) {
                                 <p className="font-body-sm text-body-sm text-on-surface-variant flex-grow">{doc.description}</p>
                               )}
                               <div className="mt-4 pt-4 border-t border-outline-variant flex justify-between items-center">
-                                <span className="font-body-md text-body-md font-bold text-primary">₱ {Number(doc.price).toFixed(2)}</span>
+                                <span className="font-body-md text-body-md font-bold text-primary">₱ {(Number(doc.price) || 0).toFixed(2)}</span>
                                 <span className="font-label-sm text-label-sm text-on-surface-variant">{meta.daysLabel || `${doc.processing_days} Working Day(s)`}</span>
                               </div>
                             </div>

@@ -33,6 +33,7 @@ export default function SystemAdminUserManagement({ user, onLogout, onNavigate, 
     const [roleFilter, setRoleFilter] = useState('All');
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [page, setPage] = useState(1);
     const [pagination, setPagination] = useState(null);
 
@@ -59,6 +60,7 @@ export default function SystemAdminUserManagement({ user, onLogout, onNavigate, 
 
     const fetchUsers = (p) => {
         setLoading(true);
+        setError(null);
         const params = new URLSearchParams({ page: p });
         if (debouncedQuery) params.append('search', debouncedQuery);
         if (roleFilter !== 'All') params.append('role', roleFilter);
@@ -66,7 +68,7 @@ export default function SystemAdminUserManagement({ user, onLogout, onNavigate, 
         fetch(`/admin/system/users?${params}`, { credentials: 'same-origin' })
             .then((r) => { if (!r.ok) throw new Error('Failed to fetch'); return r.json(); })
             .then((j) => { setUsers(j.data); setPagination(j.pagination); setLoading(false); })
-            .catch((e) => { setUsers([]); setLoading(false); });
+            .catch((e) => { setError(e.message); setUsers([]); setLoading(false); });
     };
 
     useEffect(() => { fetchUsers(page); }, [page, debouncedQuery, roleFilter]);
@@ -87,6 +89,7 @@ export default function SystemAdminUserManagement({ user, onLogout, onNavigate, 
     };
 
     const handleSubmit = (isEdit) => {
+        if (formLoading) return;
         setFormLoading(true);
         setFormError('');
 
@@ -252,6 +255,8 @@ export default function SystemAdminUserManagement({ user, onLogout, onNavigate, 
                 )}
                 {loading ? (
                     <div className="p-6 text-center text-sm text-slate-400">Loading users...</div>
+                ) : error ? (
+                    <div className="p-6 text-center text-sm text-red-500">Error: {error}</div>
                 ) : (
                     <>
                         <div className="hidden md:block">

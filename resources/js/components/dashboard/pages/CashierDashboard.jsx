@@ -76,6 +76,7 @@ export default function CashierDashboard({ user, onLogout, onNavigate }) {
     };
 
     const handleToggleOnlinePayment = () => {
+        if (toggling) return;
         setToggling(true);
         const newValue = !onlinePaymentEnabled;
         fetch('/admin/cashier/online-payment-status', {
@@ -107,7 +108,7 @@ export default function CashierDashboard({ user, onLogout, onNavigate }) {
             <td className="px-6 py-4 font-mono text-xs font-medium text-emerald-700">{req.tracking_number}</td>
             <td className="px-6 py-4 font-medium text-slate-900">{req.student_name}</td>
             <td className="px-6 py-4 text-xs text-slate-600 capitalize">{req.payment_method || 'N/A'}</td>
-            <td className="px-6 py-4 text-sm font-medium text-slate-900">₱{Number(req.total_fee).toFixed(2)}</td>
+            <td className="px-6 py-4 text-sm font-medium text-slate-900">₱{(Number(req.total_fee) || 0).toFixed(2)}</td>
             <td className="px-6 py-4"><span className={`inline-block text-[11px] font-bold px-2.5 py-1 rounded-full border ${paymentBadgeClass(req.payment_status)}`}>{req.payment_status === 'pending_verification' ? 'Pending Verification' : req.payment_status === 'unpaid' ? 'Unpaid' : 'Paid'}</span></td>
             <td className="px-6 py-4">
                 <button
@@ -204,7 +205,7 @@ export default function CashierDashboard({ user, onLogout, onNavigate }) {
                                     subtitle={item.student_name}
                                     metadata={[
                                         { label: 'Method', value: item.payment_method || 'N/A' },
-                                        { label: 'Fee', value: `₱${Number(item.total_fee).toFixed(2)}` },
+                                        { label: 'Fee', value: `₱${(Number(item.total_fee) || 0).toFixed(2)}` },
                                         { label: 'Status', value: <span className={`inline-block text-[11px] font-bold px-2.5 py-1 rounded-full border ${paymentBadgeClass(item.payment_status)}`}>{item.payment_status === 'pending_verification' ? 'Pending Verification' : item.payment_status === 'unpaid' ? 'Unpaid' : 'Paid'}</span> },
                                     ]}
                                     actionLabel="View Payment"

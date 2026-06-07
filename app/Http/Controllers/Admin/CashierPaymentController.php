@@ -82,7 +82,7 @@ class CashierPaymentController extends Controller
         $studentRequest->verified_at = now();
         $studentRequest->save();
 
-        Notification::notifyRole('admin', 'payment_verified', 'Payment Verified', "Payment verified for {$studentRequest->tracking_number}", (string) $studentRequest->id, "/admin/requests/{$studentRequest->id}");
+        Notification::notifyRole('admin', 'payment_verified', 'Payment Verified', "Payment verified for {$studentRequest->tracking_number}", (string) $studentRequest->id, "/admin/requests/{$studentRequest->id}", auth()->id());
 
         AuditLog::create([
             'action' => 'verify_payment',

@@ -48,6 +48,7 @@ class StudentRequestController extends Controller
             ]);
 
             Notification::notifyRole('admin', 'new_request', 'New Credential Request', "{$validated['fullName']} submitted a request", (string) $studentRequest->id, "/admin/requests/{$studentRequest->id}");
+            Notification::notifyRole('cashier', 'new_request', 'New Credential Request', "{$validated['fullName']} submitted a new request waiting for payment.", (string) $studentRequest->id, "/cashier/payments/{$studentRequest->id}");
 
             return response()->json([
                 'success' => true,
@@ -111,6 +112,10 @@ class StudentRequestController extends Controller
 
         $request->status = 'Cancelled';
         $request->save();
+
+        $trackingNumberDisplay = $request->tracking_number;
+        Notification::notifyRole('admin', 'request_cancelled', 'Request Cancelled', "{$trackingNumberDisplay} was cancelled by the student.", (string) $request->id, "/admin/requests/{$request->id}");
+        Notification::notifyRole('cashier', 'request_cancelled', 'Request Cancelled', "{$trackingNumberDisplay} was cancelled.", (string) $request->id, "/cashier/payments/{$request->id}");
 
         return response()->json([
             'success' => true,

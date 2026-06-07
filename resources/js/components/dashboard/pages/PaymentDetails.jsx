@@ -46,6 +46,7 @@ export default function PaymentDetails({ user, onLogout, onNavigate }) {
     }, [id]);
 
     const handleVerify = () => {
+        if (verifying) return;
         setVerifying(true);
         setMessage(null);
 
@@ -216,7 +217,7 @@ export default function PaymentDetails({ user, onLogout, onNavigate }) {
                             <div className="p-5 text-center">
                                 <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Total Fee</p>
                                 <p className="text-3xl font-bold text-emerald-700 mb-4">
-                                    ₱{Number(request.total_fee).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    ₱{Number(request.total_fee ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </p>
                                 <div className="space-y-2.5 text-left">
                                     <div className="flex items-center justify-between py-2 border-t border-slate-100">

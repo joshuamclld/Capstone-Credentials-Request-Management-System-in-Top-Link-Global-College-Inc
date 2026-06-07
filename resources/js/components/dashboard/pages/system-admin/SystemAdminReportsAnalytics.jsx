@@ -45,13 +45,14 @@ const fmtRevenue = (v) => `₱${Number(v).toLocaleString(undefined, { minimumFra
 export default function SystemAdminReportsAnalytics({ user, onLogout, onNavigate }) {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [exporting, setExporting] = useState(null);
 
     useEffect(() => {
         fetch('/admin/system/reports', { credentials: 'same-origin' })
-            .then((r) => { if (!r.ok) throw new Error('Failed to fetch'); return r.json(); })
+            .then((r) => { if (!r.ok) throw new Error('Failed to fetch reports'); return r.json(); })
             .then((j) => { setData(j.data); setLoading(false); })
-            .catch(() => setLoading(false));
+            .catch((e) => { setError(e.message); setLoading(false); });
     }, []);
 
     const doExport = (format) => {
@@ -71,6 +72,14 @@ export default function SystemAdminReportsAnalytics({ user, onLogout, onNavigate
         );
     }
 
+    if (error) {
+        return (
+            <DashboardLayout title="Reports & Analytics" subtitle="View system-wide reports and analytics." sidebarItems={sidebarItems} currentUser={user} roleLabel="System Administrator" onLogout={onLogout} onNavigate={onNavigate}>
+                <div className="flex items-center justify-center py-20 text-red-500 text-sm">Unable to load reports: {error}</div>
+            </DashboardLayout>
+        );
+    }
+
     if (!data) {
         return (
             <DashboardLayout title="Reports & Analytics" subtitle="View system-wide reports and analytics." sidebarItems={sidebarItems} currentUser={user} roleLabel="System Administrator" onLogout={onLogout} onNavigate={onNavigate}>
@@ -79,13 +88,15 @@ export default function SystemAdminReportsAnalytics({ user, onLogout, onNavigate
         );
     }
 
+    const safeNum = (v) => { const n = parseFloat(v); return isNaN(n) ? 0 : n; };
+    const fmt = (v) => `₱${safeNum(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     const stats = {
         total_requests: data.total_requests,
         total_paid: data.total_paid,
-        total_revenue: `₱${parseFloat(data.total_revenue).toLocaleString()}`,
-        average_fee: `₱${data.average_fee}`,
+        total_revenue: fmt(data.total_revenue),
+        average_fee: fmt(data.average_fee),
         this_month: data.this_month,
-        this_month_revenue: `₱${parseFloat(data.this_month_revenue).toLocaleString()}`,
+        this_month_revenue: fmt(data.this_month_revenue),
     };
 
     const byType = data.monthly_requests_by_type || [];

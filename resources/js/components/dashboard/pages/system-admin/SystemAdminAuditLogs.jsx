@@ -26,6 +26,7 @@ export default function SystemAdminAuditLogs({ user, onLogout, onNavigate }) {
     const [actionFilter, setActionFilter] = useState('All');
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [page, setPage] = useState(1);
     const [pagination, setPagination] = useState(null);
 
@@ -36,19 +37,7 @@ export default function SystemAdminAuditLogs({ user, onLogout, onNavigate }) {
 
     const fetchLogs = (p) => {
         setLoading(true);
-
-        const actionColor = {
-            update_status: 'bg-blue-100 text-blue-800',
-            update_remarks: 'bg-slate-100 text-slate-800',
-            verify_payment: 'bg-emerald-100 text-emerald-800',
-            create_user: 'bg-purple-100 text-purple-800',
-            update_user: 'bg-indigo-100 text-indigo-800',
-            delete_user: 'bg-red-100 text-red-800',
-            create_document: 'bg-emerald-100 text-emerald-800',
-            update_document: 'bg-blue-100 text-blue-800',
-            deactivate_document: 'bg-orange-100 text-orange-800',
-            update_settings: 'bg-yellow-100 text-yellow-800',
-        };
+        setError(null);
 
         const params = new URLSearchParams({ page: p });
         if (debouncedQuery) params.append('search', debouncedQuery);
@@ -57,7 +46,7 @@ export default function SystemAdminAuditLogs({ user, onLogout, onNavigate }) {
         fetch(`/admin/system/audit-logs?${params}`, { credentials: 'same-origin' })
             .then((r) => { if (!r.ok) throw new Error('Failed to fetch'); return r.json(); })
             .then((j) => { setLogs(j.data); setPagination(j.pagination); setLoading(false); })
-            .catch(() => { setLogs([]); setLoading(false); });
+            .catch((e) => { setError(e.message); setLogs([]); setLoading(false); });
     };
 
     useEffect(() => { fetchLogs(page); }, [page, debouncedQuery, actionFilter]);
@@ -107,6 +96,8 @@ export default function SystemAdminAuditLogs({ user, onLogout, onNavigate }) {
                 </div>
                 {loading ? (
                     <div className="p-6 text-center text-sm text-slate-400">Loading audit logs...</div>
+                ) : error ? (
+                    <div className="p-6 text-center text-sm text-red-500">Error: {error}</div>
                 ) : (
                     <>
                         <div className="hidden md:block">
