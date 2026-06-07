@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, FileText, Users, Settings, ChartColumn, DollarSign, RefreshCw, TrendingUp, Clock, CheckCircle, Download } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LayoutDashboard, FileText, Users, ChartColumn, DollarSign, RefreshCw, TrendingUp, Clock, CheckCircle, Download } from 'lucide-react';
+import Chart from 'react-apexcharts';
 import DashboardLayout from '../../DashboardLayout';
 import DashboardStatCard from '../../DashboardStatCard';
 import EmptyState from '../../EmptyState';
@@ -22,10 +22,10 @@ const sidebarItems = [
     { label: 'Credential Types', icon: FileText, path: '/system-admin/credentials' },
     { label: 'Reports & Analytics', icon: ChartColumn, path: '/system-admin/reports' },
     { label: 'Audit Logs', icon: RefreshCw, path: '/system-admin/audit-logs' },
-    { label: 'Settings', icon: Settings, path: '/system-admin/settings' },
 ];
 
-const STATUS_COLORS = { Pending: '#d97706', Processing: '#2563eb', 'Ready for Release': '#7c3aed', Claimed: '#64748b' };
+const STATUS_COLORS = { Pending: '#cea700', Processing: '#326574', 'Ready for Release': '#154212', Claimed: '#2d5a27' };
+const TYPE_COLORS = ['#154212', '#065f46', '#2d5a27', '#cea700', '#735c00', '#326574'];
 
 const shortMonth = (v) => {
     if (!v) return '';
@@ -89,20 +89,43 @@ export default function SystemAdminReportsAnalytics({ user, onLogout, onNavigate
     };
 
     const byType = data.monthly_requests_by_type || [];
+
+    // Build a 3-month window from the server-reported month (not browser clock)
+    const serverMonth = data.server_month;
+    const fallback = () => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}`; };
+    const base = serverMonth || fallback();
+    const [sY, sM] = base.split('-').map(Number);
+    const ym = (y, m) => `${y}-${String(m).padStart(2, '0')}`;
+    const prevM = sM === 1 ? ym(sY - 1, 12) : ym(sY, sM - 1);
+    const nextM = sM === 12 ? ym(sY + 1, 1) : ym(sY, sM + 1);
+    const monthOrder = [prevM, base, nextM];
+
+    // Fill missing months with zero-value entries so the chart never stretches
+    const lookup = {};
+    byType.forEach(m => { lookup[m.month] = m; });
+    const paddedByType = monthOrder.map(m => lookup[m] || { month: m });
+
     const allTypeKeys = [...new Set(byType.flatMap(m => Object.keys(m).filter(k => k !== 'month')))];
 
-    const credentialTypeData = allTypeKeys
-        .map(key => ({ name: key, count: byType.reduce((s, m) => s + (m[key] || 0), 0) }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 6);
+    const topTypeKeys = allTypeKeys
+        .map(key => ({ key, total: byType.reduce((s, m) => s + (m[key] || 0), 0) }))
+        .sort((a, b) => b.total - a.total)
+        .slice(0, 6)
+        .map(x => x.key);
 
-    const maxCredentialCount = credentialTypeData.length > 0 ? credentialTypeData[0].count : 1;
+    const credentialCategories = paddedByType.map(m => shortMonth(m.month));
+    const credentialSeries = topTypeKeys.map(key => ({
+        name: key,
+        data: paddedByType.map(m => m[key] || 0),
+    }));
 
     const statusData = (data.status_breakdown || []).map(s => ({ name: s.status, count: s.count }));
-    const maxStatusCount = Math.max(...statusData.map(s => s.count), 1);
 
-    const revenueData = data.monthly_revenue || [];
-    const revenueCount = revenueData.length;
+    const revenueLookup = {};
+    (data.monthly_revenue || []).forEach(r => { revenueLookup[r.month] = r; });
+    const paddedRevenue = monthOrder.map(m => revenueLookup[m] || { month: m, revenue: 0 });
+    const revenueCount = paddedRevenue.length;
+    const allZeroRevenue = paddedRevenue.every(r => !r.revenue || parseFloat(r.revenue) === 0);
 
     return (
         <DashboardLayout
@@ -144,93 +167,90 @@ export default function SystemAdminReportsAnalytics({ user, onLogout, onNavigate
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-                {/* Requests by Credential Type — Horizontal Ranked Bars */}
-                <section className="bg-white rounded-xl border border-slate-200 shadow-sm">
+                {/* Requests by Credential Type — Grouped Bar Chart (Monthly) */}
+                <section className="bg-white rounded-xl border border-slate-200 shadow-sm lg:col-span-2">
                     <div className="px-5 py-4 border-b border-slate-100">
                         <h2 className="text-sm font-bold text-slate-900">Requests by Credential Type</h2>
                     </div>
                     <div className="p-5">
-                        {credentialTypeData.length > 0 ? (
-                            <div className="space-y-3">
-                                {credentialTypeData.map((item) => {
-                                    const pct = (item.count / maxCredentialCount) * 100;
-                                    return (
-                                        <div key={item.name}>
-                                            <div className="flex items-center justify-between mb-1">
-                                                <span className="text-xs font-medium text-slate-700 truncate pr-2">{item.name}</span>
-                                                <span className="text-xs font-bold text-slate-900 tabular-nums">{item.count}</span>
-                                            </div>
-                                            <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                                                <div
-                                                    className="h-full rounded-full bg-emerald-600 transition-all"
-                                                    style={{ width: `${Math.max(pct, item.count > 0 ? 2 : 0)}%` }}
-                                                />
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
+                        {credentialCategories.length > 0 && topTypeKeys.length > 0 ? (
+                            <Chart
+                                options={{
+                                    chart: { type: 'bar', toolbar: { show: false }, fontFamily: 'inherit', animations: { enabled: true, easing: 'easeinout', speed: 800 } },
+                                    plotOptions: { bar: { horizontal: false, borderRadius: 10, columnWidth: '22%', borderRadiusApplication: 'end', distributed: false, hoverState: { color: '#0a3a0d' } } },
+                                    colors: TYPE_COLORS,
+                                    dataLabels: { enabled: false },
+                                    xaxis: { categories: credentialCategories, labels: { style: { fontSize: '12px', colors: '#475569', fontWeight: 500 } }, axisBorder: { show: true, color: '#e2e8f0' }, axisTicks: { show: false } },
+                                    yaxis: { min: 0, forceNiceScale: true, labels: { style: { fontSize: '12px', colors: '#94a3b8' }, formatter: v => Math.round(v) } },
+                                    grid: { show: true, borderColor: '#f1f5f9', strokeDashArray: 5 },
+                                    tooltip: { theme: 'light', style: { fontSize: '12px' }, intersect: false, x: { formatter: (val, { dataPointIndex }) => fullMonth(paddedByType[dataPointIndex]?.month || val) }, y: { formatter: v => `${v} requests` } },
+                                    legend: { position: 'bottom', fontSize: '12px', fontWeight: 500, itemMargin: { horizontal: 20, vertical: 4 }, markers: { width: 10, height: 10, radius: 2 } },
+                                    responsive: [{ breakpoint: 1024, options: { plotOptions: { bar: { columnWidth: '30%' } }, xaxis: { labels: { style: { fontSize: '11px' } } }, legend: { fontSize: '11px' } } }, { breakpoint: 640, options: { legend: { fontSize: '10px' }, xaxis: { labels: { style: { fontSize: '10px' } } }, plotOptions: { bar: { columnWidth: '36%' } } } }],
+                                }}
+                                series={credentialSeries}
+                                type="bar"
+                                height={320}
+                            />
                         ) : (
                             <div className="py-8"><EmptyState icon={ChartColumn} title="No Data" subtitle="No request analytics available." /></div>
                         )}
                     </div>
                 </section>
 
-                {/* Monthly Revenue — Smart Card or Line Chart */}
+                {/* Monthly Revenue — Area Chart */}
                 <section className="bg-white rounded-xl border border-slate-200 shadow-sm">
                     <div className="px-5 py-4 border-b border-slate-100">
                         <h2 className="text-sm font-bold text-slate-900">Monthly Revenue</h2>
                     </div>
                     <div className="p-5">
-                        {revenueCount === 0 ? (
-                            <div className="py-8"><EmptyState icon={DollarSign} title="No Data" subtitle="No revenue data available." /></div>
-                        ) : revenueCount === 1 ? (
-                            <div className="flex flex-col items-center justify-center py-6">
-                                <p className="text-3xl sm:text-4xl font-bold text-emerald-700 tracking-tight">{fmtRevenue(revenueData[0].revenue)}</p>
-                                <p className="text-xs text-slate-500 mt-1.5">Revenue for {fullMonth(revenueData[0].month)}</p>
-                            </div>
+                        {allZeroRevenue ? (
+                            <div className="py-8"><EmptyState icon={DollarSign} title="No Data" subtitle="No revenue data yet." /></div>
                         ) : (
-                            <ResponsiveContainer width="100%" height={240}>
-                                <LineChart data={revenueData} margin={{ top: 4, right: 4, left: -15, bottom: 0 }}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                                    <XAxis dataKey="month" tickFormatter={shortMonth} tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={{ stroke: '#e2e8f0' }} tickLine={false} />
-                                    <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} tickFormatter={(v) => `₱${v}`} width={50} />
-                                    <Tooltip
-                                        contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '12px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                        formatter={(v) => [fmtRevenue(v), 'Revenue']}
-                                        labelFormatter={(v) => fullMonth(v)}
-                                    />
-                                    <Line type="monotone" dataKey="revenue" stroke="#059669" strokeWidth={2.5} dot={{ fill: '#059669', strokeWidth: 2, r: 3 }} activeDot={{ r: 5, fill: '#059669' }} />
-                                </LineChart>
-                            </ResponsiveContainer>
+                            <Chart
+                                options={{
+                                    chart: { type: 'area', toolbar: { show: false }, fontFamily: 'inherit', animations: { enabled: true, easing: 'easeinout', speed: 800 } },
+                                    stroke: { curve: 'smooth', width: 2, colors: ['#154212'] },
+                                    markers: { size: 0, hover: { size: 6 } },
+                                    fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.25, opacityTo: 0.03, stops: [0, 100] } },
+                                    colors: ['#154212'],
+                                    dataLabels: { enabled: false },
+                                    xaxis: { categories: paddedRevenue.map(r => shortMonth(r.month)), labels: { style: { fontSize: '12px', colors: '#64748b', fontWeight: 500 } }, axisBorder: { show: true, color: '#e2e8f0' }, axisTicks: { show: false } },
+                                    yaxis: { min: 0, forceNiceScale: true, labels: { style: { fontSize: '12px', colors: '#94a3b8' }, formatter: v => `₱${Math.round(v).toLocaleString()}` } },
+                                    grid: { show: true, borderColor: '#f1f5f9', strokeDashArray: 5 },
+                                    tooltip: { theme: 'light', style: { fontSize: '12px' }, intersect: false, y: { formatter: v => fmtRevenue(v) }, x: { formatter: (val, { dataPointIndex }) => fullMonth(paddedRevenue[dataPointIndex]?.month || val) } },
+                                    legend: { show: false },
+                                    responsive: [{ breakpoint: 1024, options: { xaxis: { labels: { style: { fontSize: '11px' } } } } }, { breakpoint: 640, options: { xaxis: { labels: { style: { fontSize: '10px' } } } } }],
+                                }}
+                                series={[{ name: 'Revenue', data: paddedRevenue.map(r => parseFloat(r.revenue || 0)) }]}
+                                type="area"
+                                height={240}
+                            />
                         )}
                     </div>
                 </section>
 
-                {/* Status Breakdown — Compact Progress Bars */}
-                <section className="bg-white rounded-xl border border-slate-200 shadow-sm lg:col-span-2">
+                {/* Status Breakdown — Donut Chart */}
+                <section className="bg-white rounded-xl border border-slate-200 shadow-sm">
                     <div className="px-5 py-4 border-b border-slate-100">
                         <h2 className="text-sm font-bold text-slate-900">Status Breakdown</h2>
                     </div>
                     <div className="p-5">
                         {statusData.length > 0 ? (
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                {statusData.map((item) => {
-                                    const pct = (item.count / maxStatusCount) * 100;
-                                    return (
-                                        <div key={item.name} className="text-center p-4 bg-slate-50 rounded-xl border border-slate-100">
-                                            <p className="text-2xl font-bold text-slate-900 tabular-nums">{item.count}</p>
-                                            <div className="mt-2 h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                                                <div
-                                                    className="h-full rounded-full transition-all"
-                                                    style={{ width: `${Math.max(pct, item.count > 0 ? 5 : 0)}%`, backgroundColor: STATUS_COLORS[item.name] || '#94a3b8' }}
-                                                />
-                                            </div>
-                                            <p className="text-[11px] font-medium text-slate-500 mt-2">{item.name}</p>
-                                        </div>
-                                    );
-                                })}
-                            </div>
+                            <Chart
+                                options={{
+                                    chart: { type: 'donut', fontFamily: 'inherit', animations: { enabled: true, easing: 'easeinout', speed: 800 } },
+                                    labels: statusData.map(s => s.name),
+                                    colors: statusData.map(s => STATUS_COLORS[s.name] || '#94a3b8'),
+                                    plotOptions: { pie: { donut: { size: '50%' }, expandOnClick: false } },
+                                    dataLabels: { enabled: true, formatter: (val, opts) => opts.w.globals.series[opts.seriesIndex], style: { fontSize: '13px', fontWeight: 700, colors: ['#fff'] }, dropShadow: { enabled: true, top: 1, left: 1, blur: 2, color: '#000', opacity: 0.45 } },
+                                    legend: { position: 'bottom', fontSize: '12px', fontWeight: 500, itemMargin: { horizontal: 20, vertical: 4 }, markers: { width: 10, height: 10, radius: 2 }, formatter: (n, opts) => `${n}: ${opts.w.globals.series[opts.seriesIndex]}` },
+                                    tooltip: { theme: 'light', style: { fontSize: '13px' }, y: { formatter: (v, opts) => `${v} requests (${((v / opts.w.globals.series.reduce((a, b) => a + b, 0)) * 100).toFixed(1)}%)` } },
+                                    responsive: [{ breakpoint: 1024, options: { legend: { fontSize: '11px' }, dataLabels: { style: { fontSize: '12px' } } } }, { breakpoint: 640, options: { legend: { fontSize: '10px' }, dataLabels: { style: { fontSize: '11px' } } } }],
+                                }}
+                                series={statusData.map(s => s.count)}
+                                type="donut"
+                                height={220}
+                            />
                         ) : (
                             <div className="py-8"><EmptyState icon={ChartColumn} title="No Data" subtitle="No status breakdown data available." /></div>
                         )}

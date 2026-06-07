@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, FileText, Users, Settings, RefreshCw, ChartColumn } from 'lucide-react';
+import { LayoutDashboard, FileText, Users, RefreshCw, ChartColumn } from 'lucide-react';
 import DashboardLayout from '../../DashboardLayout';
 import DashboardSearch from '../../DashboardSearch';
 import DashboardTable from '../../DashboardTable';
@@ -16,7 +16,6 @@ const sidebarItems = [
     { label: 'Credential Types', icon: FileText, path: '/system-admin/credentials' },
     { label: 'Reports & Analytics', icon: ChartColumn, path: '/system-admin/reports' },
     { label: 'Audit Logs', icon: RefreshCw, path: '/system-admin/audit-logs' },
-    { label: 'Settings', icon: Settings, path: '/system-admin/settings' },
 ];
 
 const actionFilterOptions = ['All', 'update_status', 'update_remarks', 'verify_payment', 'create_user', 'update_user', 'delete_user', 'create_document', 'update_document', 'deactivate_document', 'update_settings'];

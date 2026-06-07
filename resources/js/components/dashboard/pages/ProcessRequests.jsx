@@ -88,7 +88,7 @@ export default function ProcessRequests({ user, onLogout, onNavigate }) {
     };
 
     const processable = requests.filter(
-        (req) => req.payment_status === 'paid' || req.status === 'Processing'
+        (req) => (req.payment_status === 'paid' || req.status === 'Processing') && !['Claimed', 'Cancelled'].includes(req.status)
     );
 
     const filtered = processable.filter((req) =>
@@ -100,7 +100,7 @@ export default function ProcessRequests({ user, onLogout, onNavigate }) {
         <tr key={req.id} className="hover:bg-slate-50 transition-colors">
             <td className="px-6 py-4 font-mono text-xs font-medium text-emerald-700">{req.tracking_number}</td>
             <td className="px-6 py-4 font-medium text-slate-900">{req.student_name}</td>
-            <td className="px-6 py-4 text-slate-700 max-w-[200px] truncate" title={req.document_names.join(', ')}>{req.document_names.join(', ')}</td>
+            <td className="px-6 py-4 text-slate-700 max-w-[200px] truncate" title={(req.document_names || []).join(', ')}>{(req.document_names || []).join(', ')}</td>
             <td className="px-6 py-4"><StatusBadge status={req.status} /></td>
             <td className="px-6 py-4 text-slate-500 text-xs">{req.created_at}</td>
             <td className="px-6 py-4">
@@ -187,7 +187,7 @@ export default function ProcessRequests({ user, onLogout, onNavigate }) {
                                     title={item.tracking_number}
                                     subtitle={item.student_name}
                                     metadata={[
-                                        { label: 'Documents', value: item.document_names.join(', ') },
+                                        { label: 'Documents', value: (item.document_names || []).join(', ') },
                                         { label: 'Status', value: <StatusBadge status={item.status} /> },
                                         { label: 'Date', value: item.created_at },
                                     ]}

@@ -11,7 +11,6 @@ use App\Http\Requests\UpdateUserRequest;
 use App\Models\AuditLog;
 use App\Models\Document;
 use App\Models\StudentRequest;
-use App\Models\SystemSetting;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
@@ -287,7 +286,7 @@ class SystemAdminController extends Controller
             ->whereRaw("DATE_FORMAT(created_at, '%Y-%m') = ?", [$month])
             ->sum('total_fee');
 
-        $documents = Document::where('is_active', true)->get()->keyBy('code');
+        $documents = Document::all()->keyBy('code');
 
         $monthlyRequestsByType = StudentRequest::selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month, document_ids")
             ->get()
@@ -319,6 +318,8 @@ class SystemAdminController extends Controller
                 'status_breakdown' => $statusBreakdown,
                 'this_month' => $thisMonth,
                 'this_month_revenue' => $thisMonthRevenue,
+                'server_month' => now()->format('Y-m'),
+                'server_date' => now()->format('Y-m-d'),
             ],
         ]);
     }
@@ -444,53 +445,6 @@ class SystemAdminController extends Controller
                 'total' => $logs->total(),
                 'per_page' => $logs->perPage(),
             ],
-        ]);
-    }
-
-    // ─── System Settings ─────────────────────────────────────────────────────
-
-    public function getSettings(): JsonResponse
-    {
-        $settings = SystemSetting::all()->pluck('value', 'key');
-
-        $defaults = [
-            'school_name' => 'Tarlac Luminary Global College',
-            'school_address' => 'Tarlac City, Philippines',
-            'processing_time_days' => '3',
-            'enable_online_payment' => 'true',
-            'enable_student_registration' => 'true',
-            'max_requests_per_student' => '5',
-            'notification_email' => '',
-        ];
-
-        foreach ($defaults as $key => $default) {
-            if (!isset($settings[$key])) {
-                $settings[$key] = $default;
-            }
-        }
-
-        return response()->json([
-            'status' => 'success',
-            'data' => $settings,
-        ]);
-    }
-
-    public function updateSettings(Request $request): JsonResponse
-    {
-        $request->validate([
-            'settings' => 'required|array',
-            'settings.*' => 'nullable|string',
-        ]);
-
-        foreach ($request->input('settings') as $key => $value) {
-            SystemSetting::setValue($key, $value);
-        }
-
-        $this->audit('update_settings', 'SystemSetting', null, 'Updated system settings');
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Settings updated successfully.',
         ]);
     }
 }

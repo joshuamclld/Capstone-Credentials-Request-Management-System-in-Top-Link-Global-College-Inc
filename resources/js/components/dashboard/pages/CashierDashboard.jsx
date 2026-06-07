@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, Clock, CheckCircle, Search, CreditCard, DollarSign } from 'lucide-react';
+import { LayoutDashboard, Clock, CheckCircle, Search, CreditCard, DollarSign, ToggleLeft, ToggleRight } from 'lucide-react';
 import DashboardLayout from '../DashboardLayout';
 import DashboardStatCard from '../DashboardStatCard';
 import DashboardSearch from '../DashboardSearch';
@@ -37,6 +37,15 @@ export default function CashierDashboard({ user, onLogout, onNavigate }) {
     const [error, setError] = useState(null);
     const [page, setPage] = useState(1);
     const [pagination, setPagination] = useState(null);
+    const [onlinePaymentEnabled, setOnlinePaymentEnabled] = useState(true);
+    const [toggling, setToggling] = useState(false);
+
+    const fetchOnlinePaymentStatus = () => {
+        fetch('/admin/cashier/online-payment-status', { credentials: 'same-origin' })
+            .then(r => r.json())
+            .then(d => setOnlinePaymentEnabled(d.enabled))
+            .catch(() => {});
+    };
 
     const fetchData = (p) => {
         setLoading(true);
@@ -58,11 +67,32 @@ export default function CashierDashboard({ user, onLogout, onNavigate }) {
 
     useEffect(() => {
         fetchData(page);
+        fetchOnlinePaymentStatus();
     }, [page]);
 
     const handlePageChange = (newPage) => {
         if (newPage < 1 || (pagination && newPage > pagination.last_page)) return;
         setPage(newPage);
+    };
+
+    const handleToggleOnlinePayment = () => {
+        setToggling(true);
+        const newValue = !onlinePaymentEnabled;
+        fetch('/admin/cashier/online-payment-status', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
+            },
+            body: JSON.stringify({ enabled: newValue }),
+            credentials: 'same-origin',
+        })
+            .then(r => r.json())
+            .then(d => {
+                if (d.success) setOnlinePaymentEnabled(d.enabled);
+            })
+            .catch(() => {})
+            .finally(() => setToggling(false));
     };
 
     const filtered = data.requests.filter((req) =>
@@ -117,6 +147,23 @@ export default function CashierDashboard({ user, onLogout, onNavigate }) {
                                 iconColor={stat.iconColor}
                             />
                         ))}
+                    </section>
+
+                    {/* Online Payment Toggle */}
+                    <section className="bg-white rounded-xl border border-slate-200 shadow-sm mb-8">
+                        <div className="flex items-center justify-between px-6 py-4">
+                            <div>
+                                <h3 className="text-sm font-bold text-slate-900">Online Payment</h3>
+                                <p className="text-xs text-slate-500 mt-0.5">Enable or disable student online payment availability.</p>
+                            </div>
+                            <button
+                                onClick={handleToggleOnlinePayment}
+                                disabled={toggling}
+                                className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 cursor-pointer ${onlinePaymentEnabled ? 'bg-emerald-700' : 'bg-slate-300'}`}
+                            >
+                                <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${onlinePaymentEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                            </button>
+                        </div>
                     </section>
 
                     <section className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, Users, FileText, Settings, Eye, Edit, ToggleLeft, Plus, ChartColumn, RefreshCw, X, Check } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Eye, Edit, ToggleLeft, Plus, ChartColumn, RefreshCw, X, Check } from 'lucide-react';
 import DashboardLayout from '../../DashboardLayout';
 import DashboardSearch from '../../DashboardSearch';
 import DashboardTable from '../../DashboardTable';
@@ -23,7 +23,6 @@ const sidebarItems = [
     { label: 'Credential Types', icon: FileText, path: '/system-admin/credentials' },
     { label: 'Reports & Analytics', icon: ChartColumn, path: '/system-admin/reports' },
     { label: 'Audit Logs', icon: RefreshCw, path: '/system-admin/audit-logs' },
-    { label: 'Settings', icon: Settings, path: '/system-admin/settings' },
 ];
 
 const roleFilterOptions = ['All', 'admin', 'cashier', 'system_admin'];

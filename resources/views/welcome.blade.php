@@ -15,6 +15,15 @@
         <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
         @fonts
         @vite(['resources/css/app.css', 'resources/js/app.jsx'])
+
+        @php
+            $onlinePayment = \App\Models\SystemSetting::getValue('enable_online_payment', 'true');
+        @endphp
+        <script>
+            window.CRMS_SETTINGS = {
+                enable_online_payment: {{ $onlinePayment === 'true' || $onlinePayment === true ? 'true' : 'false' }},
+            };
+        </script>
     </head>
     <body>
         <div id="app"></div>

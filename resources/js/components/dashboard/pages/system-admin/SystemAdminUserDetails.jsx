@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, Users, FileText, Settings, ArrowLeft, Mail, Phone, Calendar, Shield, RefreshCw, Hash, ChartColumn } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, ArrowLeft, Mail, Phone, Calendar, Shield, RefreshCw, Hash, ChartColumn } from 'lucide-react';
 import DashboardLayout from '../../DashboardLayout';
 import StatusBadge from '../../StatusBadge';
 import EmptyState from '../../EmptyState';
@@ -10,7 +10,6 @@ const sidebarItems = [
     { label: 'Credential Types', icon: FileText, path: '/system-admin/credentials' },
     { label: 'Reports & Analytics', icon: ChartColumn, path: '/system-admin/reports' },
     { label: 'Audit Logs', icon: RefreshCw, path: '/system-admin/audit-logs' },
-    { label: 'Settings', icon: Settings, path: '/system-admin/settings' },
 ];
 
 export default function SystemAdminUserDetails({ user, onLogout, onNavigate }) {
@@ -50,7 +49,7 @@ export default function SystemAdminUserDetails({ user, onLogout, onNavigate }) {
                     <div className="px-6 py-6 border-b border-slate-200">
                         <div className="flex items-center gap-4">
                             <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-lg">
-                                {userData.name.charAt(0).toUpperCase()}
+                                {(userData.name || '').charAt(0).toUpperCase()}
                             </div>
                             <div>
                                 <h2 className="text-lg font-bold text-slate-900">{userData.name}</h2>

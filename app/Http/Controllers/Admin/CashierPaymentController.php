@@ -7,6 +7,7 @@ use App\Models\AuditLog;
 use App\Models\Document;
 use App\Models\Notification;
 use App\Models\StudentRequest;
+use App\Models\SystemSetting;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -102,7 +103,11 @@ class CashierPaymentController extends Controller
                 'tracking_number' => $studentRequest->tracking_number,
                 'student_name' => $studentRequest->full_name,
                 'student_number' => $studentRequest->student_number,
+                'course' => $studentRequest->course,
+                'email' => $studentRequest->email,
                 'document_names' => $documentNames,
+                'semesters' => $studentRequest->semesters ?? [],
+                'pages' => $studentRequest->pages,
                 'payment_method' => $studentRequest->payment_method,
                 'payment_status' => $studentRequest->payment_status,
                 'status' => $studentRequest->status,
@@ -111,6 +116,28 @@ class CashierPaymentController extends Controller
                 'verified_at' => $studentRequest->verified_at,
                 'created_at' => $studentRequest->created_at->format('Y-m-d'),
             ],
+        ]);
+    }
+
+    public function getOnlinePaymentStatus(): JsonResponse
+    {
+        $enabled = SystemSetting::getValue('enable_online_payment', 'true');
+
+        return response()->json([
+            'enabled' => $enabled === 'true' || $enabled === true,
+        ]);
+    }
+
+    public function toggleOnlinePayment(Request $request): JsonResponse
+    {
+        $request->validate(['enabled' => 'required|boolean']);
+
+        SystemSetting::setValue('enable_online_payment', $request->input('enabled') ? 'true' : 'false');
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Online payment setting updated.',
+            'enabled' => $request->input('enabled'),
         ]);
     }
 }

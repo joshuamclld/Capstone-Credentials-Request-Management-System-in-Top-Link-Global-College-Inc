@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, FileText, Users, Clock, CheckCircle, RefreshCw, DollarSign, Settings, ChartColumn, Shield } from 'lucide-react';
+import { LayoutDashboard, FileText, Users, Clock, CheckCircle, RefreshCw, DollarSign, ChartColumn, Shield } from 'lucide-react';
 import DashboardLayout from '../../DashboardLayout';
 import DashboardStatCard from '../../DashboardStatCard';
 import DashboardSearch from '../../DashboardSearch';
@@ -18,7 +18,6 @@ const sidebarItems = [
     { label: 'Credential Types', icon: FileText, path: '/system-admin/credentials' },
     { label: 'Reports & Analytics', icon: ChartColumn, path: '/system-admin/reports' },
     { label: 'Audit Logs', icon: RefreshCw, path: '/system-admin/audit-logs' },
-    { label: 'Settings', icon: Settings, path: '/system-admin/settings' },
 ];
 
 export default function SystemAdminDashboard({ user, onLogout, onNavigate }) {

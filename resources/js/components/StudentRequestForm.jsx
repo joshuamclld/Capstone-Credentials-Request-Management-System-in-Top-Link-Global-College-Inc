@@ -600,6 +600,7 @@ export default function StudentRequestForm({ onNavigate }) {
                             </div>
                           </div>
                         </div>
+                        {window.CRMS_SETTINGS?.enable_online_payment !== false && (
                         <div
                           onClick={() => setPaymentMethod('online')}
                           className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${paymentMethod === 'online' ? 'border-primary bg-surface-container-low' : 'border-outline-variant bg-surface-container-lowest'
@@ -616,6 +617,7 @@ export default function StudentRequestForm({ onNavigate }) {
                             </div>
                           </div>
                         </div>
+                        )}
                       </div>
                     </div>
 

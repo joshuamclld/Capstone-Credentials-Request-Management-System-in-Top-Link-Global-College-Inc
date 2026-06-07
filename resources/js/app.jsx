@@ -21,14 +21,12 @@ import UserDetails from './components/dashboard/pages/UserDetails';
 import CredentialTypes from './components/dashboard/pages/CredentialTypes';
 import CredentialTypeDetails from './components/dashboard/pages/CredentialTypeDetails';
 import Reports from './components/dashboard/pages/Reports';
-import Settings from './components/dashboard/pages/Settings';
 import SystemAdminDashboard from './components/dashboard/pages/system-admin/SystemAdminDashboard';
 import SystemAdminUserManagement from './components/dashboard/pages/system-admin/SystemAdminUserManagement';
 import SystemAdminUserDetails from './components/dashboard/pages/system-admin/SystemAdminUserDetails';
 import SystemAdminCredentialTypes from './components/dashboard/pages/system-admin/SystemAdminCredentialTypes';
 import SystemAdminReportsAnalytics from './components/dashboard/pages/system-admin/SystemAdminReportsAnalytics';
 import SystemAdminAuditLogs from './components/dashboard/pages/system-admin/SystemAdminAuditLogs';
-import SystemAdminSettings from './components/dashboard/pages/system-admin/SystemAdminSettings';
 import '../css/app.css';
 
 function App() {
@@ -281,10 +279,6 @@ function App() {
     return <Reports user={user} onLogout={handleLogout} onNavigate={navigate} />;
   }
 
-  if (currentPath === '/system/settings') {
-    return <Settings user={user} onLogout={handleLogout} onNavigate={navigate} />;
-  }
-
   // System Administrator routes (new /system-admin-* prefix)
   if (currentPath === '/system-admin-dashboard') {
     return <SystemAdminDashboard user={user} onLogout={handleLogout} onNavigate={navigate} />;
@@ -308,10 +302,6 @@ function App() {
 
   if (currentPath === '/system-admin/audit-logs') {
     return <SystemAdminAuditLogs user={user} onLogout={handleLogout} onNavigate={navigate} />;
-  }
-
-  if (currentPath === '/system-admin/settings') {
-    return <SystemAdminSettings user={user} onLogout={handleLogout} onNavigate={navigate} />;
   }
 
   // Fallback: Default to Student Landing Page

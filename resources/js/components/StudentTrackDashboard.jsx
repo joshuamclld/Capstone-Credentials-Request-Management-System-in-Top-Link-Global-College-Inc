@@ -222,7 +222,7 @@ export default function StudentTrackDashboard({ onNavigate }) {
                       </div>
                       <div className="flex justify-between border-b border-outline-variant pb-2">
                         <span className="text-on-surface-variant font-medium">Document(s):</span>
-                        <span className="font-bold text-on-surface text-right">{request.documents.join(', ')}</span>
+                        <span className="font-bold text-on-surface text-right">{(request.documents || []).join(', ')}</span>
                       </div>
                       {request.semesters && request.semesters.length > 0 && (
                         <div className="flex justify-between border-b border-outline-variant pb-2">

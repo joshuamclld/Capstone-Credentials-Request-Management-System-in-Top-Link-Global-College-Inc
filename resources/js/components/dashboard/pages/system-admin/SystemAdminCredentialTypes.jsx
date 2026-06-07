@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, FileText, Users, Settings, Plus, X, RefreshCw, ChartColumn, DollarSign, Clock } from 'lucide-react';
+import { LayoutDashboard, FileText, Users, Plus, X, RefreshCw, ChartColumn, DollarSign, Clock } from 'lucide-react';
 import DashboardLayout from '../../DashboardLayout';
 import DashboardSearch from '../../DashboardSearch';
 import DashboardTable from '../../DashboardTable';
@@ -16,7 +16,6 @@ const sidebarItems = [
     { label: 'Credential Types', icon: FileText, path: '/system-admin/credentials' },
     { label: 'Reports & Analytics', icon: ChartColumn, path: '/system-admin/reports' },
     { label: 'Audit Logs', icon: RefreshCw, path: '/system-admin/audit-logs' },
-    { label: 'Settings', icon: Settings, path: '/system-admin/settings' },
 ];
 
 export default function SystemAdminCredentialTypes({ user, onLogout, onNavigate }) {
@@ -73,7 +72,7 @@ export default function SystemAdminCredentialTypes({ user, onLogout, onNavigate 
 
         const url = editingDoc ? `/admin/system/documents/${editingDoc.id}` : '/admin/system/documents';
         const method = editingDoc ? 'PUT' : 'POST';
-        const body = { ...formData, price: parseFloat(formData.price), processing_days: parseInt(formData.processing_days) };
+        const body = { ...formData, price: parseFloat(formData.price ?? 0) || 0, processing_days: parseInt(formData.processing_days ?? 0) || 0 };
 
         fetch(url, {
             method,
@@ -104,7 +103,7 @@ export default function SystemAdminCredentialTypes({ user, onLogout, onNavigate 
         <tr key={d.id} className="hover:bg-slate-50 transition-colors">
             <td className="px-6 py-4 font-mono text-xs font-medium text-emerald-700">{d.code}</td>
             <td className="px-6 py-4 font-medium text-slate-900">{d.name}</td>
-            <td className="px-6 py-4 font-medium text-slate-900">₱{parseFloat(d.price).toFixed(2)}</td>
+            <td className="px-6 py-4 font-medium text-slate-900">₱{parseFloat(d.price ?? 0).toFixed(2)}</td>
             <td className="px-6 py-4 text-slate-700">{d.processing_days} day{d.processing_days !== 1 ? 's' : ''}</td>
             <td className="px-6 py-4">{d.is_per_semester ? <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">Yes</span> : <span className="text-xs text-slate-400">No</span>}</td>
             <td className="px-6 py-4">{d.is_per_page ? <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full">Yes</span> : <span className="text-xs text-slate-400">No</span>}</td>
@@ -217,7 +216,7 @@ export default function SystemAdminCredentialTypes({ user, onLogout, onNavigate 
                                             title={item.code}
                                             subtitle={item.name}
                                             metadata={[
-                                                { label: 'Price', value: `₱${parseFloat(item.price).toFixed(2)}` },
+                                                { label: 'Price', value: `₱${parseFloat(item.price ?? 0).toFixed(2)}` },
                                                 { label: 'Processing', value: `${item.processing_days} day${item.processing_days !== 1 ? 's' : ''}` },
                                                 { label: 'Per Semester', value: item.is_per_semester ? <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">Yes</span> : <span className="text-xs text-slate-400">No</span> },
                                                 { label: 'Per Page', value: item.is_per_page ? <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full">Yes</span> : <span className="text-xs text-slate-400">No</span> },

@@ -75,7 +75,7 @@ export default function SearchRecords({ user, onLogout, onNavigate }) {
         <tr key={rec.id} className="hover:bg-slate-50 transition-colors">
             <td className="px-6 py-4 font-mono text-xs font-medium text-emerald-700">{rec.tracking_number}</td>
             <td className="px-6 py-4 font-medium text-slate-900">{rec.student_name}</td>
-            <td className="px-6 py-4 text-slate-700 max-w-[200px] truncate" title={rec.document_names.join(', ')}>{rec.document_names.join(', ')}</td>
+            <td className="px-6 py-4 text-slate-700 max-w-[200px] truncate" title={(rec.document_names || []).join(', ')}>{(rec.document_names || []).join(', ')}</td>
             <td className="px-6 py-4"><StatusBadge status={rec.payment_status} type="payment" /></td>
             <td className="px-6 py-4"><StatusBadge status={rec.status} /></td>
             <td className="px-6 py-4 text-slate-500 text-xs">{rec.created_at}</td>
@@ -171,7 +171,7 @@ export default function SearchRecords({ user, onLogout, onNavigate }) {
                                     title={item.tracking_number}
                                     subtitle={item.student_name}
                                     metadata={[
-                                        { label: 'Documents', value: item.document_names.join(', ') },
+                                        { label: 'Documents', value: (item.document_names || []).join(', ') },
                                         { label: 'Payment', value: <StatusBadge status={item.payment_status} type="payment" /> },
                                         { label: 'Status', value: <StatusBadge status={item.status} /> },
                                         { label: 'Date', value: item.created_at },

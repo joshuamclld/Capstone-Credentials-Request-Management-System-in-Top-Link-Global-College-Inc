@@ -13,8 +13,9 @@ class StudentRequestController extends Controller
 {
     public function store(StoreStudentRequest $request)
     {
-        return DB::transaction(function () use ($request) {
-            $validated = $request->validated();
+        $validated = $request->validated();
+
+        return DB::transaction(function () use ($validated) {
 
             $documents = Document::whereIn('code', $validated['selectedDocs'])->get();
 

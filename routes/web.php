@@ -2,10 +2,10 @@
 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Auth\AdminAuthController;
-use App\Http\Controllers\Admin\RegistrarRequestController;
+use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\CashierPaymentController;
+use App\Http\Controllers\Admin\RegistrarRequestController;
 use App\Http\Controllers\Admin\SystemAdminController;
 use App\Http\Controllers\StudentRequestController;
 use App\Http\Controllers\DocumentController;
@@ -58,6 +58,12 @@ Route::prefix('admin')->group(function () {
         ->middleware('cashier')
         ->whereNumber('id');
 
+    Route::get('/cashier/online-payment-status', [CashierPaymentController::class, 'getOnlinePaymentStatus'])
+        ->middleware('cashier');
+
+    Route::post('/cashier/online-payment-status', [CashierPaymentController::class, 'toggleOnlinePayment'])
+        ->middleware('cashier');
+
     // System Administrator Routes
     Route::middleware('system_admin')->group(function () {
         Route::get('/system-dashboard-data', [SystemAdminController::class, 'dashboard']);
@@ -65,7 +71,7 @@ Route::prefix('admin')->group(function () {
         // User management
         Route::get('/system/users', [SystemAdminController::class, 'getUsers']);
         Route::get('/system/users/{id}', [SystemAdminController::class, 'showUser'])->whereNumber('id');
-        Route::post('/system/users', [SystemAdminController::class, 'storeUser']);
+        Route::post('/system/users', [SystemAdminController::class, 'storeUser'])->middleware('throttle:10,10');
         Route::put('/system/users/{id}', [SystemAdminController::class, 'updateUser'])->whereNumber('id');
         Route::delete('/system/users/{id}', [SystemAdminController::class, 'deleteUser'])->whereNumber('id');
 
@@ -84,10 +90,6 @@ Route::prefix('admin')->group(function () {
 
         // Audit logs
         Route::get('/system/audit-logs', [SystemAdminController::class, 'getAuditLogs']);
-
-        // System settings
-        Route::get('/system/settings', [SystemAdminController::class, 'getSettings']);
-        Route::post('/system/settings', [SystemAdminController::class, 'updateSettings']);
     });
 
     // API routes — moved out of SPA page path to avoid hard-refresh conflict
@@ -110,8 +112,10 @@ Route::get('/system-admin/{any?}', function () { return view('welcome'); })->whe
 // Student Request Submission & Tracking
 Route::post('/requests', [StudentRequestController::class, 'store'])
     ->middleware('throttle:10,1');
-Route::get('/requests/{tracking_number}', [StudentRequestController::class, 'show']);
-Route::patch('/requests/{tracking_number}/cancel', [StudentRequestController::class, 'cancel']);
+Route::get('/requests/{tracking_number}', [StudentRequestController::class, 'show'])
+    ->middleware('throttle:30,1');
+Route::patch('/requests/{tracking_number}/cancel', [StudentRequestController::class, 'cancel'])
+    ->middleware('throttle:5,1');
 Route::get('/documents', [DocumentController::class, 'index']);
 
 

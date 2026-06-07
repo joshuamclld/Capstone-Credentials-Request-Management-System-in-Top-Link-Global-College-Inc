@@ -52,7 +52,7 @@ export default function DashboardLayout({ title, subtitle, sidebarItems, current
                             </div>
                             <button
                                 onClick={onLogout}
-                                className="lg:hidden p-2 rounded-lg text-slate-500 hover:bg-slate-100 cursor-pointer"
+                                className="hidden p-2 rounded-lg text-slate-500 hover:bg-slate-100 cursor-pointer"
                                 title="Sign Out"
                             >
                                 <LogOut className="w-5 h-5" />

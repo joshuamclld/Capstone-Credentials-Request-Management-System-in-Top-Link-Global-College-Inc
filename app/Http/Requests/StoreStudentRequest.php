@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\Document;
+use App\Models\SystemSetting;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -69,6 +70,11 @@ class StoreStudentRequest extends FormRequest
 
             if ($hasPerPageDoc && !$this->input('pages')) {
                 $validator->errors()->add('pages', 'Please specify the number of pages for this document.');
+            }
+
+            $onlineEnabled = SystemSetting::getValue('enable_online_payment', 'true');
+            if ($this->input('paymentMethod') === 'online' && ($onlineEnabled !== 'true' && $onlineEnabled !== true)) {
+                $validator->errors()->add('paymentMethod', 'Online payment is currently disabled. Please select cash payment.');
             }
         });
     }
