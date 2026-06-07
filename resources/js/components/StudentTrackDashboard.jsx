@@ -69,6 +69,9 @@ export default function StudentTrackDashboard({ onNavigate }) {
   const [request, setRequest] = useState(null);
   const [error, setError] = useState('');
   const [cancelling, setCancelling] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelStudentNumber, setCancelStudentNumber] = useState('');
+  const [cancelModalError, setCancelModalError] = useState('');
 
   const getCsrfToken = () =>
     document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
@@ -102,10 +105,22 @@ export default function StudentTrackDashboard({ onNavigate }) {
     setSearching(false);
   };
 
-  const handleCancel = async () => {
-    if (!request || !confirm('Are you sure you want to cancel this request?')) return;
+  const handleCancelClick = () => {
+    setCancelStudentNumber('');
+    setCancelModalError('');
+    setShowCancelModal(true);
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!request) return;
+
+    if (!cancelStudentNumber.trim()) {
+      setCancelModalError('Please enter your Student Number.');
+      return;
+    }
 
     setCancelling(true);
+    setCancelModalError('');
     try {
       const res = await fetch(`/requests/${encodeURIComponent(request.tracking_number)}/cancel`, {
         method: 'PATCH',
@@ -114,14 +129,17 @@ export default function StudentTrackDashboard({ onNavigate }) {
           'Accept': 'application/json',
           'X-CSRF-TOKEN': getCsrfToken(),
         },
+        body: JSON.stringify({ student_number: cancelStudentNumber.trim() }),
       });
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        setError(data.message || 'Failed to cancel request.');
+        setCancelModalError(data.message || 'Failed to cancel request.');
         setCancelling(false);
         return;
       }
+
+      setShowCancelModal(false);
 
       const searchRes = await fetch(`/requests/${encodeURIComponent(request.tracking_number)}`, {
         headers: { 'Accept': 'application/json' },
@@ -129,9 +147,15 @@ export default function StudentTrackDashboard({ onNavigate }) {
       const searchData = await searchRes.json();
       if (searchData.success) setRequest(searchData.request);
     } catch {
-      setError('Network error. Please check your connection.');
+      setCancelModalError('Network error. Please check your connection.');
     }
     setCancelling(false);
+  };
+
+  const handleCancelModalClose = () => {
+    if (cancelling) return;
+    setShowCancelModal(false);
+    setCancelModalError('');
   };
 
   const timeline = request ? buildTimeline(request.status, request.payment_status) : [];
@@ -272,7 +296,7 @@ export default function StudentTrackDashboard({ onNavigate }) {
                     {request.status === 'Pending' && (
                       <div className="mt-6 pt-4 border-t border-outline-variant flex justify-end">
                         <button
-                          onClick={handleCancel}
+                          onClick={handleCancelClick}
                           disabled={cancelling}
                           className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 disabled:opacity-50 transition-colors cursor-pointer"
                         >
@@ -460,6 +484,51 @@ export default function StudentTrackDashboard({ onNavigate }) {
           <span className="font-label-sm text-[10px] font-bold">TRACK</span>
         </button>
       </nav>
+
+      {showCancelModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4" onClick={handleCancelModalClose}>
+          <div className="bg-surface rounded-2xl shadow-xl border border-outline-variant w-full max-w-md p-6 animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-headline-sm font-bold text-on-surface mb-2">Confirm Cancellation</h3>
+            <p className="text-body-md text-on-surface-variant mb-4">Please enter your Student Number to confirm cancellation.</p>
+
+            {cancelModalError && (
+              <div className="mb-4 p-3 rounded-lg bg-error/10 border border-error/30">
+                <p className="text-body-sm text-error flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  {cancelModalError}
+                </p>
+              </div>
+            )}
+
+            <input
+              type="text"
+              value={cancelStudentNumber}
+              onChange={(e) => setCancelStudentNumber(e.target.value)}
+              placeholder="Enter your Student Number"
+              disabled={cancelling}
+              className="w-full px-4 py-3 bg-surface-container-lowest border border-outline rounded-xl focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all font-body-md mb-6 disabled:opacity-50"
+              autoFocus
+            />
+
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={handleCancelModalClose}
+                disabled={cancelling}
+                className="px-5 py-2.5 rounded-lg font-label-md text-label-md font-bold text-on-surface-variant bg-surface-container-high hover:bg-surface-container-higher transition-colors cursor-pointer disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmCancel}
+                disabled={cancelling}
+                className="px-5 py-2.5 rounded-lg font-label-md text-label-md font-bold text-on-primary bg-red-600 hover:bg-red-700 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                {cancelling ? 'Cancelling...' : 'Confirm Cancellation'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

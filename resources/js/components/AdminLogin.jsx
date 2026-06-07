@@ -34,39 +34,32 @@ export default function AdminLogin({ onLoginSuccess }) {
             },
             body: JSON.stringify({ email, password, remember_me: rememberMe })
         })
-        .then(response => {
-            if (!response.ok) {
-                return response.json().then(err => {
-                    throw new Error(err.message || 'Login failed');
-                }).catch(() => {
-                    throw new Error('Server error. Please try again.');
-                });
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.status === 'success') {
-                setStatus('success');
-                onLoginSuccess(data.user);
-            } else {
-                throw new Error(data.message || 'Login failed');
-            }
-        })
-        .catch(error => {
-            setStatus('error');
-            setErrorMessage(error.message || 'An error occurred during login');
-        });
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        throw new Error(err.message || 'Login failed');
+                    }).catch(() => {
+                        throw new Error('Server error. Please try again.');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    setStatus('success');
+                    onLoginSuccess(data.user);
+                } else {
+                    throw new Error(data.message || 'Login failed');
+                }
+            })
+            .catch(error => {
+                setStatus('error');
+                setErrorMessage(error.message || 'An error occurred during login');
+            });
     };
 
     return (
         <div className="bg-surface font-body-md text-on-surface flex flex-col min-h-screen">
-            {/* TopNavBar */}
-            <header className="bg-surface border-b border-outline-variant flex justify-between items-center w-full px-margin-mobile md:px-margin-desktop h-16 z-50">
-                <div className="flex items-center gap-3">
-                    <span className="text-headline-sm font-headline-sm font-bold text-primary">Top Link Global College</span>
-                </div>
-            </header>
-
             {/* Main Content Area */}
             <main className="flex-grow flex items-center justify-center px-margin-mobile py-12">
                 <div className="animate-card w-full max-w-[440px] bg-surface-container-lowest border border-outline-variant rounded-lg p-8 md:p-10 shadow-sm">
@@ -180,8 +173,8 @@ export default function AdminLogin({ onLoginSuccess }) {
                         {/* Submit Button */}
                         <button
                             className={`mt-4 w-full py-4 px-6 rounded-lg font-headline-sm text-headline-sm hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer 
-                                ${status === 'success' 
-                                    ? 'bg-on-primary-container text-primary font-semibold' 
+                                ${status === 'success'
+                                    ? 'bg-on-primary-container text-primary font-semibold'
                                     : status === 'error'
                                         ? 'bg-error text-on-error'
                                         : 'bg-primary text-on-primary'

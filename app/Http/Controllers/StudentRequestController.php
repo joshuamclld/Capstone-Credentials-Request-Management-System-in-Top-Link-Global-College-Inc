@@ -7,6 +7,7 @@ use App\Models\Notification;
 use App\Models\StudentRequest;
 use App\Models\Document;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class StudentRequestController extends Controller
@@ -92,7 +93,7 @@ class StudentRequestController extends Controller
         ]);
     }
 
-    public function cancel(string $trackingNumber)
+    public function cancel(Request $cancelRequest, string $trackingNumber)
     {
         $request = StudentRequest::where('tracking_number', $trackingNumber)->first();
 
@@ -101,6 +102,14 @@ class StudentRequestController extends Controller
                 'success' => false,
                 'message' => 'Tracking number not found.',
             ], 404);
+        }
+
+        $studentNumber = $cancelRequest->input('student_number');
+        if (!$studentNumber || $studentNumber !== $request->student_number) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This request does not belong to you.',
+            ], 403);
         }
 
         if ($request->status !== 'Pending') {
