@@ -7,16 +7,9 @@ import DashboardMobileCard from '../../DashboardMobileCard';
 import DashboardPagination from '../../DashboardPagination';
 import EmptyState from '../../EmptyState';
 import DashboardDropdown from '../../../common/DashboardDropdown';
+import { systemAdminSidebarItems } from '../../config/sidebarItems';
 
 const tableHeaders = ['Action', 'Performed By', 'Target', 'Description', 'Date & Time'];
-
-const sidebarItems = [
-    { label: 'Dashboard', icon: LayoutDashboard, path: '/system-admin-dashboard' },
-    { label: 'User Management', icon: Users, path: '/system-admin/users' },
-    { label: 'Credential Types', icon: FileText, path: '/system-admin/credentials' },
-    { label: 'Reports & Analytics', icon: ChartColumn, path: '/system-admin/reports' },
-    { label: 'Audit Logs', icon: RefreshCw, path: '/system-admin/audit-logs' },
-];
 
 const actionFilterOptions = ['All', 'update_status', 'update_remarks', 'verify_payment', 'create_user', 'update_user', 'delete_user', 'create_document', 'update_document', 'deactivate_document', 'update_settings'];
 
@@ -75,7 +68,7 @@ export default function SystemAdminAuditLogs({ user, onLogout, onNavigate }) {
         <DashboardLayout
             title="Audit Logs"
             subtitle="Track all actions performed across the system."
-            sidebarItems={sidebarItems}
+            sidebarItems={systemAdminSidebarItems}
             currentUser={user}
             roleLabel="System Administrator"
             onLogout={onLogout}

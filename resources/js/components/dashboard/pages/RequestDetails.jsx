@@ -2,14 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FileText, LayoutDashboard, Clock, CheckCircle, Search, ArrowLeft, ChevronRight, CreditCard, User, BookOpen, MessageSquare, ShieldAlert, ShieldCheck } from 'lucide-react';
 import DashboardLayout from '../DashboardLayout';
 import DashboardDropdown from '../../common/DashboardDropdown';
-
-const sidebarItems = [
-    { label: 'Dashboard', icon: LayoutDashboard, path: '/admin-dashboard' },
-    { label: 'Request Management', icon: FileText, path: '/admin/requests' },
-    { label: 'Process Requests', icon: Clock, path: '/admin/process' },
-    { label: 'Release Credentials', icon: CheckCircle, path: '/admin/release' },
-    { label: 'Search Records', icon: Search, path: '/admin/search' },
-];
+import { registrarSidebarItems } from '../config/sidebarItems';
 
 const statusOptions = [
     { label: 'Pending', value: 'Pending' },
@@ -143,7 +136,7 @@ export default function RequestDetails({ user, onLogout, onNavigate }) {
         <DashboardLayout
             title="Request Details"
             subtitle="View and manage credential request details."
-            sidebarItems={sidebarItems}
+            sidebarItems={registrarSidebarItems}
             currentUser={user}
             roleLabel="Administrator"
             onLogout={onLogout}

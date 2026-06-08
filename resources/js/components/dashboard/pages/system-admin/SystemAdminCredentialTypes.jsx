@@ -7,16 +7,11 @@ import DashboardMobileCard from '../../DashboardMobileCard';
 import DashboardPagination from '../../DashboardPagination';
 import StatusBadge from '../../StatusBadge';
 import EmptyState from '../../EmptyState';
+import { systemAdminSidebarItems } from '../../config/sidebarItems';
 
 const tableHeaders = ['Code', 'Name', 'Price', 'Processing Days', 'Per Semester', 'Per Page', 'Status', 'Action'];
 
-const sidebarItems = [
-    { label: 'Dashboard', icon: LayoutDashboard, path: '/system-admin-dashboard' },
-    { label: 'User Management', icon: Users, path: '/system-admin/users' },
-    { label: 'Credential Types', icon: FileText, path: '/system-admin/credentials' },
-    { label: 'Reports & Analytics', icon: ChartColumn, path: '/system-admin/reports' },
-    { label: 'Audit Logs', icon: RefreshCw, path: '/system-admin/audit-logs' },
-];
+
 
 export default function SystemAdminCredentialTypes({ user, onLogout, onNavigate }) {
     const [query, setQuery] = useState('');
@@ -186,7 +181,7 @@ export default function SystemAdminCredentialTypes({ user, onLogout, onNavigate 
         <DashboardLayout
             title="Credential Types"
             subtitle="Manage credential/document types available for requests."
-            sidebarItems={sidebarItems}
+            sidebarItems={systemAdminSidebarItems}
             currentUser={user}
             roleLabel="System Administrator"
             onLogout={onLogout}

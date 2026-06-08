@@ -3,7 +3,11 @@ import { createRoot } from 'react-dom/client';
 import StudentLanding from './components/StudentLanding';
 import StudentRequestForm from './components/StudentRequestForm';
 import StudentTrackDashboard from './components/StudentTrackDashboard';
+import StudentLogin from './components/StudentLogin';
+import StudentRegister from './components/StudentRegister';
+import StudentOtpVerify from './components/StudentOtpVerify';
 import AdminLogin from './components/AdminLogin';
+import ErrorBoundary from './components/ErrorBoundary';
 
 import RegistrarDashboard from './components/dashboard/pages/RegistrarDashboard';
 import RequestManagement from './components/dashboard/pages/RequestManagement';
@@ -28,6 +32,9 @@ function App() {
     const [authChecked, setAuthChecked] = useState(false);
     const [user, setUser] = useState(null);
 
+    const [studentUser, setStudentUser] = useState(null);
+    const [studentAuthChecked, setStudentAuthChecked] = useState(false);
+
     const [currentPath, setCurrentPath] = useState(window.location.pathname);
 
   // Check authentication status on app load
@@ -46,6 +53,17 @@ function App() {
       });
   }, []);
 
+  // Check student authentication status on app load
+  useEffect(() => {
+    fetch('/student/check')
+      .then(res => res.json())
+      .then(data => {
+        if (data.authenticated) setStudentUser(data.student);
+        setStudentAuthChecked(true);
+      })
+      .catch(() => setStudentAuthChecked(true));
+  }, []);
+
   // Listen to popstate event (browser back/forward buttons)
   useEffect(() => {
     const handlePopState = () => {
@@ -61,6 +79,22 @@ function App() {
     setCurrentPath(path);
     // Scroll to top on navigation
     window.scrollTo({ top: 0, behavior: 'instant' });
+  };
+
+  const handleStudentLoginSuccess = (studentData) => {
+    setStudentUser(studentData);
+    navigate('/track');
+  };
+
+  const handleStudentModalLogin = (studentData) => {
+    setStudentUser(studentData);
+  };
+
+  const handleStudentLogout = () => {
+    setStudentUser(null);
+    navigate('/');
+    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    fetch('/student/logout', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token } }).catch(() => {});
   };
 
   const clearAuth = () => {
@@ -234,11 +268,26 @@ function App() {
   }
 
   if (currentPath === '/request') {
-    return <StudentRequestForm onNavigate={navigate} />;
+    if (!studentAuthChecked) return <div className="flex items-center justify-center min-h-screen text-on-surface-variant">Loading...</div>;
+    if (!studentUser) return <StudentLanding student={studentUser} onLogout={handleStudentLogout} onNavigate={navigate} currentPath={currentPath} initialAuthTab="login" onStudentLogin={handleStudentModalLogin} />;
+    return <StudentRequestForm onNavigate={navigate} student={studentUser} onLogout={handleStudentLogout} currentPath={currentPath} />;
   }
 
   if (currentPath === '/track') {
-    return <StudentTrackDashboard onNavigate={navigate} />;
+    return <StudentTrackDashboard studentUser={studentUser} onLogout={handleStudentLogout} onNavigate={navigate} onStudentLogin={handleStudentModalLogin} currentPath={currentPath} />;
+  }
+
+  // Student Authentication Routes
+  if (currentPath === '/student/login') {
+    return <StudentLogin onNavigate={navigate} onLoginSuccess={handleStudentLoginSuccess} />;
+  }
+
+  if (currentPath === '/student/register') {
+    return <StudentRegister onNavigate={navigate} />;
+  }
+
+  if (currentPath === '/student/verify-otp') {
+    return <StudentOtpVerify onNavigate={navigate} onLoginSuccess={handleStudentLoginSuccess} />;
   }
 
   // Legacy redirect — /system/* and /system-* → /system-admin/*
@@ -273,7 +322,7 @@ function App() {
   }
 
   // Fallback: Default to Student Landing Page
-  return <StudentLanding onNavigate={navigate} />;
+  return <StudentLanding student={studentUser} onLogout={handleStudentLogout} onNavigate={navigate} currentPath={currentPath} onStudentLogin={handleStudentModalLogin} />;
 }
 
-createRoot(document.getElementById('app')).render(<App />);
+createRoot(document.getElementById('app')).render(<ErrorBoundary><App /></ErrorBoundary>);

@@ -3,14 +3,7 @@ import { LayoutDashboard, Users, FileText, ArrowLeft, Mail, Phone, Calendar, Shi
 import DashboardLayout from '../../DashboardLayout';
 import StatusBadge from '../../StatusBadge';
 import EmptyState from '../../EmptyState';
-
-const sidebarItems = [
-    { label: 'Dashboard', icon: LayoutDashboard, path: '/system-admin-dashboard' },
-    { label: 'User Management', icon: Users, path: '/system-admin/users' },
-    { label: 'Credential Types', icon: FileText, path: '/system-admin/credentials' },
-    { label: 'Reports & Analytics', icon: ChartColumn, path: '/system-admin/reports' },
-    { label: 'Audit Logs', icon: RefreshCw, path: '/system-admin/audit-logs' },
-];
+import { systemAdminSidebarItems } from '../../config/sidebarItems';
 
 export default function SystemAdminUserDetails({ user, onLogout, onNavigate }) {
     const [userData, setUserData] = useState(null);
@@ -31,7 +24,7 @@ export default function SystemAdminUserDetails({ user, onLogout, onNavigate }) {
         <DashboardLayout
             title="User Details"
             subtitle={userData ? `Details for ${userData.name}` : 'View user information'}
-            sidebarItems={sidebarItems}
+            sidebarItems={systemAdminSidebarItems}
             currentUser={user}
             roleLabel="System Administrator"
             onLogout={onLogout}

@@ -16,6 +16,13 @@ class StudentRequestController extends Controller
     {
         $validated = $request->validated();
 
+        if (auth('student')->check()) {
+            $student = auth('student')->user();
+            $validated['studentId'] = $student->student_number;
+            $validated['fullName'] = $student->last_name . ', ' . $student->first_name;
+            $validated['email'] = $student->email;
+        }
+
         return DB::transaction(function () use ($validated) {
 
             $documents = Document::whereIn('code', $validated['selectedDocs'])->get();
@@ -33,6 +40,7 @@ class StudentRequestController extends Controller
 
             $studentRequest = StudentRequest::create([
                 'tracking_number' => $trackingNumber,
+                'student_id' => auth('student')->id(),
                 'student_number' => $validated['studentId'],
                 'full_name' => $validated['fullName'],
                 'contact_number' => $validated['contactNo'],
@@ -74,8 +82,12 @@ class StudentRequestController extends Controller
         $documentNames = $documents->pluck('name')->toArray();
         $processingDays = $documents->max('processing_days');
 
+        $studentId = auth('student')->id();
+
         return response()->json([
             'success' => true,
+            'is_authenticated' => $studentId !== null,
+            'is_owner' => $studentId !== null && $request->student_id === $studentId,
             'request' => [
                 'tracking_number' => $request->tracking_number,
                 'student_name' => $request->full_name,
@@ -93,8 +105,17 @@ class StudentRequestController extends Controller
         ]);
     }
 
-    public function cancel(Request $cancelRequest, string $trackingNumber)
+    public function cancel(string $trackingNumber)
     {
+        $student = auth('student')->user();
+
+        if (!$student) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You must be logged in to cancel a request.',
+            ], 401);
+        }
+
         $request = StudentRequest::where('tracking_number', $trackingNumber)->first();
 
         if (!$request) {
@@ -104,8 +125,7 @@ class StudentRequestController extends Controller
             ], 404);
         }
 
-        $studentNumber = $cancelRequest->input('student_number');
-        if (!$studentNumber || $studentNumber !== $request->student_number) {
+        if (!$request->student_id || $request->student_id !== $student->id) {
             return response()->json([
                 'success' => false,
                 'message' => 'This request does not belong to you.',

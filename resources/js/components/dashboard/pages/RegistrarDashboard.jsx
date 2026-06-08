@@ -8,6 +8,7 @@ import DashboardMobileCard from '../DashboardMobileCard';
 import StatusBadge from '../StatusBadge';
 import EmptyState from '../EmptyState';
 import DashboardPagination from '../DashboardPagination';
+import { registrarSidebarItems } from '../config/sidebarItems';
 
 const statDefs = [
     { label: 'Total Requests', key: 'total', icon: FileText, iconBg: 'bg-emerald-50', iconColor: 'text-emerald-700' },
@@ -18,14 +19,6 @@ const statDefs = [
 ];
 
 const tableHeaders = ['Reference No.', 'Student Name', 'Requested Documents', 'Payment Status', 'Request Status', 'Date Requested', 'Action'];
-
-const sidebarItems = [
-    { label: 'Dashboard', icon: LayoutDashboard, path: '/admin-dashboard' },
-    { label: 'Request Management', icon: FileText, path: '/admin/requests' },
-    { label: 'Process Requests', icon: Clock, path: '/admin/process' },
-    { label: 'Release Credentials', icon: CheckCircle, path: '/admin/release' },
-    { label: 'Search Records', icon: Search, path: '/admin/search' },
-];
 
 export default function RegistrarDashboard({ user, onLogout, onNavigate }) {
     const [query, setQuery] = useState('');
@@ -90,7 +83,7 @@ export default function RegistrarDashboard({ user, onLogout, onNavigate }) {
         <DashboardLayout
             title="Registrar Dashboard"
             subtitle="Manage and process student credential requests."
-            sidebarItems={sidebarItems}
+            sidebarItems={registrarSidebarItems}
             currentUser={user}
             roleLabel="Administrator"
             onLogout={onLogout}

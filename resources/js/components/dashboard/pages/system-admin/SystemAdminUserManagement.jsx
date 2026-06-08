@@ -8,6 +8,7 @@ import DashboardPagination from '../../DashboardPagination';
 import StatusBadge from '../../StatusBadge';
 import EmptyState from '../../EmptyState';
 import DashboardDropdown from '../../../common/DashboardDropdown';
+import { systemAdminSidebarItems } from '../../config/sidebarItems';
 
 const tableHeaders = ['Name', 'Email', 'Role', 'Status', 'Date Created', 'Action'];
 
@@ -16,14 +17,6 @@ const roleColors = {
     cashier: 'bg-emerald-100 text-emerald-800 border-emerald-300',
     system_admin: 'bg-purple-100 text-purple-800 border-purple-300',
 };
-
-const sidebarItems = [
-    { label: 'Dashboard', icon: LayoutDashboard, path: '/system-admin-dashboard' },
-    { label: 'User Management', icon: Users, path: '/system-admin/users' },
-    { label: 'Credential Types', icon: FileText, path: '/system-admin/credentials' },
-    { label: 'Reports & Analytics', icon: ChartColumn, path: '/system-admin/reports' },
-    { label: 'Audit Logs', icon: RefreshCw, path: '/system-admin/audit-logs' },
-];
 
 const roleFilterOptions = ['All', 'admin', 'cashier', 'system_admin'];
 
@@ -225,7 +218,7 @@ export default function SystemAdminUserManagement({ user, onLogout, onNavigate, 
         <DashboardLayout
             title="User Management"
             subtitle="Manage system users and their roles."
-            sidebarItems={sidebarItems}
+            sidebarItems={systemAdminSidebarItems}
             currentUser={user}
             roleLabel="System Administrator"
             onLogout={onLogout}

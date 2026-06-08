@@ -4,6 +4,7 @@ import Chart from 'react-apexcharts';
 import DashboardLayout from '../../DashboardLayout';
 import DashboardStatCard from '../../DashboardStatCard';
 import EmptyState from '../../EmptyState';
+import { systemAdminSidebarItems } from '../../config/sidebarItems';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -14,14 +15,6 @@ const statDefs = [
     { label: 'Average Fee', key: 'average_fee', icon: TrendingUp, iconBg: 'bg-purple-50', iconColor: 'text-purple-700' },
     { label: 'This Month', key: 'this_month', icon: Clock, iconBg: 'bg-orange-50', iconColor: 'text-orange-700' },
     { label: 'Month Revenue', key: 'this_month_revenue', icon: DollarSign, iconBg: 'bg-yellow-50', iconColor: 'text-yellow-700' },
-];
-
-const sidebarItems = [
-    { label: 'Dashboard', icon: LayoutDashboard, path: '/system-admin-dashboard' },
-    { label: 'User Management', icon: Users, path: '/system-admin/users' },
-    { label: 'Credential Types', icon: FileText, path: '/system-admin/credentials' },
-    { label: 'Reports & Analytics', icon: ChartColumn, path: '/system-admin/reports' },
-    { label: 'Audit Logs', icon: RefreshCw, path: '/system-admin/audit-logs' },
 ];
 
 const STATUS_COLORS = { Pending: '#cea700', Processing: '#326574', 'Ready for Release': '#154212', Claimed: '#2d5a27' };
@@ -142,7 +135,7 @@ export default function SystemAdminReportsAnalytics({ user, onLogout, onNavigate
         <DashboardLayout
             title="Reports & Analytics"
             subtitle="View system-wide reports and analytics."
-            sidebarItems={sidebarItems}
+            sidebarItems={systemAdminSidebarItems}
             currentUser={user}
             roleLabel="System Administrator"
             onLogout={onLogout}

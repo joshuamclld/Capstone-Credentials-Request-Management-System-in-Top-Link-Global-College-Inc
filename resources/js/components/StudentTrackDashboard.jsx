@@ -1,5 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, FileText, BadgeCheck, Clock, PackageCheck, CheckCheck, AlertCircle, XCircle } from 'lucide-react';
+import StudentNavbar from './student/StudentNavbar';
+import StudentFooter from './student/StudentFooter';
+import StudentMobileNav from './student/StudentMobileNav';
+import StudentAuthModal from './student/StudentAuthModal';
 
 const STATUS_LABELS = {
   'Pending': { label: 'Pending Review', bg: 'bg-amber-100 text-amber-800 border-amber-300' },
@@ -63,15 +67,17 @@ function buildTimeline(status, payment_status) {
   }));
 }
 
-export default function StudentTrackDashboard({ onNavigate }) {
+export default function StudentTrackDashboard({ studentUser, onLogout, onNavigate, onStudentLogin, currentPath }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searching, setSearching] = useState(false);
   const [request, setRequest] = useState(null);
+  const [isOwner, setIsOwner] = useState(false);
   const [error, setError] = useState('');
   const [cancelling, setCancelling] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
-  const [cancelStudentNumber, setCancelStudentNumber] = useState('');
   const [cancelModalError, setCancelModalError] = useState('');
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModalTab, setAuthModalTab] = useState('login');
 
   const getCsrfToken = () =>
     document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
@@ -98,6 +104,7 @@ export default function StudentTrackDashboard({ onNavigate }) {
       }
 
       setRequest(data.request);
+      setIsOwner(!!data.is_owner);
     } catch {
       setError('Network error. Please check your connection.');
     }
@@ -106,18 +113,12 @@ export default function StudentTrackDashboard({ onNavigate }) {
   };
 
   const handleCancelClick = () => {
-    setCancelStudentNumber('');
     setCancelModalError('');
     setShowCancelModal(true);
   };
 
   const handleConfirmCancel = async () => {
     if (!request) return;
-
-    if (!cancelStudentNumber.trim()) {
-      setCancelModalError('Please enter your Student Number.');
-      return;
-    }
 
     setCancelling(true);
     setCancelModalError('');
@@ -129,7 +130,6 @@ export default function StudentTrackDashboard({ onNavigate }) {
           'Accept': 'application/json',
           'X-CSRF-TOKEN': getCsrfToken(),
         },
-        body: JSON.stringify({ student_number: cancelStudentNumber.trim() }),
       });
       const data = await res.json();
 
@@ -158,32 +158,42 @@ export default function StudentTrackDashboard({ onNavigate }) {
     setCancelModalError('');
   };
 
+  const isLoggedIn = Boolean(studentUser);
+
+  useEffect(() => {
+    if (studentUser && request) {
+      fetch(`/requests/${encodeURIComponent(request.tracking_number)}`, {
+        headers: { 'Accept': 'application/json' },
+      })
+        .then(res => res.json())
+        .then(data => { if (data.success) { setRequest(data.request); setIsOwner(!!data.is_owner); } })
+        .catch(() => {});
+    }
+  }, [studentUser]);
+
   const timeline = request ? buildTimeline(request.status, request.payment_status) : [];
+
+  const openAuth = () => { setAuthModalTab('login'); setAuthModalOpen(true); };
+  const closeAuth = () => setAuthModalOpen(false);
+
+  const handleAuthLoginSuccess = (studentData) => {
+    closeAuth();
+    if (onStudentLogin) onStudentLogin(studentData);
+    if (request) {
+      fetch(`/requests/${encodeURIComponent(request.tracking_number)}`, {
+        headers: { 'Accept': 'application/json' },
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) { setRequest(data.request); setIsOwner(!!data.is_owner); }
+        })
+        .catch(() => {});
+    }
+  };
 
   return (
     <div className="font-body-md text-on-surface bg-surface min-h-screen flex flex-col">
-      {/* TopAppBar */}
-      <header className="sticky top-0 z-50 flex justify-between items-center px-margin-mobile md:px-margin-desktop h-20 w-full bg-surface/80 backdrop-blur-md border-b border-outline-variant">
-        <div className="flex items-center gap-4 cursor-pointer" onClick={(e) => { e.preventDefault(); onNavigate('/'); }}>
-          <img
-            alt="Top Link Global College Logo"
-            className="h-14 w-auto object-contain"
-            src="/images/logo.png"
-            onError={(e) => {
-              e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 24 24' fill='%231a6e38'%3E%3Cpath d='M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72z'/%3E%3C/svg%3E";
-            }}
-          />
-          <div className="flex flex-col">
-            <span className="text-headline-sm font-bold text-primary leading-tight">TLGC</span>
-            <span className="text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider">Credentials</span>
-          </div>
-        </div>
-        <nav className="hidden md:flex gap-2 items-center">
-          <a className="text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high transition-all px-5 py-2.5 rounded-full" href="/" onClick={(e) => { e.preventDefault(); onNavigate('/'); }}>Home</a>
-          <a className="text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high transition-all px-5 py-2.5 rounded-full" href="/request" onClick={(e) => { e.preventDefault(); onNavigate('/request'); }}>Request</a>
-          <a className="text-primary font-bold font-label-md text-label-md hover:bg-primary/10 transition-all px-5 py-2.5 rounded-full" href="/track" onClick={(e) => { e.preventDefault(); onNavigate('/track'); }}>Track</a>
-        </nav>
-      </header>
+      <StudentNavbar student={studentUser} onLogout={onLogout} onNavigate={onNavigate} onOpenAuth={openAuth} currentPath={currentPath} />
 
       <main className="flex-grow flex flex-col pb-20 md:pb-8">
         <div className="px-margin-mobile md:px-margin-desktop py-8 max-w-container-max mx-auto w-full">
@@ -293,7 +303,7 @@ export default function StudentTrackDashboard({ onNavigate }) {
                       <span className="text-2xl font-bold text-primary">₱ {(Number(request.total_fee) || 0).toFixed(2)}</span>
                     </div>
 
-                    {request.status === 'Pending' && (
+                    {request.status === 'Pending' && isOwner && (
                       <div className="mt-6 pt-4 border-t border-outline-variant flex justify-end">
                         <button
                           onClick={handleCancelClick}
@@ -302,6 +312,16 @@ export default function StudentTrackDashboard({ onNavigate }) {
                         >
                           <XCircle className="w-4 h-4" />
                           {cancelling ? 'Cancelling...' : 'Cancel Request'}
+                        </button>
+                      </div>
+                    )}
+                    {request.status === 'Pending' && !isLoggedIn && (
+                      <div className="mt-6 pt-4 border-t border-outline-variant flex justify-end">
+                        <button
+                          onClick={openAuth}
+                          className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-primary bg-primary/5 border border-primary/30 rounded-lg hover:bg-primary/10 transition-colors cursor-pointer"
+                        >
+                          Sign In to Cancel
                         </button>
                       </div>
                     )}
@@ -419,77 +439,15 @@ export default function StudentTrackDashboard({ onNavigate }) {
         </div>
       </main>
 
-      <footer className="w-full py-16 px-margin-mobile md:px-margin-desktop bg-surface-container-highest border-t border-outline-variant">
-        <div className="max-w-container-max mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-10">
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-3">
-              <img
-                alt="Logo"
-                className="h-10 w-auto opacity-70 grayscale hover:grayscale-0 transition-all"
-                src="/images/logo.png"
-                onError={(e) => {
-                  e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 24 24' fill='%231a6e38'%3E%3Cpath d='M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72z'/%3E%3C/svg%3E";
-                }}
-              />
-              <span className="font-headline-sm text-xl text-on-surface">Top Link Global College</span>
-            </div>
-            <p className="font-body-sm text-on-surface-variant">Empowering students through accessible academic records since 2018.</p>
-            <p className="font-label-sm text-outline">&copy; {new Date().getFullYear()} Top Link Global College. All Rights Reserved.</p>
-          </div>
+      <StudentFooter student={studentUser} onNavigate={onNavigate} onOpenAuth={openAuth} />
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-12">
-            <div className="flex flex-col gap-4">
-              <span className="font-label-md font-bold text-primary uppercase">Quick Links</span>
-              <nav className="flex flex-col gap-2">
-                <a className="text-body-sm text-on-surface-variant hover:text-primary transition-colors" href="/request" onClick={(e) => { e.preventDefault(); onNavigate('/request'); }}>Request Form</a>
-                <a className="text-body-sm text-on-surface-variant hover:text-primary transition-colors" href="/track" onClick={(e) => e.preventDefault()}>Track Status</a>
-                <a className="text-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Payment Info</a>
-              </nav>
-            </div>
-            <div className="flex flex-col gap-4">
-              <span className="font-label-md font-bold text-primary uppercase">Legal</span>
-              <nav className="flex flex-col gap-2">
-                <a className="text-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Privacy Policy</a>
-                <a className="text-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Terms of Use</a>
-              </nav>
-            </div>
-            <div className="flex flex-col gap-4 col-span-2 sm:col-span-1">
-              <span className="font-label-md font-bold text-primary uppercase">Support</span>
-              <nav className="flex flex-col gap-2">
-                <a className="text-body-sm text-on-surface-variant hover:text-primary flex items-center gap-2" href="mailto:support@toplink.edu">
-                  <span className="material-symbols-outlined text-[18px]">mail</span>
-                  support@toplink.edu
-                </a>
-                <a className="text-body-sm text-on-surface-variant hover:text-primary flex items-center gap-2" href="#">
-                  <span className="material-symbols-outlined text-[18px]">help</span>
-                  Help Center
-                </a>
-              </nav>
-            </div>
-          </div>
-        </div>
-      </footer>
-
-      <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-16 md:hidden px-2 pb-safe bg-surface border-t border-outline-variant shadow-lg">
-        <button onClick={(e) => { e.preventDefault(); onNavigate('/'); }} className="flex flex-col items-center justify-center text-on-surface-variant px-5 py-1.5 active:scale-95 transition-transform cursor-pointer">
-          <span className="material-symbols-outlined">home</span>
-          <span className="font-label-sm text-[10px] font-bold">HOME</span>
-        </button>
-        <button onClick={(e) => { e.preventDefault(); onNavigate('/request'); }} className="flex flex-col items-center justify-center text-on-surface-variant px-5 py-1.5 active:scale-95 transition-transform cursor-pointer">
-          <span className="material-symbols-outlined">add_circle</span>
-          <span className="font-label-sm text-[10px] font-bold">REQUEST</span>
-        </button>
-        <button onClick={(e) => { e.preventDefault(); onNavigate('/track'); }} className="flex flex-col items-center justify-center text-primary bg-primary-fixed rounded-full px-5 py-1.5 active:scale-95 transition-transform cursor-pointer">
-          <span className="material-symbols-outlined">analytics</span>
-          <span className="font-label-sm text-[10px] font-bold">TRACK</span>
-        </button>
-      </nav>
+      <StudentMobileNav active={currentPath} student={studentUser} onNavigate={onNavigate} onOpenAuth={openAuth} />
 
       {showCancelModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4" onClick={handleCancelModalClose}>
           <div className="bg-surface rounded-2xl shadow-xl border border-outline-variant w-full max-w-md p-6 animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-headline-sm font-bold text-on-surface mb-2">Confirm Cancellation</h3>
-            <p className="text-body-md text-on-surface-variant mb-4">Please enter your Student Number to confirm cancellation.</p>
+            <p className="text-body-md text-on-surface-variant mb-6">Are you sure you want to cancel this request? This action cannot be undone.</p>
 
             {cancelModalError && (
               <div className="mb-4 p-3 rounded-lg bg-error/10 border border-error/30">
@@ -499,16 +457,6 @@ export default function StudentTrackDashboard({ onNavigate }) {
                 </p>
               </div>
             )}
-
-            <input
-              type="text"
-              value={cancelStudentNumber}
-              onChange={(e) => setCancelStudentNumber(e.target.value)}
-              placeholder="Enter your Student Number"
-              disabled={cancelling}
-              className="w-full px-4 py-3 bg-surface-container-lowest border border-outline rounded-xl focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all font-body-md mb-6 disabled:opacity-50"
-              autoFocus
-            />
 
             <div className="flex gap-3 justify-end">
               <button
@@ -529,6 +477,13 @@ export default function StudentTrackDashboard({ onNavigate }) {
           </div>
         </div>
       )}
+
+      <StudentAuthModal
+        isOpen={authModalOpen}
+        defaultTab={authModalTab}
+        onClose={closeAuth}
+        onLoginSuccess={handleAuthLoginSuccess}
+      />
     </div>
   );
 }

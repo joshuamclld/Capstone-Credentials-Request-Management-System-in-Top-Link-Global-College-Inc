@@ -8,16 +8,11 @@ import StatusBadge from '../StatusBadge';
 import EmptyState from '../EmptyState';
 import DashboardPagination from '../DashboardPagination';
 import DashboardDropdown from '../../common/DashboardDropdown';
+import { cashierSidebarItems } from '../config/sidebarItems';
 
 const tableHeaders = ['Tracking No.', 'Student Name', 'Requested Documents', 'Payment Method', 'Total Fee', 'Payment Status', 'Date Requested', 'Action'];
 
 const filterOptions = ['All', 'Cash Payments', 'Online Verification'];
-
-const sidebarItems = [
-    { label: 'Dashboard', icon: LayoutDashboard, path: '/cashier-dashboard' },
-    { label: 'Payment Queue', icon: Clock, path: '/cashier/payments' },
-    { label: 'Paid Transactions', icon: CheckCircle, path: '/cashier/transactions' },
-];
 
 const paymentBadgeStyle = {
     'unpaid': 'bg-red-50 text-red-700 border-red-200',
@@ -116,7 +111,7 @@ export default function PaymentQueue({ user, onLogout, onNavigate }) {
         <DashboardLayout
             title="Payment Queue"
             subtitle="Verify pending payments."
-            sidebarItems={sidebarItems}
+            sidebarItems={cashierSidebarItems}
             currentUser={user}
             roleLabel="Cashier / Accounting"
             onLogout={onLogout}

@@ -1,12 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { LayoutDashboard, Clock, CheckCircle, Search, ArrowLeft, CreditCard, User, BookOpen, ShieldCheck } from 'lucide-react';
 import DashboardLayout from '../DashboardLayout';
-
-const sidebarItems = [
-    { label: 'Dashboard', icon: LayoutDashboard, path: '/cashier-dashboard' },
-    { label: 'Payment Queue', icon: Clock, path: '/cashier/payments' },
-    { label: 'Paid Transactions', icon: CheckCircle, path: '/cashier/transactions' },
-];
+import { cashierSidebarItems } from '../config/sidebarItems';
 
 const paymentBadgeStyle = {
     'unpaid': 'bg-red-100 text-red-800 border-red-300',
@@ -104,7 +99,7 @@ export default function PaymentDetails({ user, onLogout, onNavigate }) {
         <DashboardLayout
             title="Payment Details"
             subtitle="View and verify payment."
-            sidebarItems={sidebarItems}
+            sidebarItems={cashierSidebarItems}
             currentUser={user}
             roleLabel="Cashier / Accounting"
             onLogout={onLogout}

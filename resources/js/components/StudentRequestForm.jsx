@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import StudentNavbar from './student/StudentNavbar';
+import StudentFooter from './student/StudentFooter';
+import StudentMobileNav from './student/StudentMobileNav';
 
 const GRADE_YEARS = ['1st Year', '2nd Year', '3rd Year'];
 const GRADE_SEMESTERS = ['1st Semester', '2nd Semester'];
@@ -11,7 +14,7 @@ const DOCUMENT_META = {
   tor: { icon: 'history_edu', color: 'primary', tag: 'Most Requested', daysLabel: '7 Working Days' },
 };
 
-export default function StudentRequestForm({ onNavigate }) {
+export default function StudentRequestForm({ onNavigate, student, onLogout, currentPath }) {
   const [step, setStep] = useState(1);
 
   const [personalInfo, setPersonalInfo] = useState({
@@ -37,6 +40,19 @@ export default function StudentRequestForm({ onNavigate }) {
   const [documents, setDocuments] = useState([]);
   const [docsLoading, setDocsLoading] = useState(true);
 
+  const isAuthenticated = Boolean(student);
+
+  useEffect(() => {
+    if (student) {
+      setPersonalInfo(prev => ({
+        ...prev,
+        fullName: `${student.last_name}, ${student.first_name}`,
+        studentId: student.student_number,
+        email: student.email,
+      }));
+    }
+  }, [student]);
+
   useEffect(() => {
     fetch('/documents', { headers: { 'Accept': 'application/json' } })
       .then(res => res.json())
@@ -58,7 +74,13 @@ export default function StudentRequestForm({ onNavigate }) {
 
   const resetForm = () => {
     setStep(1);
-    setPersonalInfo({ fullName: '', studentId: '', contactNo: '', email: '', course: '' });
+    setPersonalInfo(student ? {
+      fullName: `${student.last_name}, ${student.first_name}`,
+      studentId: student.student_number,
+      contactNo: '',
+      email: student.email,
+      course: ''
+    } : { fullName: '', studentId: '', contactNo: '', email: '', course: '' });
     setSelectedDocs([]);
     setSelectedSemesters([]);
     setPages(1);
@@ -91,7 +113,10 @@ export default function StudentRequestForm({ onNavigate }) {
     }, 0);
   })();
 
+  const lockedFields = ['fullName', 'studentId', 'email'];
+
   const handlePersonalChange = (e) => {
+    if (isAuthenticated && lockedFields.includes(e.target.name)) return;
     setPersonalInfo({
       ...personalInfo,
       [e.target.name]: e.target.value
@@ -216,46 +241,7 @@ export default function StudentRequestForm({ onNavigate }) {
 
   return (
     <div className="font-body-md text-on-surface bg-surface min-h-screen flex flex-col">
-      {/* TopAppBar */}
-      <header className="sticky top-0 z-50 flex justify-between items-center px-margin-mobile md:px-margin-desktop h-20 w-full bg-surface/80 backdrop-blur-md border-b border-outline-variant">
-        <div className="flex items-center gap-4 cursor-pointer" onClick={(e) => { e.preventDefault(); onNavigate('/'); }}>
-          <img
-            alt="Top Link Global College Logo"
-            className="h-14 w-auto object-contain"
-            src="/images/logo.png"
-            onError={(e) => {
-              e.target.src = "https://lh3.googleusercontent.com/aida-public/AB6AXuCyMyPRtdQPf2Gskza0ayx5mNzvWT4tgO9yFmfXXsefaddaBTwUvTgYlWlWRJkMJmmvz8ueNr0ogEN2P3H9HlduWN59CLbmCUS-Sava7XzZ85xXL2CXpbHeZ0FpohCD3LoojhIz4lDxRmFgceThTZVWO6RfIXoDw4QNe2vrVGvik2DcE1oj_OWCLI48o-x9viGfWL_686ah978VK6oQwGAEr9tMroLasRlhWDJDWxYGQz9TEGby0kxKxKjHRF67jCUf3ZPlQhEzadk";
-            }}
-          />
-          <div className="flex flex-col">
-            <span className="text-headline-sm font-bold text-primary leading-tight">TLGC</span>
-            <span className="text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider">Credentials</span>
-          </div>
-        </div>
-        <nav className="hidden md:flex gap-2 items-center">
-          <a
-            className="text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high transition-all px-5 py-2.5 rounded-full"
-            href="/"
-            onClick={(e) => { e.preventDefault(); onNavigate('/'); }}
-          >
-            Home
-          </a>
-          <a
-            className="text-primary font-bold font-label-md text-label-md hover:bg-primary/10 transition-all px-5 py-2.5 rounded-full"
-            href="/request"
-            onClick={(e) => e.preventDefault()}
-          >
-            Request
-          </a>
-          <a
-            className="text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high transition-all px-5 py-2.5 rounded-full"
-            href="/track"
-            onClick={(e) => { e.preventDefault(); onNavigate('/track'); }}
-          >
-            Track
-          </a>
-        </nav>
-      </header>
+      <StudentNavbar student={student} onLogout={onLogout} onNavigate={onNavigate} currentPath={currentPath} />
 
       <main className="flex-grow w-full max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-8 animate-card">
         {submitSuccess ? (
@@ -355,9 +341,11 @@ export default function StudentRequestForm({ onNavigate }) {
                           name="fullName"
                           value={personalInfo.fullName}
                           onChange={handlePersonalChange}
-                          className="w-full rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-3 text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                          readOnly={isAuthenticated}
+                          className={`w-full rounded-lg border px-4 py-3 text-body-md outline-none ${isAuthenticated ? 'border-surface-container-high bg-surface-container-high text-on-surface/60 cursor-not-allowed' : 'border-outline-variant bg-surface-container-lowest focus:border-primary focus:ring-1 focus:ring-primary'}`}
                           placeholder="e.g. Dela Cruz, Juan"
                         />
+                        {isAuthenticated && <p className="text-label-sm text-on-surface-variant mt-1.5 flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">info</span>Information from your student account</p>}
                       </div>
                       <div>
                         <label className="block font-label-md text-label-md text-on-surface-variant mb-2">Student ID Number</label>
@@ -367,9 +355,11 @@ export default function StudentRequestForm({ onNavigate }) {
                           name="studentId"
                           value={personalInfo.studentId}
                           onChange={handlePersonalChange}
-                          className="w-full rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-3 text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                          readOnly={isAuthenticated}
+                          className={`w-full rounded-lg border px-4 py-3 text-body-md outline-none ${isAuthenticated ? 'border-surface-container-high bg-surface-container-high text-on-surface/60 cursor-not-allowed' : 'border-outline-variant bg-surface-container-lowest focus:border-primary focus:ring-1 focus:ring-primary'}`}
                           placeholder="e.g. TLGC-2022-0941"
                         />
+                        {isAuthenticated && <p className="text-label-sm text-on-surface-variant mt-1.5 flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">info</span>Information from your student account</p>}
                       </div>
                       <div>
                         <label className="block font-label-md text-label-md text-on-surface-variant mb-2">Contact Number</label>
@@ -391,9 +381,11 @@ export default function StudentRequestForm({ onNavigate }) {
                           name="email"
                           value={personalInfo.email}
                           onChange={handlePersonalChange}
-                          className="w-full rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-3 text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                          readOnly={isAuthenticated}
+                          className={`w-full rounded-lg border px-4 py-3 text-body-md outline-none ${isAuthenticated ? 'border-surface-container-high bg-surface-container-high text-on-surface/60 cursor-not-allowed' : 'border-outline-variant bg-surface-container-lowest focus:border-primary focus:ring-1 focus:ring-primary'}`}
                           placeholder="e.g. juan.delacruz@example.com"
                         />
+                        {isAuthenticated && <p className="text-label-sm text-on-surface-variant mt-1.5 flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">info</span>Information from your student account</p>}
                       </div>
                       <div>
                         <label className="block font-label-md text-label-md text-on-surface-variant mb-2">Course / Program</label>
@@ -845,82 +837,9 @@ export default function StudentRequestForm({ onNavigate }) {
         )}
       </main>
 
-      {/* Footer */}
-      <footer className="w-full py-16 px-margin-mobile md:px-margin-desktop bg-surface-container-highest border-t border-outline-variant">
-        <div className="max-w-container-max mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-10">
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-3">
-              <img
-                alt="Logo"
-                className="h-10 w-auto opacity-70 grayscale hover:grayscale-0 transition-all"
-                src="/images/logo.png"
-                onError={(e) => {
-                  e.target.src = "https://lh3.googleusercontent.com/aida-public/AB6AXuCyMyPRtdQPf2Gskza0ayx5mNzvWT4tgO9yFmfXXsefaddaBTwUvTgYlWlWRJkMJmmvz8ueNr0ogEN2P3H9HlduWN59CLbmCUS-Sava7XzZ85xXL2CXpbHeZ0FpohCD3LoojhIz4lDxRmFgceThTZVWO6RfIXoDw4QNe2vrVGvik2DcE1oj_OWCLI48o-x9viGfWL_686ah978VK6oQwGAEr9tMroLasRlhWDJDWxYGQz9TEGby0kxKxKjHRF67jCUf3ZPlQhEzadk";
-                }}
-              />
-              <span className="font-headline-sm text-xl text-on-surface">Top Link Global College</span>
-            </div>
-            <p className="font-body-sm text-on-surface-variant">Empowering students through accessible academic records since 2018.</p>
-            <p className="font-label-sm text-outline">&copy; {new Date().getFullYear()} Top Link Global College. All Rights Reserved.</p>
-          </div>
+      <StudentFooter student={student} onNavigate={onNavigate} />
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-12">
-            <div className="flex flex-col gap-4">
-              <span className="font-label-md font-bold text-primary uppercase">Quick Links</span>
-              <nav className="flex flex-col gap-2">
-                <a className="text-body-sm text-on-surface-variant hover:text-primary transition-colors" href="/request" onClick={(e) => e.preventDefault()}>Request Form</a>
-                <a className="text-body-sm text-on-surface-variant hover:text-primary transition-colors" href="/track" onClick={(e) => { e.preventDefault(); onNavigate('/track'); }}>Track Status</a>
-                <a className="text-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Payment Info</a>
-              </nav>
-            </div>
-            <div className="flex flex-col gap-4">
-              <span className="font-label-md font-bold text-primary uppercase">Legal</span>
-              <nav className="flex flex-col gap-2">
-                <a className="text-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Privacy Policy</a>
-                <a className="text-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Terms of Use</a>
-              </nav>
-            </div>
-            <div className="flex flex-col gap-4 col-span-2 sm:col-span-1">
-              <span className="font-label-md font-bold text-primary uppercase">Support</span>
-              <nav className="flex flex-col gap-2">
-                <a className="text-body-sm text-on-surface-variant hover:text-primary flex items-center gap-2" href="mailto:support@toplink.edu">
-                  <span className="material-symbols-outlined text-[18px]">mail</span>
-                  support@toplink.edu
-                </a>
-                <a className="text-body-sm text-on-surface-variant hover:text-primary flex items-center gap-2" href="#">
-                  <span className="material-symbols-outlined text-[18px]">help</span>
-                  Help Center
-                </a>
-              </nav>
-            </div>
-          </div>
-        </div>
-      </footer>
-
-      {/* BottomNavBar (Mobile Only) */}
-      <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-16 md:hidden px-2 pb-safe bg-surface border-t border-outline-variant shadow-lg">
-        <button
-          onClick={(e) => { e.preventDefault(); onNavigate('/'); }}
-          className="flex flex-col items-center justify-center text-on-surface-variant px-5 py-1.5 active:scale-95 transition-transform cursor-pointer"
-        >
-          <span className="material-symbols-outlined">home</span>
-          <span className="font-label-sm text-[10px] font-bold">HOME</span>
-        </button>
-        <button
-          onClick={(e) => e.preventDefault()}
-          className="flex flex-col items-center justify-center text-primary bg-primary-fixed rounded-full px-5 py-1.5 active:scale-95 transition-transform cursor-pointer"
-        >
-          <span className="material-symbols-outlined">add_circle</span>
-          <span className="font-label-sm text-[10px] font-bold">REQUEST</span>
-        </button>
-        <button
-          onClick={(e) => { e.preventDefault(); onNavigate('/track'); }}
-          className="flex flex-col items-center justify-center text-on-surface-variant px-5 py-1.5 active:scale-95 transition-transform cursor-pointer"
-        >
-          <span className="material-symbols-outlined">analytics</span>
-          <span className="font-label-sm text-[10px] font-bold">TRACK</span>
-        </button>
-      </nav>
+      <StudentMobileNav active={currentPath} student={student} onNavigate={onNavigate} />
     </div>
   );
 }

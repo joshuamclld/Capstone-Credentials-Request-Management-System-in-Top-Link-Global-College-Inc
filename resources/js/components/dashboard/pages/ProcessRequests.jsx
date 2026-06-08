@@ -7,16 +7,9 @@ import DashboardMobileCard from '../DashboardMobileCard';
 import StatusBadge from '../StatusBadge';
 import EmptyState from '../EmptyState';
 import DashboardPagination from '../DashboardPagination';
+import { registrarSidebarItems } from '../config/sidebarItems';
 
 const tableHeaders = ['Reference No.', 'Student Name', 'Documents', 'Current Status', 'Date Requested', 'Action'];
-
-const sidebarItems = [
-    { label: 'Dashboard', icon: LayoutDashboard, path: '/admin-dashboard' },
-    { label: 'Request Management', icon: FileText, path: '/admin/requests' },
-    { label: 'Process Requests', icon: Clock, path: '/admin/process' },
-    { label: 'Release Credentials', icon: CheckCircle, path: '/admin/release' },
-    { label: 'Search Records', icon: Search, path: '/admin/search' },
-];
 
 export default function ProcessRequests({ user, onLogout, onNavigate }) {
     const [query, setQuery] = useState('');
@@ -136,7 +129,7 @@ export default function ProcessRequests({ user, onLogout, onNavigate }) {
         <DashboardLayout
             title="Process Requests"
             subtitle="Monitor and process credential requests."
-            sidebarItems={sidebarItems}
+            sidebarItems={registrarSidebarItems}
             currentUser={user}
             roleLabel="Administrator"
             onLogout={onLogout}

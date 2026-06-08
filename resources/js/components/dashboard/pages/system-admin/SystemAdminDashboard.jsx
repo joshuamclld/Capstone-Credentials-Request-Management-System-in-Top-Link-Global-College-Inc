@@ -4,6 +4,7 @@ import DashboardLayout from '../../DashboardLayout';
 import DashboardStatCard from '../../DashboardStatCard';
 import DashboardSearch from '../../DashboardSearch';
 import EmptyState from '../../EmptyState';
+import { systemAdminSidebarItems } from '../../config/sidebarItems';
 
 const statDefs = [
     { label: 'Total Users', key: 'total_users', icon: Users, iconBg: 'bg-blue-50', iconColor: 'text-blue-700' },
@@ -12,13 +13,7 @@ const statDefs = [
     { label: 'Active Credentials', key: 'total_documents', icon: Shield, iconBg: 'bg-purple-50', iconColor: 'text-purple-700' },
 ];
 
-const sidebarItems = [
-    { label: 'Dashboard', icon: LayoutDashboard, path: '/system-admin-dashboard' },
-    { label: 'User Management', icon: Users, path: '/system-admin/users' },
-    { label: 'Credential Types', icon: FileText, path: '/system-admin/credentials' },
-    { label: 'Reports & Analytics', icon: ChartColumn, path: '/system-admin/reports' },
-    { label: 'Audit Logs', icon: RefreshCw, path: '/system-admin/audit-logs' },
-];
+
 
 export default function SystemAdminDashboard({ user, onLogout, onNavigate }) {
     const [data, setData] = useState(null);
@@ -59,7 +54,7 @@ export default function SystemAdminDashboard({ user, onLogout, onNavigate }) {
         <DashboardLayout
             title="System Dashboard"
             subtitle="Monitor and manage the entire CRMS system."
-            sidebarItems={sidebarItems}
+            sidebarItems={systemAdminSidebarItems}
             currentUser={user}
             roleLabel="System Administrator"
             onLogout={onLogout}

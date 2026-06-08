@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\CashierPaymentController;
 use App\Http\Controllers\Admin\RegistrarRequestController;
 use App\Http\Controllers\Admin\SystemAdminController;
+use App\Http\Controllers\StudentAuthController;
 use App\Http\Controllers\StudentRequestController;
 use App\Http\Controllers\DocumentController;
 
@@ -118,6 +119,21 @@ Route::patch('/requests/{tracking_number}/cancel', [StudentRequestController::cl
     ->middleware('throttle:5,1');
 Route::get('/documents', [DocumentController::class, 'index']);
 
+// Student Authentication Routes
+Route::prefix('student')->group(function () {
+    Route::post('/register', [StudentAuthController::class, 'register'])
+        ->middleware('throttle:3,1');
+    Route::post('/verify-otp', [StudentAuthController::class, 'verifyOtp'])
+        ->middleware('throttle:5,1');
+    Route::post('/resend-otp', [StudentAuthController::class, 'resendOtp'])
+        ->middleware('throttle:2,1');
+    Route::post('/login', [StudentAuthController::class, 'login'])
+        ->middleware('throttle:5,1');
+    Route::post('/logout', [StudentAuthController::class, 'logout']);
+    Route::get('/check', [StudentAuthController::class, 'check']);
+});
+
+Route::get('/student/{any?}', function () { return view('welcome'); })->where('any', '.*');
 
 Route::fallback(function () {
     return view('welcome');

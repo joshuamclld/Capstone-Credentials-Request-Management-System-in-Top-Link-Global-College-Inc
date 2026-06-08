@@ -6,14 +6,9 @@ import DashboardTable from '../DashboardTable';
 import DashboardMobileCard from '../DashboardMobileCard';
 import EmptyState from '../EmptyState';
 import DashboardPagination from '../DashboardPagination';
+import { cashierSidebarItems } from '../config/sidebarItems';
 
 const tableHeaders = ['Tracking No.', 'Student Name', 'Amount Paid', 'Payment Method', 'Date Paid', 'Action'];
-
-const sidebarItems = [
-    { label: 'Dashboard', icon: LayoutDashboard, path: '/cashier-dashboard' },
-    { label: 'Payment Queue', icon: Clock, path: '/cashier/payments' },
-    { label: 'Paid Transactions', icon: CheckCircle, path: '/cashier/transactions' },
-];
 
 export default function PaidTransactions({ user, onLogout, onNavigate }) {
     const [query, setQuery] = useState('');
@@ -95,7 +90,7 @@ export default function PaidTransactions({ user, onLogout, onNavigate }) {
         <DashboardLayout
             title="Paid Transactions"
             subtitle="Completed payment transactions."
-            sidebarItems={sidebarItems}
+            sidebarItems={cashierSidebarItems}
             currentUser={user}
             roleLabel="Cashier / Accounting"
             onLogout={onLogout}
