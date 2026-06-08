@@ -109,7 +109,7 @@ export default function ReleaseCredentials({ user, onLogout, onNavigate }) {
 
     if (loading) {
         return (
-            <DashboardLayout title="Release Credentials" subtitle="Manage credential claiming and release." sidebarItems={sidebarItems} currentUser={user} roleLabel="Administrator" onLogout={onLogout} onNavigate={onNavigate}>
+            <DashboardLayout title="Release Credentials" subtitle="Manage credential claiming and release." sidebarItems={registrarSidebarItems} currentUser={user} roleLabel="Administrator" onLogout={onLogout} onNavigate={onNavigate}>
                 <div className="flex items-center justify-center py-20 text-slate-500 text-sm">Loading requests...</div>
             </DashboardLayout>
         );
@@ -117,7 +117,7 @@ export default function ReleaseCredentials({ user, onLogout, onNavigate }) {
 
     if (error) {
         return (
-            <DashboardLayout title="Release Credentials" subtitle="Manage credential claiming and release." sidebarItems={sidebarItems} currentUser={user} roleLabel="Administrator" onLogout={onLogout} onNavigate={onNavigate}>
+            <DashboardLayout title="Release Credentials" subtitle="Manage credential claiming and release." sidebarItems={registrarSidebarItems} currentUser={user} roleLabel="Administrator" onLogout={onLogout} onNavigate={onNavigate}>
                 <div className="flex items-center justify-center py-20 text-red-500 text-sm">Error: {error}</div>
             </DashboardLayout>
         );

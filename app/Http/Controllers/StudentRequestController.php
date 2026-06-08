@@ -7,8 +7,10 @@ use App\Models\Notification;
 use App\Models\StudentRequest;
 use App\Models\Document;
 use App\Models\User;
+use App\Services\PayMongoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class StudentRequestController extends Controller
 {
@@ -23,7 +25,9 @@ class StudentRequestController extends Controller
             $validated['email'] = $student->email;
         }
 
-        return DB::transaction(function () use ($validated) {
+        $checkoutUrl = null;
+
+        $result = DB::transaction(function () use ($validated, &$checkoutUrl) {
 
             $documents = Document::whereIn('code', $validated['selectedDocs'])->get();
 
@@ -54,17 +58,45 @@ class StudentRequestController extends Controller
                 'purpose' => $validated['purpose'],
                 'total_fee' => $totalFee,
                 'status' => 'Pending',
+                'year_level' => $validated['yearLevel'],
+                'section' => $validated['section'],
             ]);
+
+            if ($paymentMethod === 'online') {
+                try {
+                    $paymongo = app(PayMongoService::class);
+                    $session = $paymongo->createCheckoutSession([
+                        'name' => $validated['fullName'],
+                        'email' => $validated['email'],
+                        'amount' => $totalFee,
+                        'description' => "Credential Request - {$trackingNumber}",
+                        'tracking_number' => $trackingNumber,
+                        'success_url' => url("/payment/success?tracking_number={$trackingNumber}&session_id={CHECKOUT_SESSION_ID}"),
+                        'cancel_url' => url("/payment/failed?tracking_number={$trackingNumber}"),
+                    ]);
+
+                    $checkoutUrl = $session['attributes']['checkout_url'];
+                    $studentRequest->paymongo_checkout_id = $session['id'];
+                    $studentRequest->save();
+                } catch (\RuntimeException $e) {
+                    Log::error('PayMongo checkout failed: ' . $e->getMessage());
+                }
+            }
 
             Notification::notifyRole('admin', 'new_request', 'New Credential Request', "{$validated['fullName']} submitted a request", (string) $studentRequest->id, "/admin/requests/{$studentRequest->id}");
             Notification::notifyRole('cashier', 'new_request', 'New Credential Request', "{$validated['fullName']} submitted a new request waiting for payment.", (string) $studentRequest->id, "/cashier/payments/{$studentRequest->id}");
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Request submitted successfully',
+            return [
                 'tracking_number' => $trackingNumber,
-            ], 201);
+            ];
         });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Request submitted successfully',
+            'tracking_number' => $result['tracking_number'],
+            'checkout_url' => $checkoutUrl,
+        ], 201);
     }
 
     public function show(string $trackingNumber)
@@ -101,6 +133,8 @@ class StudentRequestController extends Controller
                 'total_fee' => (float) $request->total_fee,
                 'processing_days' => $processingDays,
                 'created_at' => $request->created_at->format('F d, Y'),
+                'year_level' => $request->year_level,
+                'section' => $request->section,
             ],
         ]);
     }
@@ -150,6 +184,75 @@ class StudentRequestController extends Controller
             'success' => true,
             'message' => 'Request cancelled successfully.',
         ]);
+    }
+
+    public function paymentSuccess(Request $request)
+    {
+        $trackingNumber = $request->query('tracking_number');
+        $sessionId = $request->query('session_id');
+
+        if ($sessionId && $trackingNumber) {
+            try {
+                $paymongo = app(PayMongoService::class);
+                $session = $paymongo->retrieveCheckoutSession($sessionId);
+                $attributes = $session['attributes'];
+
+                if (($attributes['payment_status'] ?? '') === 'paid') {
+                    StudentRequest::where('tracking_number', $trackingNumber)
+                        ->where('payment_status', 'pending_verification')
+                        ->update(['payment_status' => 'paid']);
+                }
+            } catch (\RuntimeException $e) {
+                Log::error('PayMongo success verification failed: ' . $e->getMessage());
+            }
+        }
+
+        return redirect('/track');
+    }
+
+    public function paymentFailed(Request $request)
+    {
+        return redirect('/request');
+    }
+
+    public function webhook(Request $request)
+    {
+        $payload = $request->getContent();
+        $signature = $request->header('Paymongo-Signature');
+
+        if (!$signature) {
+            return response()->json(['error' => 'Missing signature'], 400);
+        }
+
+        $webhookSecret = config('services.paymongo.webhook_secret');
+        if (!$webhookSecret) {
+            return response()->json(['error' => 'Webhook not configured'], 500);
+        }
+
+        $computedSignature = hash_hmac('sha256', $payload, $webhookSecret);
+
+        if (!hash_equals($computedSignature, $signature)) {
+            return response()->json(['error' => 'Invalid signature'], 401);
+        }
+
+        $event = json_decode($payload, true);
+        $eventType = $event['data']['attributes']['type'] ?? '';
+
+        if ($eventType === 'checkout_session.payment.paid') {
+            $checkoutData = $event['data']['attributes']['data']['attributes'] ?? [];
+
+            if (($checkoutData['payment_status'] ?? '') === 'paid') {
+                $trackingNumber = $checkoutData['metadata']['tracking_number'] ?? null;
+
+                if ($trackingNumber) {
+                    StudentRequest::where('tracking_number', $trackingNumber)
+                        ->where('payment_status', 'pending_verification')
+                        ->update(['payment_status' => 'paid']);
+                }
+            }
+        }
+
+        return response()->json(['success' => true]);
     }
 
     private function calculateFee($documents, array $semesters, ?int $pages): float

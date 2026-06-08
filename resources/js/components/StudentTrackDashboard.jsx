@@ -270,6 +270,18 @@ export default function StudentTrackDashboard({ studentUser, onLogout, onNavigat
                           <span className="font-bold text-on-surface text-right">{request.pages}</span>
                         </div>
                       )}
+                      {request.year_level && (
+                        <div className="flex justify-between border-b border-outline-variant pb-2">
+                          <span className="text-on-surface-variant font-medium">Year Level:</span>
+                          <span className="font-bold text-on-surface text-right">{request.year_level}</span>
+                        </div>
+                      )}
+                      {request.section && (
+                        <div className="flex justify-between border-b border-outline-variant pb-2">
+                          <span className="text-on-surface-variant font-medium">Section:</span>
+                          <span className="font-bold text-on-surface text-right">{request.section}</span>
+                        </div>
+                      )}
                       <div className="flex justify-between border-b border-outline-variant pb-2">
                         <span className="text-on-surface-variant font-medium">Request Date:</span>
                         <span className="font-bold text-on-surface">{request.created_at}</span>

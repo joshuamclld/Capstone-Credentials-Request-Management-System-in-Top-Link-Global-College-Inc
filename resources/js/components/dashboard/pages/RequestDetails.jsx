@@ -113,7 +113,7 @@ export default function RequestDetails({ user, onLogout, onNavigate }) {
 
     if (loading) {
         return (
-            <DashboardLayout title="Request Details" subtitle="View and manage credential request details." sidebarItems={sidebarItems} currentUser={user} roleLabel="Administrator" onLogout={onLogout} onNavigate={onNavigate}>
+            <DashboardLayout title="Request Details" subtitle="View and manage credential request details." sidebarItems={registrarSidebarItems} currentUser={user} roleLabel="Administrator" onLogout={onLogout} onNavigate={onNavigate}>
                 <div className="flex items-center justify-center py-20 text-slate-500 text-sm">Loading request...</div>
             </DashboardLayout>
         );
@@ -121,7 +121,7 @@ export default function RequestDetails({ user, onLogout, onNavigate }) {
 
     if (error || !request) {
         return (
-            <DashboardLayout title="Request Details" subtitle="View and manage credential request details." sidebarItems={sidebarItems} currentUser={user} roleLabel="Administrator" onLogout={onLogout} onNavigate={onNavigate}>
+            <DashboardLayout title="Request Details" subtitle="View and manage credential request details." sidebarItems={registrarSidebarItems} currentUser={user} roleLabel="Administrator" onLogout={onLogout} onNavigate={onNavigate}>
                 <div className="flex flex-col items-center justify-center py-20 text-red-500 text-sm">
                     <p>{error || 'Request not found.'}</p>
                     <button onClick={() => onNavigate('/admin/requests')} className="mt-4 px-4 py-2 text-sm font-medium text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg transition-colors cursor-pointer">
@@ -208,6 +208,14 @@ export default function RequestDetails({ user, onLogout, onNavigate }) {
                                     <div>
                                         <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Course</p>
                                         <p className="text-sm font-medium text-slate-900">{request.course}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Year Level</p>
+                                        <p className="text-sm font-medium text-slate-900">{request.year_level || '-'}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Section</p>
+                                        <p className="text-sm font-medium text-slate-900">{request.section || '-'}</p>
                                     </div>
                                     <div>
                                         <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Email</p>

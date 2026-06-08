@@ -93,7 +93,7 @@ export default function PaymentQueue({ user, onLogout, onNavigate }) {
 
     if (loading) {
         return (
-            <DashboardLayout title="Payment Queue" subtitle="Verify pending payments." sidebarItems={sidebarItems} currentUser={user} roleLabel="Cashier / Accounting" onLogout={onLogout} onNavigate={onNavigate}>
+            <DashboardLayout title="Payment Queue" subtitle="Verify pending payments." sidebarItems={cashierSidebarItems} currentUser={user} roleLabel="Cashier / Accounting" onLogout={onLogout} onNavigate={onNavigate}>
                 <div className="flex items-center justify-center py-20 text-slate-500 text-sm">Loading payment queue...</div>
             </DashboardLayout>
         );
@@ -101,7 +101,7 @@ export default function PaymentQueue({ user, onLogout, onNavigate }) {
 
     if (error) {
         return (
-            <DashboardLayout title="Payment Queue" subtitle="Verify pending payments." sidebarItems={sidebarItems} currentUser={user} roleLabel="Cashier / Accounting" onLogout={onLogout} onNavigate={onNavigate}>
+            <DashboardLayout title="Payment Queue" subtitle="Verify pending payments." sidebarItems={cashierSidebarItems} currentUser={user} roleLabel="Cashier / Accounting" onLogout={onLogout} onNavigate={onNavigate}>
                 <div className="flex items-center justify-center py-20 text-red-500 text-sm">Error: {error}</div>
             </DashboardLayout>
         );

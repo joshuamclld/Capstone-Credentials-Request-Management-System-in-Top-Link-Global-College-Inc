@@ -11,6 +11,7 @@ class StudentRequest extends Model
         'email', 'course', 'document_ids', 'semesters', 'pages',
         'payment_method', 'payment_status', 'purpose', 'total_fee',
         'status', 'remarks', 'verified_by', 'verified_by_user_id', 'verified_at',
+        'paymongo_checkout_id',
     ];
 
     public function student()

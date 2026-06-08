@@ -95,6 +95,7 @@ class StudentAuthController extends Controller
                 'student_number' => $student->student_number,
                 'first_name' => $student->first_name,
                 'last_name' => $student->last_name,
+                'email' => $student->email,
             ],
         ]);
     }
@@ -175,6 +176,7 @@ class StudentAuthController extends Controller
                 'student_number' => $student->student_number,
                 'first_name' => $student->first_name,
                 'last_name' => $student->last_name,
+                'email' => $student->email,
             ],
         ]);
     }

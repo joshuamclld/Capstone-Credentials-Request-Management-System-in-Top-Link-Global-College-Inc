@@ -20,6 +20,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'cashier' => CashierMiddleware::class,
             'system_admin' => SystemAdminMiddleware::class,
         ]);
+
+        $middleware->validateCsrfTokens(except: [
+            '/webhooks/paymongo',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

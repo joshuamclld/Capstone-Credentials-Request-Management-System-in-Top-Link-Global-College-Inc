@@ -7,6 +7,10 @@ export default function StudentMobileNav({ active, student, onNavigate, onOpenAu
         <span className="material-symbols-outlined">home</span>
         <span className="font-label-sm text-[10px] font-bold">HOME</span>
       </button>
+      <button onClick={() => onNavigate('/track')} className={`flex flex-col items-center justify-center px-5 py-1.5 active:scale-95 transition-transform cursor-pointer ${active === '/track' ? 'text-primary bg-primary-fixed rounded-full' : 'text-on-surface-variant'}`}>
+        <span className="material-symbols-outlined">analytics</span>
+        <span className="font-label-sm text-[10px] font-bold">TRACK</span>
+      </button>
       {student ? (
         <button onClick={() => onNavigate('/request')} className={`flex flex-col items-center justify-center px-5 py-1.5 active:scale-95 transition-transform cursor-pointer ${active === '/request' ? 'text-primary bg-primary-fixed rounded-full' : 'text-on-surface-variant'}`}>
           <span className="material-symbols-outlined">assignment</span>
@@ -18,10 +22,6 @@ export default function StudentMobileNav({ active, student, onNavigate, onOpenAu
           <span className="font-label-sm text-[10px] font-bold">SIGN IN</span>
         </button>
       )}
-      <button onClick={() => onNavigate('/track')} className={`flex flex-col items-center justify-center px-5 py-1.5 active:scale-95 transition-transform cursor-pointer ${active === '/track' ? 'text-primary bg-primary-fixed rounded-full' : 'text-on-surface-variant'}`}>
-        <span className="material-symbols-outlined">analytics</span>
-        <span className="font-label-sm text-[10px] font-bold">TRACK</span>
-      </button>
     </nav>
   );
 }

@@ -59,7 +59,7 @@ export default function SystemAdminReportsAnalytics({ user, onLogout, onNavigate
 
     if (loading) {
         return (
-            <DashboardLayout title="Reports & Analytics" subtitle="Loading report data..." sidebarItems={sidebarItems} currentUser={user} roleLabel="System Administrator" onLogout={onLogout} onNavigate={onNavigate}>
+            <DashboardLayout title="Reports & Analytics" subtitle="Loading report data..." sidebarItems={systemAdminSidebarItems} currentUser={user} roleLabel="System Administrator" onLogout={onLogout} onNavigate={onNavigate}>
                 <div className="flex items-center justify-center py-20"><p className="text-slate-400 text-sm">Loading reports...</p></div>
             </DashboardLayout>
         );
@@ -67,7 +67,7 @@ export default function SystemAdminReportsAnalytics({ user, onLogout, onNavigate
 
     if (error) {
         return (
-            <DashboardLayout title="Reports & Analytics" subtitle="View system-wide reports and analytics." sidebarItems={sidebarItems} currentUser={user} roleLabel="System Administrator" onLogout={onLogout} onNavigate={onNavigate}>
+            <DashboardLayout title="Reports & Analytics" subtitle="View system-wide reports and analytics." sidebarItems={systemAdminSidebarItems} currentUser={user} roleLabel="System Administrator" onLogout={onLogout} onNavigate={onNavigate}>
                 <div className="flex items-center justify-center py-20 text-red-500 text-sm">Unable to load reports: {error}</div>
             </DashboardLayout>
         );
@@ -75,7 +75,7 @@ export default function SystemAdminReportsAnalytics({ user, onLogout, onNavigate
 
     if (!data) {
         return (
-            <DashboardLayout title="Reports & Analytics" subtitle="View system-wide reports and analytics." sidebarItems={sidebarItems} currentUser={user} roleLabel="System Administrator" onLogout={onLogout} onNavigate={onNavigate}>
+            <DashboardLayout title="Reports & Analytics" subtitle="View system-wide reports and analytics." sidebarItems={systemAdminSidebarItems} currentUser={user} roleLabel="System Administrator" onLogout={onLogout} onNavigate={onNavigate}>
                 <EmptyState icon={ChartColumn} title="No Data" subtitle="Report data could not be loaded." />
             </DashboardLayout>
         );

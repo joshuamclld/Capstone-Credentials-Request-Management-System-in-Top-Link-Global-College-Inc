@@ -133,6 +133,11 @@ Route::prefix('student')->group(function () {
     Route::get('/check', [StudentAuthController::class, 'check']);
 });
 
+// PayMongo Payment Routes
+Route::get('/payment/success', [StudentRequestController::class, 'paymentSuccess']);
+Route::get('/payment/failed', [StudentRequestController::class, 'paymentFailed']);
+Route::post('/webhooks/paymongo', [StudentRequestController::class, 'webhook']);
+
 Route::get('/student/{any?}', function () { return view('welcome'); })->where('any', '.*');
 
 Route::fallback(function () {

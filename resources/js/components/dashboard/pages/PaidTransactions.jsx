@@ -72,7 +72,7 @@ export default function PaidTransactions({ user, onLogout, onNavigate }) {
 
     if (loading) {
         return (
-            <DashboardLayout title="Paid Transactions" subtitle="Completed payment transactions." sidebarItems={sidebarItems} currentUser={user} roleLabel="Cashier / Accounting" onLogout={onLogout} onNavigate={onNavigate}>
+            <DashboardLayout title="Paid Transactions" subtitle="Completed payment transactions." sidebarItems={cashierSidebarItems} currentUser={user} roleLabel="Cashier / Accounting" onLogout={onLogout} onNavigate={onNavigate}>
                 <div className="flex items-center justify-center py-20 text-slate-500 text-sm">Loading transactions...</div>
             </DashboardLayout>
         );
@@ -80,7 +80,7 @@ export default function PaidTransactions({ user, onLogout, onNavigate }) {
 
     if (error) {
         return (
-            <DashboardLayout title="Paid Transactions" subtitle="Completed payment transactions." sidebarItems={sidebarItems} currentUser={user} roleLabel="Cashier / Accounting" onLogout={onLogout} onNavigate={onNavigate}>
+            <DashboardLayout title="Paid Transactions" subtitle="Completed payment transactions." sidebarItems={cashierSidebarItems} currentUser={user} roleLabel="Cashier / Accounting" onLogout={onLogout} onNavigate={onNavigate}>
                 <div className="flex items-center justify-center py-20 text-red-500 text-sm">Error: {error}</div>
             </DashboardLayout>
         );

@@ -8,6 +8,7 @@ import DashboardPagination from '../../DashboardPagination';
 import StatusBadge from '../../StatusBadge';
 import EmptyState from '../../EmptyState';
 import DashboardDropdown from '../../../common/DashboardDropdown';
+import FormSelect from '../../../ui/FormSelect';
 import { systemAdminSidebarItems } from '../../config/sidebarItems';
 
 const tableHeaders = ['Name', 'Email', 'Role', 'Status', 'Date Created', 'Action'];
@@ -191,11 +192,18 @@ export default function SystemAdminUserManagement({ user, onLogout, onNavigate, 
                     </div>
                     <div>
                         <label className="block text-xs font-medium text-slate-600 mb-1">Role</label>
-                        <select value={formData.role} onChange={(e) => setFormData({ ...formData, role: e.target.value })} className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer">
-                            <option value="admin">Admin (Registrar)</option>
-                            <option value="cashier">Cashier</option>
-                            <option value="system_admin">System Administrator</option>
-                        </select>
+                        <FormSelect
+                          name="role"
+                          value={formData.role}
+                          onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                          options={[
+                            { value: 'admin', label: 'Admin (Registrar)' },
+                            { value: 'cashier', label: 'Cashier' },
+                            { value: 'system_admin', label: 'System Administrator' },
+                          ]}
+                          className="text-sm border-slate-200 focus:ring-emerald-500 cursor-pointer"
+                          required
+                        />
                     </div>
                     <div>
                         <label className="block text-xs font-medium text-slate-600 mb-1">Contact Number</label>

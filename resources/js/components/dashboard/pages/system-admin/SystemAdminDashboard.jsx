@@ -29,7 +29,7 @@ export default function SystemAdminDashboard({ user, onLogout, onNavigate }) {
 
     if (loading) {
         return (
-            <DashboardLayout title="System Dashboard" subtitle="Loading system overview..." sidebarItems={sidebarItems} currentUser={user} roleLabel="System Administrator" onLogout={onLogout} onNavigate={onNavigate}>
+            <DashboardLayout title="System Dashboard" subtitle="Loading system overview..." sidebarItems={systemAdminSidebarItems} currentUser={user} roleLabel="System Administrator" onLogout={onLogout} onNavigate={onNavigate}>
                 <div className="flex items-center justify-center py-20"><p className="text-slate-400 text-sm">Loading dashboard data...</p></div>
             </DashboardLayout>
         );
@@ -37,7 +37,7 @@ export default function SystemAdminDashboard({ user, onLogout, onNavigate }) {
 
     if (error || !data) {
         return (
-            <DashboardLayout title="System Dashboard" subtitle="Monitor and manage the entire CRMS system." sidebarItems={sidebarItems} currentUser={user} roleLabel="System Administrator" onLogout={onLogout} onNavigate={onNavigate}>
+            <DashboardLayout title="System Dashboard" subtitle="Monitor and manage the entire CRMS system." sidebarItems={systemAdminSidebarItems} currentUser={user} roleLabel="System Administrator" onLogout={onLogout} onNavigate={onNavigate}>
                 <EmptyState icon={RefreshCw} title="Failed to Load" subtitle={error || 'Unable to fetch dashboard data.'} />
             </DashboardLayout>
         );

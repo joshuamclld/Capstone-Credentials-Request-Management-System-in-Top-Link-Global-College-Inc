@@ -77,7 +77,7 @@ export default function SearchRecords({ user, onLogout, onNavigate }) {
 
     if (loading) {
         return (
-            <DashboardLayout title="Search Records" subtitle="Search credential request records." sidebarItems={sidebarItems} currentUser={user} roleLabel="Administrator" onLogout={onLogout} onNavigate={onNavigate}>
+            <DashboardLayout title="Search Records" subtitle="Search credential request records." sidebarItems={registrarSidebarItems} currentUser={user} roleLabel="Administrator" onLogout={onLogout} onNavigate={onNavigate}>
                 <div className="flex items-center justify-center py-20 text-slate-500 text-sm">Loading records...</div>
             </DashboardLayout>
         );
@@ -85,7 +85,7 @@ export default function SearchRecords({ user, onLogout, onNavigate }) {
 
     if (error) {
         return (
-            <DashboardLayout title="Search Records" subtitle="Search credential request records." sidebarItems={sidebarItems} currentUser={user} roleLabel="Administrator" onLogout={onLogout} onNavigate={onNavigate}>
+            <DashboardLayout title="Search Records" subtitle="Search credential request records." sidebarItems={registrarSidebarItems} currentUser={user} roleLabel="Administrator" onLogout={onLogout} onNavigate={onNavigate}>
                 <div className="flex items-center justify-center py-20 text-red-500 text-sm">Error: {error}</div>
             </DashboardLayout>
         );

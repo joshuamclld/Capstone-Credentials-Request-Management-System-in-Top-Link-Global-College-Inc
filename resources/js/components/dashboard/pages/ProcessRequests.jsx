@@ -111,7 +111,7 @@ export default function ProcessRequests({ user, onLogout, onNavigate }) {
 
     if (loading) {
         return (
-            <DashboardLayout title="Process Requests" subtitle="Monitor and process credential requests." sidebarItems={sidebarItems} currentUser={user} roleLabel="Administrator" onLogout={onLogout} onNavigate={onNavigate}>
+            <DashboardLayout title="Process Requests" subtitle="Monitor and process credential requests." sidebarItems={registrarSidebarItems} currentUser={user} roleLabel="Administrator" onLogout={onLogout} onNavigate={onNavigate}>
                 <div className="flex items-center justify-center py-20 text-slate-500 text-sm">Loading requests...</div>
             </DashboardLayout>
         );
@@ -119,7 +119,7 @@ export default function ProcessRequests({ user, onLogout, onNavigate }) {
 
     if (error) {
         return (
-            <DashboardLayout title="Process Requests" subtitle="Monitor and process credential requests." sidebarItems={sidebarItems} currentUser={user} roleLabel="Administrator" onLogout={onLogout} onNavigate={onNavigate}>
+            <DashboardLayout title="Process Requests" subtitle="Monitor and process credential requests." sidebarItems={registrarSidebarItems} currentUser={user} roleLabel="Administrator" onLogout={onLogout} onNavigate={onNavigate}>
                 <div className="flex items-center justify-center py-20 text-red-500 text-sm">Error: {error}</div>
             </DashboardLayout>
         );

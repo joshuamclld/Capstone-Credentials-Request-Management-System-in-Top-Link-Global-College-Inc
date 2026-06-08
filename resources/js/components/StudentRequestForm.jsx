@@ -2,9 +2,12 @@ import React, { useState, useEffect } from 'react';
 import StudentNavbar from './student/StudentNavbar';
 import StudentFooter from './student/StudentFooter';
 import StudentMobileNav from './student/StudentMobileNav';
+import FormSelect from './ui/FormSelect';
 
 const GRADE_YEARS = ['1st Year', '2nd Year', '3rd Year'];
 const GRADE_SEMESTERS = ['1st Semester', '2nd Semester'];
+const YEAR_LEVELS = ['1st Year', '2nd Year', '3rd Year'];
+const SECTIONS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
 
 const DOCUMENT_META = {
   enrollment: { icon: 'badge', color: 'primary', daysLabel: 'Same Day' },
@@ -22,7 +25,9 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
     studentId: '',
     contactNo: '',
     email: '',
-    course: ''
+    course: '',
+    yearLevel: '',
+    section: ''
   });
 
   const [selectedDocs, setSelectedDocs] = useState([]);
@@ -79,8 +84,10 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
       studentId: student.student_number,
       contactNo: '',
       email: student.email,
-      course: ''
-    } : { fullName: '', studentId: '', contactNo: '', email: '', course: '' });
+      course: '',
+      yearLevel: '',
+      section: ''
+    } : { fullName: '', studentId: '', contactNo: '', email: '', course: '', yearLevel: '', section: '' });
     setSelectedDocs([]);
     setSelectedSemesters([]);
     setPages(1);
@@ -209,6 +216,8 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
           contactNo: personalInfo.contactNo,
           email: personalInfo.email,
           course: personalInfo.course,
+          yearLevel: personalInfo.yearLevel,
+          section: personalInfo.section,
           selectedDocs: selectedDocs,
           selectedSemesters: selectedSemesters,
           pages: hasPerPageDoc ? pages : null,
@@ -230,6 +239,10 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
         return;
       }
 
+      if (data.checkout_url) {
+        window.location.href = data.checkout_url;
+        return;
+      }
       setGeneratedRef(data.tracking_number);
       setIsSubmitting(false);
       setSubmitSuccess(true);
@@ -360,6 +373,28 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
                           placeholder="e.g. TLGC-2022-0941"
                         />
                         {isAuthenticated && <p className="text-label-sm text-on-surface-variant mt-1.5 flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">info</span>Information from your student account</p>}
+                      </div>
+                      <div>
+                        <FormSelect
+                          label="Year Level"
+                          name="yearLevel"
+                          value={personalInfo.yearLevel}
+                          onChange={handlePersonalChange}
+                          options={YEAR_LEVELS}
+                          placeholder="Select Year Level"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <FormSelect
+                          label="Block / Section"
+                          name="section"
+                          value={personalInfo.section}
+                          onChange={handlePersonalChange}
+                          options={SECTIONS.map(s => ({ value: s, label: `Section ${s}` }))}
+                          placeholder="Select Section"
+                          required
+                        />
                       </div>
                       <div>
                         <label className="block font-label-md text-label-md text-on-surface-variant mb-2">Contact Number</label>
@@ -607,6 +642,7 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
                             <div>
                               <p className="font-label-md font-bold text-on-surface">Online Payment</p>
                               <p className="text-body-sm text-on-surface-variant">Pay online and wait for payment verification.</p>
+                              <p className="text-label-sm text-on-surface-variant mt-1">You will be redirected to secure payment after submission.</p>
                             </div>
                           </div>
                         </div>

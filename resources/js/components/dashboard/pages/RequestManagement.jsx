@@ -90,7 +90,7 @@ export default function RequestManagement({ user, onLogout, onNavigate }) {
 
     if (loading) {
         return (
-            <DashboardLayout title="Request Management" subtitle="Manage submitted credential requests." sidebarItems={sidebarItems} currentUser={user} roleLabel="Administrator" onLogout={onLogout} onNavigate={onNavigate}>
+            <DashboardLayout title="Request Management" subtitle="Manage submitted credential requests." sidebarItems={registrarSidebarItems} currentUser={user} roleLabel="Administrator" onLogout={onLogout} onNavigate={onNavigate}>
                 <div className="flex items-center justify-center py-20 text-slate-500 text-sm">Loading requests...</div>
             </DashboardLayout>
         );
@@ -98,7 +98,7 @@ export default function RequestManagement({ user, onLogout, onNavigate }) {
 
     if (error) {
         return (
-            <DashboardLayout title="Request Management" subtitle="Manage submitted credential requests." sidebarItems={sidebarItems} currentUser={user} roleLabel="Administrator" onLogout={onLogout} onNavigate={onNavigate}>
+            <DashboardLayout title="Request Management" subtitle="Manage submitted credential requests." sidebarItems={registrarSidebarItems} currentUser={user} roleLabel="Administrator" onLogout={onLogout} onNavigate={onNavigate}>
                 <div className="flex items-center justify-center py-20 text-red-500 text-sm">Error: {error}</div>
             </DashboardLayout>
         );
