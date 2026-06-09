@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, FileText, FolderOpen, Search, LogOut } from 'lucide-react';
+import { LayoutDashboard, FileText, FolderOpen, LogOut, User } from 'lucide-react';
 
 const sidebarItems = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/student/dashboard' },
@@ -28,7 +28,7 @@ export default function StudentDashboardSidebar({ student, sidebarOpen, onClose,
           />
           <div>
             <h1 className="text-sm font-bold text-primary leading-tight">TLGC</h1>
-            <p className="text-[10px] text-on-surface-variant uppercase tracking-wider font-medium">Credentials</p>
+            <p className="text-[10px] text-on-surface-variant uppercase tracking-wider font-medium">CRMS</p>
           </div>
         </div>
       </div>
@@ -39,8 +39,8 @@ export default function StudentDashboardSidebar({ student, sidebarOpen, onClose,
             key={item.label}
             onClick={() => { onClose(); onNavigate(item.path); }}
             className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all cursor-pointer ${isActive(item)
-                ? 'bg-primary/10 text-primary font-bold'
-                : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface'
+              ? 'bg-primary/10 text-primary font-bold'
+              : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface'
               }`}
           >
             <item.icon className="w-4 h-4 shrink-0" />

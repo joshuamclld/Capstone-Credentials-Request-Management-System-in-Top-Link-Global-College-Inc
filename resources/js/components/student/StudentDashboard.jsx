@@ -131,7 +131,7 @@ export default function StudentDashboard({ student, onLogout, onNavigate, curren
               {recentRequests.map(req => (
                 <div
                   key={req.tracking_number}
-                  onClick={() => onNavigate(`/student/request/${req.tracking_number}`)}
+                  onClick={() => onNavigate(`/student/requests/${req.tracking_number}`)}
                   className="flex items-center justify-between p-3 sm:p-4 rounded-xl bg-surface-container-low border border-outline-variant hover:border-primary/30 hover:bg-surface-container-high transition-all cursor-pointer"
                 >
                   <div className="min-w-0 flex-1">

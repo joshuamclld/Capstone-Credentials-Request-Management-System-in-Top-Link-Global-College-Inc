@@ -13,6 +13,7 @@ export default function StudentRegister({ onNavigate }) {
     password_confirmation: '',
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -101,9 +102,14 @@ export default function StudentRegister({ onNavigate }) {
             </div>
             <div>
               <label className="block text-label-md font-bold text-on-surface mb-1.5">Confirm Password</label>
-              <input type="password" value={form.password_confirmation} onChange={set('password_confirmation')}
-                className="w-full px-4 py-3 bg-surface-container-lowest border border-outline rounded-xl focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all font-body-md"
-                placeholder="Repeat your password" />
+              <div className="relative">
+                <input type={showConfirmPassword ? 'text' : 'password'} value={form.password_confirmation} onChange={set('password_confirmation')}
+                  className="w-full px-4 py-3 pr-12 bg-surface-container-lowest border border-outline rounded-xl focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all font-body-md"
+                  placeholder="Repeat your password" />
+                <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant cursor-pointer">
+                  {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
             </div>
           </div>
 

@@ -88,7 +88,10 @@ export default function DashboardDropdown({
             }
         };
 
-        const onScroll = () => close();
+        const onScroll = (e) => {
+            if (menuRef.current && menuRef.current.contains(e.target)) return;
+            close();
+        };
         const onResize = () => close();
         const onKeyDown = (e) => {
             if (e.key === 'Escape') { close(); return; }
@@ -144,7 +147,7 @@ export default function DashboardDropdown({
                 disabled={disabled}
                 aria-haspopup="listbox"
                 aria-expanded={open}
-                className={`w-full border border-slate-300 rounded-lg px-3 py-3 sm:py-2.5 text-base sm:text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 flex items-center justify-between gap-2 cursor-pointer ${
+                className={`w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 flex items-center justify-between gap-2 cursor-pointer ${
                     disabled
                         ? 'opacity-50 cursor-not-allowed bg-slate-50'
                         : 'hover:border-slate-400'

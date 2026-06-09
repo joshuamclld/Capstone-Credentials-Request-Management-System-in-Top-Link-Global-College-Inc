@@ -73,90 +73,85 @@ export default function StudentMyRequests({ student, onLogout, onNavigate, curre
 
   return (
     <>
-    <StudentDashboardLayout title="My Requests" subtitle="View and manage all your credential requests." student={student} onLogout={onLogout} onNavigate={onNavigate} currentPath={currentPath}>
-      <div className="max-w-container-max mx-auto">
-        <div className="mb-6 sm:mb-8">
-          <h2 className="font-headline-md text-xl sm:text-2xl text-primary mb-1">My Requests</h2>
-          <p className="text-body-md text-on-surface-variant">View and manage all your credential requests.</p>
-        </div>
-
-        {loading ? (
-          <div className="space-y-3">
-            {[1,2,3,4].map(i => <div key={i} className="h-24 bg-surface-container-high rounded-xl animate-pulse" />)}
-          </div>
-        ) : requests.length === 0 ? (
-          <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-10 text-center">
-            <span className="material-symbols-outlined text-5xl text-on-surface-variant/40 mb-3">inbox</span>
-            <p className="text-body-lg text-on-surface-variant mb-2">No requests found.</p>
-            <button onClick={() => onNavigate('/request')} className="text-label-sm font-bold text-primary hover:underline cursor-pointer">
-              Submit your first request
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {requests.map(req => (
-              <div key={req.tracking_number} className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-4 sm:p-5 shadow-sm">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
-                  <div className="min-w-0">
-                    <p className="font-bold text-body-md text-on-surface truncate">{req.documents.join(', ')}</p>
-                    <p className="text-label-sm text-on-surface-variant">{req.tracking_number}</p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className={`text-label-sm font-bold px-2.5 py-1 rounded-full border ${STATUS_BADGES[req.status] || 'bg-gray-100 text-gray-800 border-gray-300'}`}>
-                      {req.status === 'Ready for Release' ? 'Ready for Release' : req.status}
-                    </span>
-                    <span className={`text-label-sm font-bold px-2.5 py-1 rounded-full border ${PAYMENT_BADGES[req.payment_status] || 'bg-gray-100 text-gray-800 border-gray-300'}`}>
-                      {req.payment_status === 'pending_verification' ? 'Pending Verification' : req.payment_status === 'paid' ? 'Paid' : 'Unpaid'}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3 text-body-sm">
-                  <div>
-                    <span className="text-on-surface-variant">Date:</span>
-                    <span className="font-medium text-on-surface ml-1">{req.created_at}</span>
-                  </div>
-                  <div>
-                    <span className="text-on-surface-variant">Fee:</span>
-                    <span className="font-medium text-primary ml-1">₱{Number(req.total_fee).toFixed(2)}</span>
-                  </div>
-                  {req.semesters && req.semesters.length > 0 && (
-                    <div className="col-span-2">
-                      <span className="text-on-surface-variant">Semesters:</span>
-                      <span className="font-medium text-on-surface ml-1">{req.semesters.join(', ')}</span>
+      <StudentDashboardLayout title="My Requests" subtitle="View and manage all your credential requests." student={student} onLogout={onLogout} onNavigate={onNavigate} currentPath={currentPath}>
+        <div className="max-w-container-max mx-auto">
+          {loading ? (
+            <div className="space-y-3">
+              {[1, 2, 3, 4].map(i => <div key={i} className="h-24 bg-surface-container-high rounded-xl animate-pulse" />)}
+            </div>
+          ) : requests.length === 0 ? (
+            <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-10 text-center">
+              <span className="material-symbols-outlined text-5xl text-on-surface-variant/40 mb-3">inbox</span>
+              <p className="text-body-lg text-on-surface-variant mb-2">No requests found.</p>
+              <button onClick={() => onNavigate('/request')} className="text-label-sm font-bold text-primary hover:underline cursor-pointer">
+                Submit your first request
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {requests.map(req => (
+                <div key={req.tracking_number} className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-4 sm:p-5 shadow-sm">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                    <div className="min-w-0">
+                      <p className="font-bold text-body-md text-on-surface truncate">{req.documents.join(', ')}</p>
+                      <p className="text-label-sm text-on-surface-variant">{req.tracking_number}</p>
                     </div>
-                  )}
-                  {req.pages && (
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className={`text-label-sm font-bold px-2.5 py-1 rounded-full border ${STATUS_BADGES[req.status] || 'bg-gray-100 text-gray-800 border-gray-300'}`}>
+                        {req.status === 'Ready for Release' ? 'Ready for Release' : req.status}
+                      </span>
+                      <span className={`text-label-sm font-bold px-2.5 py-1 rounded-full border ${PAYMENT_BADGES[req.payment_status] || 'bg-gray-100 text-gray-800 border-gray-300'}`}>
+                        {req.payment_status === 'pending_verification' ? 'Pending Verification' : req.payment_status === 'paid' ? 'Paid' : 'Unpaid'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3 text-body-sm">
                     <div>
-                      <span className="text-on-surface-variant">Pages:</span>
-                      <span className="font-medium text-on-surface ml-1">{req.pages}</span>
+                      <span className="text-on-surface-variant">Date:</span>
+                      <span className="font-medium text-on-surface ml-1">{req.created_at}</span>
                     </div>
-                  )}
-                </div>
+                    <div>
+                      <span className="text-on-surface-variant">Fee:</span>
+                      <span className="font-medium text-primary ml-1">₱{Number(req.total_fee).toFixed(2)}</span>
+                    </div>
+                    {req.semesters && req.semesters.length > 0 && (
+                      <div className="col-span-2">
+                        <span className="text-on-surface-variant">Semesters:</span>
+                        <span className="font-medium text-on-surface ml-1">{req.semesters.join(', ')}</span>
+                      </div>
+                    )}
+                    {req.pages && (
+                      <div>
+                        <span className="text-on-surface-variant">Pages:</span>
+                        <span className="font-medium text-on-surface ml-1">{req.pages}</span>
+                      </div>
+                    )}
+                  </div>
 
-                <div className="flex gap-2 pt-2 border-t border-outline-variant">
-                  <button
-                    onClick={() => onNavigate(`/student/request/${req.tracking_number}`)}
-                    className="px-4 py-2 rounded-lg bg-primary text-on-primary font-bold text-label-sm hover:opacity-90 transition-all cursor-pointer"
-                  >
-                    View Details
-                  </button>
-                  {req.status === 'Pending' && (
+                  <div className="flex gap-2 pt-2 border-t border-outline-variant">
                     <button
-                      onClick={() => handleCancelClick(req)}
-                      disabled={cancelling === req.tracking_number}
-                      className="px-4 py-2 rounded-lg text-red-700 bg-red-50 border border-red-200 font-bold text-label-sm hover:bg-red-100 transition-all cursor-pointer disabled:opacity-50"
+                      onClick={() => onNavigate(`/student/requests/${req.tracking_number}`)}
+                      className="px-4 sm:py-2 max-md:py-3 rounded-lg bg-primary text-on-primary font-bold text-label-sm hover:opacity-90 transition-all cursor-pointer"
                     >
-                      {cancelling === req.tracking_number ? 'Cancelling...' : 'Cancel Request'}
+                      View Details
                     </button>
-                  )}
+                    {req.status === 'Pending' && (
+                      <button
+                        onClick={() => handleCancelClick(req)}
+                        disabled={cancelling === req.tracking_number}
+                        className="px-4 sm:py-2 max-md:py-3 rounded-lg text-red-700 bg-red-50 border border-red-200 font-bold text-label-sm hover:bg-red-100 transition-all cursor-pointer disabled:opacity-50"
+                      >
+                        {cancelling === req.tracking_number ? 'Cancelling...' : 'Cancel Request'}
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </StudentDashboardLayout>
+              ))}
+            </div>
+          )}
+        </div>
+      </StudentDashboardLayout>
 
       {cancelModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4" onClick={() => !cancelling && setCancelModal(null)}>

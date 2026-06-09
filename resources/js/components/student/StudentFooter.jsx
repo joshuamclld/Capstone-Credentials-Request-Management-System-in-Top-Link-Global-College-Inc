@@ -2,7 +2,7 @@ import React from 'react';
 
 export default function StudentFooter({ student, onNavigate, onOpenAuth }) {
   return (
-    <footer className="w-full py-16 px-margin-mobile md:px-margin-desktop bg-surface-container-highest border-t border-outline-variant">
+    <footer className="w-full max-md:py-8 md:py-16 px-margin-mobile md:px-margin-desktop bg-surface-container-highest border-t border-outline-variant">
       <div className="max-w-container-max mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-10">
         <div className="flex flex-col gap-4">
           <div className="flex items-center gap-3">
@@ -33,7 +33,6 @@ export default function StudentFooter({ student, onNavigate, onOpenAuth }) {
                 </>
               )}
               <a className="text-body-sm text-on-surface-variant hover:text-primary transition-colors" href="/track" onClick={(e) => { e.preventDefault(); onNavigate('/track'); }}>Track Request</a>
-              <a className="text-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Payment Info</a>
             </nav>
           </div>
           <div className="flex flex-col gap-4">
@@ -46,9 +45,9 @@ export default function StudentFooter({ student, onNavigate, onOpenAuth }) {
           <div className="flex flex-col gap-4 col-span-2 sm:col-span-1">
             <span className="font-label-md font-bold text-primary uppercase">Support</span>
             <nav className="flex flex-col gap-2">
-              <a className="text-body-sm text-on-surface-variant hover:text-primary flex items-center gap-2" href="mailto:support@toplink.edu">
+              <a className="text-body-sm text-on-surface-variant hover:text-primary flex items-center gap-2" href="mailto:toplinkglobalcollege@gmail.com">
                 <span className="material-symbols-outlined text-[18px]">mail</span>
-                support@toplink.edu
+                toplinkglobalcollege@gmail.com
               </a>
               <a className="text-body-sm text-on-surface-variant hover:text-primary flex items-center gap-2" href="#">
                 <span className="material-symbols-outlined text-[18px]">help</span>

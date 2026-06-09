@@ -78,6 +78,7 @@ function RegisterForm({ onRegistered, onSwitchToLogin }) {
     student_number: '', first_name: '', last_name: '', email: '', password: '', password_confirmation: '',
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -154,8 +155,13 @@ function RegisterForm({ onRegistered, onSwitchToLogin }) {
         </div>
         <div>
           <label className="block text-label-md font-bold text-on-surface mb-1">Confirm Password</label>
-          <input type="password" value={form.password_confirmation} onChange={set('password_confirmation')}
-            className="w-full px-4 py-2 sm:py-3 bg-surface-container-lowest border border-outline-variant rounded-lg focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-body-md" placeholder="Repeat your password" />
+          <div className="relative">
+            <input type={showConfirmPassword ? 'text' : 'password'} value={form.password_confirmation} onChange={set('password_confirmation')}
+              className="w-full px-4 py-2 sm:py-3 pr-12 bg-surface-container-lowest border border-outline-variant rounded-lg focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-body-md" placeholder="Repeat your password" />
+            <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant cursor-pointer">
+              {showConfirmPassword ? <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" /> : <Eye className="w-4 h-4 sm:w-5 sm:h-5" />}
+            </button>
+          </div>
         </div>
       </div>
       <button type="submit" disabled={loading} className="w-full py-2.5 sm:py-4 rounded-lg bg-primary text-on-primary font-bold hover:opacity-90 shadow-lg transition-all cursor-pointer disabled:opacity-50">
@@ -525,7 +531,7 @@ export default function StudentAuthModal({ isOpen, defaultTab, onClose, onLoginS
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-3 py-6" onClick={handleBackdropClick}>
       <div className="animate-[scaleIn_0.2s_ease-out] w-[92%] max-w-sm sm:max-w-md md:max-w-lg max-h-[90vh] overflow-y-auto">
         <div className="bg-surface rounded-2xl shadow-sm border border-outline-variant overflow-hidden relative">
-          <button onClick={onClose} className="absolute top-4 right-4 text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer z-10">
+          <button onClick={onClose} className="absolute top-3 right-3 w-11 h-11 flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors cursor-pointer z-10 rounded-full">
             <X className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
           <div className="p-4 sm:p-8">

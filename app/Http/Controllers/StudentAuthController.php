@@ -250,6 +250,7 @@ class StudentAuthController extends Controller
         $otpRecord = StudentOtp::where('student_id', $validated['student_id'])
             ->where('otp', $validated['otp'])
             ->where('expires_at', '>', now())
+            ->whereNull('verified_at')
             ->latest()
             ->first();
 
@@ -259,6 +260,9 @@ class StudentAuthController extends Controller
                 'message' => 'Invalid or expired OTP.',
             ], 422);
         }
+
+        $otpRecord->verified_at = now();
+        $otpRecord->save();
 
         return response()->json([
             'success' => true,
@@ -277,6 +281,7 @@ class StudentAuthController extends Controller
 
         $otpRecord = StudentOtp::where('student_id', $student->id)
             ->where('expires_at', '>', now())
+            ->whereNotNull('verified_at')
             ->latest()
             ->first();
 

@@ -31,7 +31,6 @@ export default function StudentLogin({ onNavigate, onLoginSuccess }) {
         return;
       }
       if (onLoginSuccess) onLoginSuccess(data.student);
-      onNavigate('/track');
     } catch { setError('Network error. Please check your connection.'); }
     setLoading(false);
   };

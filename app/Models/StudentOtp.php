@@ -10,12 +10,14 @@ class StudentOtp extends Model
         'student_id',
         'otp',
         'expires_at',
+        'verified_at',
     ];
 
     protected function casts(): array
     {
         return [
             'expires_at' => 'datetime',
+            'verified_at' => 'datetime',
         ];
     }
 

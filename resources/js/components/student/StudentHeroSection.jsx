@@ -9,7 +9,7 @@ const benefits = [
 
 export default function StudentHeroSection({ onNavigate, onOpenAuth, student }) {
   return (
-    <section className="relative overflow-hidden bg-surface-container-low py-12 md:py-28">
+    <section className="relative overflow-hidden bg-surface-container-low max-md:py-6 md:py-28">
       <div className="relative z-10 max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop flex flex-col lg:flex-row items-center gap-8 md:gap-16">
         {/* Left */}
         <div className="flex-1 text-center lg:text-left">

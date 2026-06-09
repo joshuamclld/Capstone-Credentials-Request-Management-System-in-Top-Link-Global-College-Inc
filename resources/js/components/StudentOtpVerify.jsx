@@ -38,7 +38,6 @@ export default function StudentOtpVerify({ onNavigate, onLoginSuccess }) {
       const data = await res.json();
       if (!res.ok) { setError(data.message || 'Verification failed.'); setLoading(false); return; }
       if (onLoginSuccess) onLoginSuccess(data.student);
-      onNavigate('/track');
     } catch { setError('Network error. Please check your connection.'); }
     setLoading(false);
   };

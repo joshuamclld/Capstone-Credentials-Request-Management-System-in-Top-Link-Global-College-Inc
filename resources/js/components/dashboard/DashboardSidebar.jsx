@@ -43,7 +43,7 @@ export default function DashboardSidebar({ items, currentUser, sidebarOpen, onCl
                         className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive(item)
                             ? 'bg-emerald-50 text-emerald-800 font-semibold'
                             : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                        }`}
+                            }`}
                     >
                         <item.icon className="w-4 h-4 shrink-0" />
                         {item.label}
@@ -52,22 +52,22 @@ export default function DashboardSidebar({ items, currentUser, sidebarOpen, onCl
             </nav>
 
             <div className="px-4 py-4 border-t border-emerald-100">
-                <div className="flex items-center gap-3 px-4 py-2 mb-2">
-                    <div className="w-8 h-8 rounded-full bg-emerald-700 text-white flex items-center justify-center text-xs font-bold">
+                <div className="flex items-center gap-3 px-4 py-2">
+                    <div className="w-8 h-8 rounded-full bg-emerald-700 text-white flex items-center justify-center text-xs font-bold shrink-0">
                         {adminName.charAt(0)}
                     </div>
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium text-slate-900 truncate">{adminName}</p>
                         <p className="text-[11px] text-slate-500 truncate">{adminEmail || 'Administrator'}</p>
                     </div>
+                    <button
+                        onClick={onLogout}
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-red-600 hover:bg-red-50 transition-colors cursor-pointer shrink-0"
+                    >
+                        <LogOut className="w-4 h-4" />
+                        <span className="text-xs">Sign Out</span>
+                    </button>
                 </div>
-                <button
-                    onClick={onLogout}
-                    className="flex w-full items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
-                >
-                    <LogOut className="w-4 h-4" />
-                    Sign Out
-                </button>
             </div>
         </aside>
     );

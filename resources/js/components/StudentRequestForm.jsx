@@ -332,6 +332,12 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
             </div>
 
             <form onSubmit={step === 4 ? handleSubmit : handleNextStep}>
+              <div className="flex items-center justify-center gap-2 mb-5 sm:mb-6">
+                {[1, 2, 3, 4].map(s => (
+                  <div key={s} className={`w-2 h-2 rounded-full transition-colors ${s <= step ? 'bg-primary' : 'bg-outline-variant'}`} />
+                ))}
+                <span className="text-label-sm text-on-surface-variant ml-2">Step {step} of 4</span>
+              </div>
               <section className="bg-surface-container-lowest rounded-xl border border-outline-variant p-4 sm:p-5 md:p-6 mb-6 sm:mb-8 shadow-sm">
 
                 {/* STEP 1: Personal Info */}

@@ -83,7 +83,7 @@ export default function SystemAdminAuditLogs({ user, onLogout, onNavigate }) {
                             value={actionFilter}
                             onChange={(v) => { setActionFilter(v); setPage(1); }}
                             placeholder="All Actions"
-                            className="w-44"
+                            className="flex-1 sm:w-64"
                         />
                     </div>
                 </div>
