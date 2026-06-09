@@ -147,11 +147,10 @@ export default function DashboardDropdown({
                 disabled={disabled}
                 aria-haspopup="listbox"
                 aria-expanded={open}
-                className={`w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 flex items-center justify-between gap-2 cursor-pointer ${
-                    disabled
+                className={`w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 flex items-center justify-between gap-2 cursor-pointer ${disabled
                         ? 'opacity-50 cursor-not-allowed bg-slate-50'
                         : 'hover:border-slate-400'
-                } ${value != null ? 'text-slate-700' : 'text-slate-400'}`}
+                    } ${value != null ? 'text-slate-700' : 'text-slate-400'}`}
             >
                 <span className="truncate">{displayLabel}</span>
                 <ChevronDown className={`w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
@@ -194,13 +193,11 @@ export default function DashboardDropdown({
                                         type="button"
                                         onClick={() => { if (!locked) pick(opt); }}
                                         disabled={locked}
-                                        className={`w-full px-3 py-2.5 text-sm text-left transition-colors ${
-                                            isHighlighted && !locked ? 'bg-emerald-100' : ''
-                                        } ${
-                                            isSelected
+                                        className={`w-full px-3 py-2.5 text-sm text-left transition-colors ${isHighlighted && !locked ? 'bg-emerald-100' : ''
+                                            } ${isSelected
                                                 ? 'bg-emerald-50 text-emerald-800 font-medium'
                                                 : 'text-slate-700 hover:bg-slate-50'
-                                        } ${locked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
+                                            } ${locked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
                                         onMouseEnter={() => setHighlighted(idx)}
                                     >
                                         {lbl}
