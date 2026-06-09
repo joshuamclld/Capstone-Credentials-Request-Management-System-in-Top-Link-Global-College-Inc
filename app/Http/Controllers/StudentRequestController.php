@@ -14,6 +14,90 @@ use Illuminate\Support\Facades\Log;
 
 class StudentRequestController extends Controller
 {
+    public function myRequests(Request $request)
+    {
+        if (!$request->expectsJson()) {
+            return view('welcome');
+        }
+
+        $student = auth('student')->user();
+        if (!$student) {
+            return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
+        }
+
+        $requests = StudentRequest::where('student_id', $student->id)
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($request) {
+                $documents = Document::whereIn('code', $request->document_ids ?? [])->get();
+                return [
+                    'id' => $request->id,
+                    'tracking_number' => $request->tracking_number,
+                    'documents' => $documents->pluck('name')->toArray(),
+                    'semesters' => $request->semesters ?? [],
+                    'pages' => $request->pages,
+                    'payment_method' => $request->payment_method,
+                    'payment_status' => $request->payment_status,
+                    'status' => $request->status,
+                    'total_fee' => (float) $request->total_fee,
+                    'created_at' => $request->created_at->format('F d, Y'),
+                    'year_level' => $request->year_level,
+                    'section' => $request->section,
+                    'remarks' => $request->remarks,
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'requests' => $requests,
+        ]);
+    }
+
+    public function myRequestDetail(Request $request, $trackingNumber)
+    {
+        if (!$request->expectsJson()) {
+            return view('welcome');
+        }
+        $student = auth('student')->user();
+        if (!$student) {
+            return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
+        }
+
+        $request = StudentRequest::where('tracking_number', $trackingNumber)->first();
+
+        if (!$request) {
+            return response()->json(['success' => false, 'message' => 'Request not found.'], 404);
+        }
+
+        if ($request->student_id !== $student->id) {
+            return response()->json(['success' => false, 'message' => 'Forbidden.'], 403);
+        }
+
+        $documents = Document::whereIn('code', $request->document_ids ?? [])->get();
+        $documentNames = $documents->pluck('name')->toArray();
+        $processingDays = $documents->max('processing_days');
+
+        return response()->json([
+            'success' => true,
+            'request' => [
+                'tracking_number' => $request->tracking_number,
+                'student_name' => $request->full_name,
+                'documents' => $documentNames,
+                'semesters' => $request->semesters ?? [],
+                'pages' => $request->pages,
+                'payment_method' => $request->payment_method,
+                'payment_status' => $request->payment_status,
+                'status' => $request->status,
+                'remarks' => $request->remarks,
+                'total_fee' => (float) $request->total_fee,
+                'processing_days' => $processingDays,
+                'created_at' => $request->created_at->format('F d, Y'),
+                'year_level' => $request->year_level,
+                'section' => $request->section,
+            ],
+        ]);
+    }
+
     public function store(StoreStudentRequest $request)
     {
         $validated = $request->validated();

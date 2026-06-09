@@ -106,6 +106,7 @@ Route::prefix('admin')->group(function () {
 });
 
 // SPA catch-all — serve React app for all admin/cashier/system-admin sub-paths
+Route::get('/login', function () { return view('welcome'); })->name('login');
 Route::get('/admin/{any?}', function () { return view('welcome'); })->where('any', '.*');
 Route::get('/cashier/{any?}', function () { return view('welcome'); })->where('any', '.*');
 Route::get('/system-admin/{any?}', function () { return view('welcome'); })->where('any', '.*');
@@ -129,8 +130,20 @@ Route::prefix('student')->group(function () {
         ->middleware('throttle:2,1');
     Route::post('/login', [StudentAuthController::class, 'login'])
         ->middleware('throttle:5,1');
+    Route::post('/forgot-password', [StudentAuthController::class, 'forgotPassword'])
+        ->middleware('throttle:3,1');
+    Route::post('/verify-reset-otp', [StudentAuthController::class, 'verifyResetOtp'])
+        ->middleware('throttle:5,1');
+    Route::post('/reset-password', [StudentAuthController::class, 'resetPassword'])
+        ->middleware('throttle:5,1');
     Route::post('/logout', [StudentAuthController::class, 'logout']);
     Route::get('/check', [StudentAuthController::class, 'check']);
+
+    // Student Request Management (authenticated)
+    Route::middleware('auth:student')->group(function () {
+        Route::get('/requests', [StudentRequestController::class, 'myRequests']);
+        Route::get('/requests/{tracking_number}', [StudentRequestController::class, 'myRequestDetail']);
+    });
 });
 
 // PayMongo Payment Routes

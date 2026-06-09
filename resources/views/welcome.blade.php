@@ -12,7 +12,7 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
-        <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
+        <link rel="icon" type="image/png" href="/images/logo.png">
         @fonts
         @vite(['resources/css/app.css', 'resources/js/app.jsx'])
 

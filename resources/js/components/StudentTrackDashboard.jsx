@@ -67,7 +67,7 @@ function buildTimeline(status, payment_status) {
   }));
 }
 
-export default function StudentTrackDashboard({ studentUser, onLogout, onNavigate, onStudentLogin, currentPath }) {
+export default function StudentTrackDashboard({ studentUser, onLogout, onNavigate, onStudentLogin, currentPath, preloadTrackingNumber }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searching, setSearching] = useState(false);
   const [request, setRequest] = useState(null);
@@ -161,6 +161,24 @@ export default function StudentTrackDashboard({ studentUser, onLogout, onNavigat
   const isLoggedIn = Boolean(studentUser);
 
   useEffect(() => {
+    if (preloadTrackingNumber) {
+      setSearching(true);
+      setError('');
+      fetch(`/student/requests/${encodeURIComponent(preloadTrackingNumber)}`, {
+        headers: { 'Accept': 'application/json' },
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (!data.success) { setError(data.message || 'Request not found.'); setSearching(false); return; }
+          setRequest(data.request);
+          setIsOwner(true);
+          setSearching(false);
+        })
+        .catch(() => { setError('Network error.'); setSearching(false); });
+    }
+  }, [preloadTrackingNumber]);
+
+  useEffect(() => {
     if (studentUser && request) {
       fetch(`/requests/${encodeURIComponent(request.tracking_number)}`, {
         headers: { 'Accept': 'application/json' },
@@ -196,29 +214,31 @@ export default function StudentTrackDashboard({ studentUser, onLogout, onNavigat
       <StudentNavbar student={studentUser} onLogout={onLogout} onNavigate={onNavigate} onOpenAuth={openAuth} currentPath={currentPath} />
 
       <main className="flex-grow flex flex-col pb-20 md:pb-8">
-        <div className="px-margin-mobile md:px-margin-desktop py-8 max-w-container-max mx-auto w-full">
-          <div className="mb-12 animate-fade-in-up text-center md:text-left">
-            <h2 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-2">Track Your Request</h2>
-            <p className="text-body-md text-on-surface-variant mb-8">Enter your reference number to check the live status of your academic documents.</p>
+        <div className="px-margin-mobile md:px-margin-desktop py-6 sm:py-8 max-w-container-max mx-auto w-full">
+          {!preloadTrackingNumber && (
+            <div className="mb-6 sm:mb-10 animate-fade-in-up text-center md:text-left">
+              <h2 className="text-xl sm:text-headline-lg-mobile md:text-headline-lg text-on-surface mb-1 sm:mb-2">Track Your Request</h2>
+              <p className="text-body-sm sm:text-body-md text-on-surface-variant mb-4 sm:mb-8">Enter your reference number to check the live status of your academic documents.</p>
 
-            <form onSubmit={handleSearch} className="relative max-w-xl mx-auto md:mx-0">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant w-4 h-4" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-32 py-4 bg-surface-container-lowest border border-outline rounded-xl focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all font-body-md"
-                placeholder="e.g., TLGC-2026-00001"
-              />
-              <button
-                type="submit"
-                disabled={searching}
-                className="absolute right-2 top-1/2 -translate-y-1/2 bg-primary text-on-primary px-6 py-2 rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer"
-              >
-                {searching ? 'SEARCHING...' : 'SEARCH'}
-              </button>
-            </form>
-          </div>
+              <form onSubmit={handleSearch} className="relative max-w-xl mx-auto md:mx-0">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant w-4 h-4" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-12 pr-32 py-3 sm:py-4 bg-surface-container-lowest border border-outline rounded-xl focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-body-sm sm:text-body-md"
+                  placeholder="e.g., TLGC-2026-00001"
+                />
+                <button
+                  type="submit"
+                  disabled={searching}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-primary text-on-primary px-4 sm:px-6 py-1.5 sm:py-2 rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer"
+                >
+                  {searching ? 'SEARCHING...' : 'SEARCH'}
+                </button>
+              </form>
+            </div>
+          )}
 
           {error && (
             <div className="max-w-xl mx-auto mb-8 p-4 rounded-lg bg-error/10 border border-error/30 animate-fade-in-up">
@@ -231,7 +251,7 @@ export default function StudentTrackDashboard({ studentUser, onLogout, onNavigat
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-gutter-desktop animate-fade-in-up">
             <div className="lg:col-span-7 flex flex-col gap-4">
-              <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-6">
+              <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-4 sm:p-6">
                 {request ? (
                   <>
                     <div className="flex justify-between items-start mb-4">
@@ -361,8 +381,8 @@ export default function StudentTrackDashboard({ studentUser, onLogout, onNavigat
             </div>
 
             <div className="lg:col-span-5">
-              <div className="bg-surface-container-high border border-outline-variant rounded-2xl p-6 h-full">
-                <div className="mb-6">
+              <div className="bg-surface-container-high border border-outline-variant rounded-2xl p-4 sm:p-6 h-full">
+                <div className="mb-4 sm:mb-6">
                   <h3 className="font-headline-sm text-headline-sm text-on-surface mb-1">Request Journey</h3>
                   <p className="text-label-md text-on-surface-variant">
                     {request ? (
@@ -453,13 +473,13 @@ export default function StudentTrackDashboard({ studentUser, onLogout, onNavigat
 
       <StudentFooter student={studentUser} onNavigate={onNavigate} onOpenAuth={openAuth} />
 
-      <StudentMobileNav active={currentPath} student={studentUser} onNavigate={onNavigate} onOpenAuth={openAuth} />
+      <StudentMobileNav active={currentPath} student={studentUser} onNavigate={onNavigate} onOpenAuth={openAuth} onLogout={onLogout} />
 
       {showCancelModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4" onClick={handleCancelModalClose}>
-          <div className="bg-surface rounded-2xl shadow-xl border border-outline-variant w-full max-w-md p-6 animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-surface rounded-2xl shadow-xl border border-outline-variant w-full max-w-md p-4 sm:p-6 animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-headline-sm font-bold text-on-surface mb-2">Confirm Cancellation</h3>
-            <p className="text-body-md text-on-surface-variant mb-6">Are you sure you want to cancel this request? This action cannot be undone.</p>
+            <p className="text-body-sm sm:text-body-md text-on-surface-variant mb-4 sm:mb-6">Are you sure you want to cancel this request? This action cannot be undone.</p>
 
             {cancelModalError && (
               <div className="mb-4 p-3 rounded-lg bg-error/10 border border-error/30">

@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client';
 import StudentLanding from './components/StudentLanding';
 import StudentRequestForm from './components/StudentRequestForm';
 import StudentTrackDashboard from './components/StudentTrackDashboard';
+import StudentDashboard from './components/student/StudentDashboard';
+import StudentMyRequests from './components/student/StudentMyRequests';
 import StudentLogin from './components/StudentLogin';
 import StudentRegister from './components/StudentRegister';
 import StudentOtpVerify from './components/StudentOtpVerify';
@@ -83,18 +85,36 @@ function App() {
 
   const handleStudentLoginSuccess = (studentData) => {
     setStudentUser(studentData);
-    navigate('/track');
+    navigate('/student/dashboard');
   };
 
   const handleStudentModalLogin = (studentData) => {
     setStudentUser(studentData);
   };
 
-  const handleStudentLogout = () => {
+  // Auto-redirect authenticated students away from guest pages
+  useEffect(() => {
+    if (studentUser && studentAuthChecked) {
+      const guestPaths = ['/', '/student/login', '/student/register', '/login'];
+      if (guestPaths.includes(currentPath)) {
+        navigate('/student/dashboard');
+      }
+    }
+  }, [studentUser, studentAuthChecked, currentPath]);
+
+  const handleStudentLogout = async () => {
+    if (!studentUser) return;
+    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    try {
+      await fetch('/student/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token },
+      });
+    } catch {
+      // Fallback: session might already be expired
+    }
     setStudentUser(null);
     navigate('/');
-    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-    fetch('/student/logout', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token } }).catch(() => {});
   };
 
   const clearAuth = () => {
@@ -275,6 +295,28 @@ function App() {
 
   if (currentPath === '/track') {
     return <StudentTrackDashboard studentUser={studentUser} onLogout={handleStudentLogout} onNavigate={navigate} onStudentLogin={handleStudentModalLogin} currentPath={currentPath} />;
+  }
+
+  // Student Dashboard - authenticated only
+  if (currentPath === '/student/dashboard') {
+    if (!studentAuthChecked) return <div className="flex items-center justify-center min-h-screen text-on-surface-variant">Loading...</div>;
+    if (!studentUser) return <StudentLanding student={studentUser} onLogout={handleStudentLogout} onNavigate={navigate} currentPath={currentPath} initialAuthTab="login" onStudentLogin={handleStudentModalLogin} />;
+    return <StudentDashboard student={studentUser} onLogout={handleStudentLogout} onNavigate={navigate} currentPath={currentPath} />;
+  }
+
+  // My Requests - authenticated only
+  if (currentPath === '/student/requests') {
+    if (!studentAuthChecked) return <div className="flex items-center justify-center min-h-screen text-on-surface-variant">Loading...</div>;
+    if (!studentUser) return <StudentLanding student={studentUser} onLogout={handleStudentLogout} onNavigate={navigate} currentPath={currentPath} initialAuthTab="login" onStudentLogin={handleStudentModalLogin} />;
+    return <StudentMyRequests student={studentUser} onLogout={handleStudentLogout} onNavigate={navigate} currentPath={currentPath} />;
+  }
+
+  // Student Request Detail - authenticated only
+  if (currentPath.startsWith('/student/request/')) {
+    if (!studentAuthChecked) return <div className="flex items-center justify-center min-h-screen text-on-surface-variant">Loading...</div>;
+    if (!studentUser) return <StudentLanding student={studentUser} onLogout={handleStudentLogout} onNavigate={navigate} currentPath={currentPath} initialAuthTab="login" onStudentLogin={handleStudentModalLogin} />;
+    const trackingNumber = currentPath.replace('/student/request/', '');
+    return <StudentTrackDashboard studentUser={studentUser} onLogout={handleStudentLogout} onNavigate={navigate} onStudentLogin={handleStudentModalLogin} currentPath={currentPath} preloadTrackingNumber={trackingNumber} />;
   }
 
   // Student Authentication Routes
