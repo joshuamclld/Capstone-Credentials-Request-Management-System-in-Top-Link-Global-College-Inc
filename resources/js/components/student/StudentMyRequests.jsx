@@ -29,7 +29,7 @@ export default function StudentMyRequests({ student, onLogout, onNavigate, curre
   const getCsrf = () => document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
   useEffect(() => {
-    fetch('/student/requests', {
+    fetch('/student/api/requests', {
       headers: { 'Accept': 'application/json' },
     })
       .then(res => res.json())
@@ -43,7 +43,7 @@ export default function StudentMyRequests({ student, onLogout, onNavigate, curre
   // Re-fetch when tab gains focus (e.g. returning from PayMongo) and auto-sync payments
   useEffect(() => {
     const onFocus = () => {
-      fetch('/student/requests', {
+      fetch('/student/api/requests', {
         headers: { 'Accept': 'application/json' },
       })
         .then(res => res.json())

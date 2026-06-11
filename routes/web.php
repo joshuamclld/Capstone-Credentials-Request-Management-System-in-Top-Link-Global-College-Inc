@@ -124,10 +124,11 @@ Route::post('/requests', [StudentRequestController::class, 'store'])
 Route::get('/requests/{tracking_number}', [StudentRequestController::class, 'show'])
     ->middleware('throttle:30,1');
 Route::patch('/requests/{tracking_number}/cancel', [StudentRequestController::class, 'cancel'])
-    ->middleware('throttle:5,1');
+    ->middleware(['auth:student', 'throttle:5,1']);
 Route::post('/requests/{tracking_number}/continue-payment', [StudentRequestController::class, 'continuePayment'])
-    ->middleware('throttle:10,1');
-Route::get('/requests/{tracking_number}/verify-payment', [StudentRequestController::class, 'verifyPayment']);
+    ->middleware(['auth:student', 'throttle:10,1']);
+Route::get('/requests/{tracking_number}/verify-payment', [StudentRequestController::class, 'verifyPayment'])
+    ->middleware(['auth:student', 'throttle:30,1']);
 Route::get('/documents', [DocumentController::class, 'index']);
 
 // Student Authentication Routes
@@ -151,8 +152,8 @@ Route::prefix('student')->group(function () {
 
     // Student Request Management (authenticated)
     Route::middleware('auth:student')->group(function () {
-        Route::get('/requests', [StudentRequestController::class, 'myRequests']);
-        Route::get('/requests/{tracking_number}', [StudentRequestController::class, 'myRequestDetail']);
+        Route::get('/api/requests', [StudentRequestController::class, 'myRequests']);
+        Route::get('/api/requests/{tracking_number}', [StudentRequestController::class, 'myRequestDetail']);
 
         // Student Profile (GET moved to /api/ to avoid SPA refresh conflict)
         Route::get('/api/profile', [StudentProfileController::class, 'show']);

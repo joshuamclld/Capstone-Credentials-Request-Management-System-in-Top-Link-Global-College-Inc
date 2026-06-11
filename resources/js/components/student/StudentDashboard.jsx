@@ -25,7 +25,7 @@ export default function StudentDashboard({ student, onLogout, onNavigate, curren
   const fetchRequests = () => {
     setLoading(true);
     setError('');
-    fetch('/student/requests', { headers: { 'Accept': 'application/json' } })
+    fetch('/student/api/requests', { headers: { 'Accept': 'application/json' } })
       .then(res => res.json())
       .then(data => {
         if (data.success) setAllRequests(data.requests);

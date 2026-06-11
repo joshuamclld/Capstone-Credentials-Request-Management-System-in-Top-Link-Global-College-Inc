@@ -165,7 +165,7 @@ export default function StudentTrackDashboard({ studentUser, onLogout, onNavigat
     if (preloadTrackingNumber) {
       setSearching(true);
       setError('');
-      fetch(`/student/requests/${encodeURIComponent(preloadTrackingNumber)}`, {
+      fetch(`/student/api/requests/${encodeURIComponent(preloadTrackingNumber)}`, {
         headers: { 'Accept': 'application/json' },
       })
         .then(res => res.json())

@@ -119,7 +119,7 @@ class SystemAdminController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'data' => $user,
+            'data' => $user->only(['id', 'name', 'email', 'role', 'contact_number', 'is_active', 'created_at']),
             'request_count' => null,
         ]);
     }
@@ -139,7 +139,7 @@ class SystemAdminController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'User created successfully.',
-            'data' => $user,
+            'data' => $user->only(['id', 'name', 'email', 'role', 'contact_number', 'is_active', 'created_at']),
         ], 201);
     }
 
@@ -171,7 +171,7 @@ class SystemAdminController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'User updated successfully.',
-            'data' => $user->fresh(),
+            'data' => $user->fresh()->only(['id', 'name', 'email', 'role', 'contact_number', 'is_active', 'created_at', 'updated_at']),
         ]);
     }
 

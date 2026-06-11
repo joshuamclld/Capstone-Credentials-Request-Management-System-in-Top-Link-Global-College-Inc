@@ -50,7 +50,7 @@ class AdminAuthController extends Controller
             return response()->json([
                 'status' => 'success',
                 'message' => 'Login successful',
-                'user' => $user,
+                'user' => $user->only(['id', 'name', 'email', 'role', 'contact_number', 'is_active']),
             ]);
         }
 
@@ -89,7 +89,7 @@ class AdminAuthController extends Controller
         if (Auth::check() && (Auth::user()->is_active ?? true) && in_array(Auth::user()->role, ['admin', 'cashier', 'system_admin'])) {
             return response()->json([
                 'status' => 'authenticated',
-                'user' => Auth::user()
+                'user' => Auth::user()->only(['id', 'name', 'email', 'role', 'contact_number', 'is_active']),
             ]);
         }
 

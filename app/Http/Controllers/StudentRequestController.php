@@ -189,8 +189,12 @@ class StudentRequestController extends Controller
         ], 201);
     }
 
-    public function show(string $trackingNumber)
+    public function show(Request $request, string $trackingNumber)
     {
+        if (!$request->expectsJson()) {
+            return view('welcome');
+        }
+
         $request = StudentRequest::where('tracking_number', $trackingNumber)->first();
 
         if (!$request) {
@@ -225,7 +229,6 @@ class StudentRequestController extends Controller
                 'created_at' => $request->created_at->format('F d, Y'),
                 'year_level' => $request->year_level,
                 'section' => $request->section,
-                'paymongo_checkout_id' => $request->paymongo_checkout_id,
             ],
         ]);
     }
@@ -233,13 +236,6 @@ class StudentRequestController extends Controller
     public function cancel(string $trackingNumber)
     {
         $student = auth('student')->user();
-
-        if (!$student) {
-            return response()->json([
-                'success' => false,
-                'message' => 'You must be logged in to cancel a request.',
-            ], 401);
-        }
 
         $request = StudentRequest::where('tracking_number', $trackingNumber)->first();
 
@@ -291,9 +287,6 @@ class StudentRequestController extends Controller
     public function continuePayment(string $trackingNumber)
     {
         $student = auth('student')->user();
-        if (!$student) {
-            return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
-        }
 
         $request = StudentRequest::where('tracking_number', $trackingNumber)->first();
         if (!$request) {
@@ -364,12 +357,26 @@ class StudentRequestController extends Controller
         }
     }
 
-    public function verifyPayment(string $trackingNumber)
+    public function verifyPayment(Request $request, string $trackingNumber)
     {
+        if (!$request->expectsJson()) {
+            return view('welcome');
+        }
+
+        $student = auth('student')->user();
+        if (!$student) {
+            return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
+        }
+
         $request = StudentRequest::where('tracking_number', $trackingNumber)->first();
         if (!$request) {
             return response()->json(['success' => false, 'message' => 'Not found.'], 404);
         }
+
+        if ($request->student_id !== $student->id) {
+            return response()->json(['success' => false, 'message' => 'Forbidden.'], 403);
+        }
+
         if ($request->payment_status === 'paid') {
             return response()->json(['success' => true, 'payment_status' => 'paid']);
         }
