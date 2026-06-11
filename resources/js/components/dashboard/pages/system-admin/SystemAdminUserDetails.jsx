@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, Users, FileText, ArrowLeft, Mail, Phone, Calendar, Shield, RefreshCw, Hash, ChartColumn } from 'lucide-react';
+import { Users, FileText, ArrowLeft, Mail, Phone, Calendar, Shield, Hash } from 'lucide-react';
 import DashboardLayout from '../../DashboardLayout';
 import StatusBadge from '../../StatusBadge';
 import EmptyState from '../../EmptyState';

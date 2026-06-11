@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, FileText, Users, Clock, CheckCircle, RefreshCw, DollarSign, ChartColumn, Shield } from 'lucide-react';
+import { FileText, Users, Clock, RefreshCw, ChartColumn, Shield } from 'lucide-react';
 import DashboardLayout from '../../DashboardLayout';
 import DashboardStatCard from '../../DashboardStatCard';
 import DashboardSearch from '../../DashboardSearch';

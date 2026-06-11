@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, LayoutDashboard, Clock, CheckCircle, Search, ArrowLeft, ChevronRight, CreditCard, User, BookOpen, MessageSquare, ShieldAlert, ShieldCheck } from 'lucide-react';
+import { FileText, Clock, ArrowLeft, ChevronRight, CreditCard, User, BookOpen, MessageSquare, ShieldAlert, ShieldCheck } from 'lucide-react';
 import DashboardLayout from '../DashboardLayout';
 import DashboardDropdown from '../../common/DashboardDropdown';
 import { registrarSidebarItems } from '../config/sidebarItems';

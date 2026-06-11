@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AlertCircle, XCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import StudentDashboardLayout from './StudentDashboardLayout';
 
 const STATUS_BADGES = {

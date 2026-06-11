@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Search, FileText, BadgeCheck, Clock, PackageCheck, CheckCheck, AlertCircle, XCircle } from 'lucide-react';
 import StudentNavbar from './student/StudentNavbar';
 import StudentFooter from './student/StudentFooter';
-import StudentMobileNav from './student/StudentMobileNav';
 import StudentAuthModal from './student/StudentAuthModal';
 
 const STATUS_LABELS = {
@@ -463,8 +462,6 @@ export default function StudentTrackDashboard({ studentUser, onLogout, onNavigat
       </main>
 
       <StudentFooter student={studentUser} onNavigate={onNavigate} onOpenAuth={openAuth} />
-
-      <StudentMobileNav active={currentPath} student={studentUser} onNavigate={onNavigate} onOpenAuth={openAuth} onLogout={onLogout} />
 
       {showCancelModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4" onClick={handleCancelModalClose}>

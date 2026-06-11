@@ -3,7 +3,6 @@ import StudentNavbar from './student/StudentNavbar';
 import StudentHeroSection from './student/StudentHeroSection';
 import StudentFeatureCard from './student/StudentFeatureCard';
 import StudentFooter from './student/StudentFooter';
-import StudentMobileNav from './student/StudentMobileNav';
 import StudentAuthModal from './student/StudentAuthModal';
 
 export default function StudentLanding({ student, onLogout, onNavigate, currentPath, initialAuthTab, onStudentLogin }) {
@@ -117,8 +116,6 @@ export default function StudentLanding({ student, onLogout, onNavigate, currentP
       </main>
 
       <StudentFooter student={student} onNavigate={onNavigate} onOpenAuth={openAuth} />
-
-      <StudentMobileNav active={currentPath} student={student} onNavigate={onNavigate} onOpenAuth={openAuth} onLogout={handleLogout} />
 
       <StudentAuthModal
         isOpen={authModal.open}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, Clock, CheckCircle, Search, ArrowLeft, CreditCard, User, BookOpen, ShieldCheck, ExternalLink, AlertCircle } from 'lucide-react';
+import { CheckCircle, ArrowLeft, CreditCard, User, BookOpen, ShieldCheck, ExternalLink, AlertCircle } from 'lucide-react';
 import DashboardLayout from '../DashboardLayout';
 import { cashierSidebarItems } from '../config/sidebarItems';
 import { getPaymentStatusConfig } from '../../../utils/statusConfig';
