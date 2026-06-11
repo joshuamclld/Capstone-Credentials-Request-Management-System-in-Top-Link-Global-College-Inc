@@ -6,6 +6,7 @@ import StudentTrackDashboard from './components/StudentTrackDashboard';
 import StudentDashboard from './components/student/StudentDashboard';
 import StudentMyRequests from './components/student/StudentMyRequests';
 import StudentRequestDetail from './components/student/StudentRequestDetail';
+import StudentProfile from './components/student/StudentProfile';
 import StudentLogin from './components/StudentLogin';
 import StudentRegister from './components/StudentRegister';
 import StudentOtpVerify from './components/StudentOtpVerify';
@@ -323,6 +324,13 @@ function App() {
     if (!studentUser) return <StudentLanding student={studentUser} onLogout={handleStudentLogout} onNavigate={navigate} currentPath={currentPath} initialAuthTab="login" onStudentLogin={handleStudentModalLogin} />;
     const trackingNumber = currentPath.replace('/student/requests/', '');
     return <StudentRequestDetail student={studentUser} onLogout={handleStudentLogout} onNavigate={navigate} currentPath={currentPath} trackingNumber={trackingNumber} />;
+  }
+
+  // Student Profile - authenticated only
+  if (currentPath === '/student/profile') {
+    if (!studentAuthChecked) return <div className="flex items-center justify-center min-h-screen text-on-surface-variant">Loading...</div>;
+    if (!studentUser) return <StudentLanding student={studentUser} onLogout={handleStudentLogout} onNavigate={navigate} currentPath={currentPath} initialAuthTab="login" onStudentLogin={handleStudentModalLogin} />;
+    return <StudentProfile student={studentUser} onLogout={handleStudentLogout} onNavigate={navigate} currentPath={currentPath} onStudentUpdate={setStudentUser} />;
   }
 
   // Student Request Detail (singular - public layout) - authenticated only

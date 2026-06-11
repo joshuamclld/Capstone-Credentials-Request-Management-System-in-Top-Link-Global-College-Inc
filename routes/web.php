@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\RegistrarRequestController;
 use App\Http\Controllers\Admin\SystemAdminController;
 use App\Http\Controllers\StudentAuthController;
 use App\Http\Controllers\StudentRequestController;
+use App\Http\Controllers\StudentProfileController;
 use App\Http\Controllers\DocumentController;
 
 Route::get('/', function () {
@@ -145,6 +146,11 @@ Route::prefix('student')->group(function () {
     Route::middleware('auth:student')->group(function () {
         Route::get('/requests', [StudentRequestController::class, 'myRequests']);
         Route::get('/requests/{tracking_number}', [StudentRequestController::class, 'myRequestDetail']);
+
+        // Student Profile (GET moved to /api/ to avoid SPA refresh conflict)
+        Route::get('/api/profile', [StudentProfileController::class, 'show']);
+        Route::patch('/profile', [StudentProfileController::class, 'update']);
+        Route::patch('/profile/password', [StudentProfileController::class, 'updatePassword']);
     });
 });
 
