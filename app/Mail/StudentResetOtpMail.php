@@ -25,7 +25,7 @@ class StudentResetOtpMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Password Reset Verification — CRMS',
+            subject: 'Reset Your Password — TLGC CRMS',
         );
     }
 

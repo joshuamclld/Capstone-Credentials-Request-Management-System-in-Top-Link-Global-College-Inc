@@ -25,7 +25,7 @@ class StudentOtpMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Verify Your Email — CRMS OTP',
+            subject: 'Verify Your Account — TLGC CRMS',
         );
     }
 

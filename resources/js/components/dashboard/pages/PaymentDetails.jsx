@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, ArrowLeft, CreditCard, User, BookOpen, ShieldCheck, ExternalLink, AlertCircle } from 'lucide-react';
+import { CheckCircle, ArrowLeft, CreditCard, User, BookOpen, ShieldCheck, ExternalLink, AlertCircle, FileText } from 'lucide-react';
 import DashboardLayout from '../DashboardLayout';
 import { cashierSidebarItems } from '../config/sidebarItems';
-import { getPaymentStatusConfig } from '../../../utils/statusConfig';
+import { getPaymentStatusConfig, getRequestStatusConfig } from '../../../utils/statusConfig';
 
 export default function PaymentDetails({ user, onLogout, onNavigate }) {
     const [request, setRequest] = useState(null);
@@ -93,6 +93,7 @@ export default function PaymentDetails({ user, onLogout, onNavigate }) {
     };
 
     const paymentCfg = (s) => getPaymentStatusConfig(s);
+    const requestCfg = (s) => getRequestStatusConfig(s);
 
     if (loading) {
         return (
@@ -127,26 +128,7 @@ export default function PaymentDetails({ user, onLogout, onNavigate }) {
         >
             <div className="max-w-6xl mx-auto">
 
-                {/* Compact Header */}
-                <div className="mb-6">
-                    <button
-                        onClick={() => onNavigate('/cashier/payments')}
-                        className="flex items-center gap-1.5 text-xs font-medium text-emerald-700 hover:text-emerald-800 transition-colors mb-3 cursor-pointer"
-                    >
-                        <ArrowLeft className="w-3.5 h-3.5" />
-                        Back to Payment Queue
-                    </button>
-                    <div className="flex items-start justify-between gap-4">
-                        <div>
-                            <h1 className="text-xl font-bold text-slate-900 font-mono tracking-tight">{request.tracking_number}</h1>
-                            <p className="text-xs text-slate-500 mt-0.5">Payment verification for credential request</p>
-                        </div>
-                        <span className={`inline-flex items-center px-3.5 py-1.5 text-sm font-bold rounded-full border-2 shadow-sm shrink-0 ${paymentCfg(request.payment_status).className}`}>
-                            {paymentCfg(request.payment_status).label}
-                        </span>
-                    </div>
-                </div>
-
+                {/* Flash Message */}
                 {message && (
                     <div className={`mb-5 px-4 py-3 rounded-lg text-sm font-medium border ${
                         message.type === 'success'
@@ -157,11 +139,51 @@ export default function PaymentDetails({ user, onLogout, onNavigate }) {
                     </div>
                 )}
 
-                {/* Two-Column Layout */}
-                <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                {/* ─── Header Section ─── */}
+                <div className="mb-6">
+                    <button
+                        onClick={() => onNavigate('/cashier/payments')}
+                        className="flex items-center gap-1.5 text-xs font-medium text-emerald-700 hover:text-emerald-800 transition-colors mb-4 cursor-pointer"
+                    >
+                        <ArrowLeft className="w-3.5 h-3.5" />
+                        Back to Payment Queue
+                    </button>
 
-                    {/* Left Column — 2/3 */}
-                    <div className="xl:col-span-2 space-y-5">
+                    <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                            <div className="min-w-0">
+                                <h1 className="text-xl sm:text-2xl font-bold text-slate-900 font-mono tracking-tight">
+                                    {request.tracking_number}
+                                </h1>
+                                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2">
+                                    {(request.document_names || []).map((name, i) => (
+                                        <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 border border-slate-200 rounded-md text-xs font-medium text-slate-700">
+                                            <FileText className="w-3 h-3 text-slate-500" />
+                                            {name}
+                                        </span>
+                                    ))}
+                                </div>
+                                <p className="text-xs sm:text-sm text-slate-500 mt-2">
+                                    Payment verification for credential request
+                                </p>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2 shrink-0">
+                                <span className={`inline-flex items-center px-3 py-1.5 text-xs font-bold rounded-full border ${paymentCfg(request.payment_status).className}`}>
+                                    {paymentCfg(request.payment_status).label}
+                                </span>
+                                <span className={`inline-flex items-center px-3 py-1.5 text-xs font-bold rounded-full border ${requestCfg(request.status).className}`}>
+                                    {requestCfg(request.status).label}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* ─── Two-Column Layout ─── */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+
+                    {/* ─── Left Column (70%) ─── */}
+                    <div className="lg:col-span-7 xl:col-span-8 space-y-5">
 
                         {/* Student Information */}
                         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
@@ -169,28 +191,28 @@ export default function PaymentDetails({ user, onLogout, onNavigate }) {
                                 <User className="w-3.5 h-3.5 text-emerald-700" />
                                 <h2 className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Student Information</h2>
                             </div>
-                            <div className="p-5">
+                            <div className="px-5 py-4">
                                 <h3 className="text-base font-bold text-slate-900 mb-3">{request.student_name}</h3>
-                                <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+                                <div className="grid grid-cols-2 gap-x-6 gap-y-2.5">
                                     <div>
                                         <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Student ID</p>
-                                        <p className="text-sm font-medium text-slate-900 font-mono mt-0.5">{request.student_number}</p>
+                                        <p className="text-sm font-medium text-slate-900 font-mono">{request.student_number}</p>
                                     </div>
                                     <div>
                                         <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Course</p>
-                                        <p className="text-sm font-medium text-slate-900 mt-0.5">{request.course}</p>
+                                        <p className="text-sm font-medium text-slate-900">{request.course}</p>
                                     </div>
                                     <div>
                                         <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Year Level</p>
-                                        <p className="text-sm font-medium text-slate-900 mt-0.5">{request.year_level || '-'}</p>
+                                        <p className="text-sm font-medium text-slate-900">{request.year_level || '-'}</p>
                                     </div>
                                     <div>
                                         <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Section</p>
-                                        <p className="text-sm font-medium text-slate-900 mt-0.5">{request.section || '-'}</p>
+                                        <p className="text-sm font-medium text-slate-900">{request.section || '-'}</p>
                                     </div>
                                     <div className="col-span-2">
                                         <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Email</p>
-                                        <p className="text-sm text-slate-700 mt-0.5">{request.email}</p>
+                                        <p className="text-sm text-slate-700">{request.email}</p>
                                     </div>
                                 </div>
                             </div>
@@ -202,34 +224,45 @@ export default function PaymentDetails({ user, onLogout, onNavigate }) {
                                 <BookOpen className="w-3.5 h-3.5 text-emerald-700" />
                                 <h2 className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Requested Documents</h2>
                             </div>
-                            <div className="p-5">
+                            <div className="px-5 py-4">
                                 <div className="flex flex-wrap gap-2 mb-3">
                                     {request.document_names.map((name, i) => (
                                         <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-800">
-                                            <BookOpen className="w-3 h-3 text-emerald-600" />
+                                            <FileText className="w-3.5 h-3.5 text-emerald-600" />
                                             {name}
                                         </span>
                                     ))}
                                 </div>
-                                <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
-                                    {request.semesters && request.semesters.length > 0 && (
-                                        <span className="flex items-center gap-1">
-                                            {request.semesters.map((sem, i) => (
-                                                <span key={i} className="bg-white text-slate-600 px-2 py-0.5 rounded-full border border-slate-200">{sem}</span>
-                                            ))}
-                                        </span>
-                                    )}
+                                <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                                    {request.semesters && request.semesters.length > 0 && request.semesters.map((sem, i) => (
+                                        <span key={i} className="bg-white text-slate-600 px-2 py-0.5 rounded-full border border-slate-200">{sem}</span>
+                                    ))}
                                     {request.pages && (
-                                        <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full border border-blue-200">{request.pages} page{request.pages > 1 ? 's' : ''}</span>
+                                        <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full border border-blue-200">
+                                            {request.pages} page{request.pages > 1 ? 's' : ''}
+                                        </span>
                                     )}
                                     <span className="ml-auto text-slate-400">Requested {request.created_at}</span>
                                 </div>
                             </div>
                         </div>
+
+                        {/* Remarks — only if present */}
+                        {request.remarks && (
+                            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                                <div className="flex items-center gap-2 px-5 py-3 bg-emerald-50 border-b border-emerald-100">
+                                    <FileText className="w-3.5 h-3.5 text-emerald-700" />
+                                    <h2 className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Registrar Remarks</h2>
+                                </div>
+                                <div className="px-5 py-4">
+                                    <p className="text-sm text-slate-700 leading-relaxed">{request.remarks}</p>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
-                    {/* Right Column — 1/3 */}
-                    <div className="space-y-5">
+                    {/* ─── Right Sidebar (30%) ─── */}
+                    <div className="lg:col-span-5 xl:col-span-4 space-y-5">
 
                         {/* Payment Summary */}
                         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
@@ -237,20 +270,26 @@ export default function PaymentDetails({ user, onLogout, onNavigate }) {
                                 <CreditCard className="w-3.5 h-3.5 text-emerald-700" />
                                 <h2 className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Payment Summary</h2>
                             </div>
-                            <div className="p-5 text-center">
+                            <div className="px-5 py-4">
                                 <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Total Fee</p>
                                 <p className="text-3xl font-bold text-emerald-700 mb-4">
                                     ₱{Number(request.total_fee ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </p>
-                                <div className="space-y-2.5 text-left">
+                                <div className="space-y-2.5">
                                     <div className="flex items-center justify-between py-2 border-t border-slate-100">
                                         <span className="text-xs text-slate-500">Payment Method</span>
                                         <span className="text-xs font-medium text-slate-900 capitalize">{request.payment_method || 'N/A'}</span>
                                     </div>
                                     <div className="flex items-center justify-between py-2 border-t border-slate-100">
-                                        <span className="text-xs text-slate-500">Status</span>
+                                        <span className="text-xs text-slate-500">Payment Status</span>
                                         <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full border ${paymentCfg(request.payment_status).className}`}>
                                             {paymentCfg(request.payment_status).label}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center justify-between py-2 border-t border-slate-100">
+                                        <span className="text-xs text-slate-500">Request Status</span>
+                                        <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full border ${requestCfg(request.status).className}`}>
+                                            {requestCfg(request.status).label}
                                         </span>
                                     </div>
                                     <div className="flex items-center justify-between py-2 border-t border-slate-100">
@@ -261,16 +300,16 @@ export default function PaymentDetails({ user, onLogout, onNavigate }) {
                             </div>
                         </div>
 
-                        {/* Cashier Action */}
+                        {/* Payment Verification */}
                         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                             <div className="flex items-center gap-2 px-5 py-3 bg-emerald-50 border-b border-emerald-100">
                                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
                                 <h2 className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Payment Verification</h2>
                             </div>
-                            <div className="p-5">
+                            <div className="px-5 py-4">
                                 {request.payment_status === 'paid' ? (
-                                    <div className="flex flex-col items-center gap-3 p-4 bg-emerald-50 rounded-lg border border-emerald-200 text-center">
-                                        <CheckCircle className="w-8 h-8 text-emerald-600" />
+                                    <div className="flex items-start gap-3 p-4 bg-emerald-50 rounded-lg border border-emerald-200">
+                                        <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
                                         <div>
                                             <p className="text-sm font-bold text-emerald-800">Payment Verified</p>
                                             {request.verified_by ? (
@@ -284,9 +323,12 @@ export default function PaymentDetails({ user, onLogout, onNavigate }) {
                                         </div>
                                     </div>
                                 ) : request.status === 'Cancelled' ? (
-                                    <div className="flex flex-col items-center gap-3 p-4 bg-red-50 rounded-lg border border-red-200 text-center">
-                                        <p className="text-sm font-bold text-red-800">Request Cancelled</p>
-                                        <p className="text-xs text-red-600">This request has been cancelled. Payment cannot be verified.</p>
+                                    <div className="flex items-start gap-3 p-4 bg-red-50 rounded-lg border border-red-200">
+                                        <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                                        <div>
+                                            <p className="text-sm font-bold text-red-800">Request Cancelled</p>
+                                            <p className="text-xs text-red-600 mt-1">This request has been cancelled. Payment verification is disabled.</p>
+                                        </div>
                                     </div>
                                 ) : request.payment_method === 'online' ? (
                                     <div className="space-y-4">
@@ -294,19 +336,19 @@ export default function PaymentDetails({ user, onLogout, onNavigate }) {
                                             This is an online payment request. Check the PayMongo session status below before marking as paid.
                                         </p>
 
-                                        {/* PayMongo Checkout ID */}
-                                        <div className="bg-slate-50 rounded-lg border border-slate-200 p-3">
-                                            <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">PayMongo Checkout ID</p>
-                                            <p className="text-xs font-mono font-medium text-slate-900 break-all">
-                                                {request.paymongo_checkout_id || 'No checkout session'}
-                                            </p>
-                                        </div>
+                                        {request.paymongo_checkout_id && (
+                                            <div className="bg-slate-50 rounded-lg border border-slate-200 p-3">
+                                                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">PayMongo Checkout ID</p>
+                                                <p className="text-xs font-mono font-medium text-slate-900 break-all">
+                                                    {request.paymongo_checkout_id}
+                                                </p>
+                                            </div>
+                                        )}
 
-                                        {/* Check with PayMongo Button */}
                                         <button
                                             onClick={handleCheckPayMongo}
                                             disabled={paymongoChecking}
-                                            className="w-full py-3 text-sm font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 disabled:opacity-50 rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-2"
+                                            className="w-full py-2.5 text-sm font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 disabled:opacity-50 rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-2"
                                         >
                                             {paymongoChecking ? (
                                                 <>Checking...</>
@@ -315,9 +357,8 @@ export default function PaymentDetails({ user, onLogout, onNavigate }) {
                                             )}
                                         </button>
 
-                                        {/* PayMongo Result */}
                                         {paymongoResult && (
-                                            <div className={`rounded-lg border p-3 text-center ${
+                                            <div className={`rounded-lg border p-3 ${
                                                 paymongoResult.success
                                                     ? paymongoResult.paymongo_status === 'paid'
                                                         ? 'bg-emerald-50 border-emerald-200'
@@ -325,7 +366,7 @@ export default function PaymentDetails({ user, onLogout, onNavigate }) {
                                                     : 'bg-red-50 border-red-200'
                                             }`}>
                                                 {paymongoResult.success ? (
-                                                    <>
+                                                    <div className="text-center">
                                                         <p className="text-xs font-bold uppercase tracking-wider mb-1 text-slate-500">PayMongo Status</p>
                                                         <span className={`inline-block text-xs font-bold px-2.5 py-1 rounded-full border ${
                                                             paymongoResult.paymongo_status === 'paid'
@@ -337,7 +378,7 @@ export default function PaymentDetails({ user, onLogout, onNavigate }) {
                                                         {paymongoResult.auto_updated && (
                                                             <p className="text-xs text-emerald-700 mt-2">Payment status auto-updated based on PayMongo confirmation.</p>
                                                         )}
-                                                    </>
+                                                    </div>
                                                 ) : (
                                                     <div className="flex items-center justify-center gap-2">
                                                         <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
@@ -347,13 +388,12 @@ export default function PaymentDetails({ user, onLogout, onNavigate }) {
                                             </div>
                                         )}
 
-                                        {/* Mark as Paid (manual override) */}
                                         <div className="border-t border-slate-200 pt-4">
                                             <p className="text-xs text-slate-400 mb-3">Manual override — only use after verifying the student's payment proof.</p>
                                             <button
                                                 onClick={handleVerify}
                                                 disabled={verifying}
-                                                className="w-full py-3 text-sm font-bold text-white bg-emerald-700 hover:bg-emerald-800 disabled:bg-emerald-400 rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-2"
+                                                className="w-full py-2.5 text-sm font-bold text-white bg-emerald-700 hover:bg-emerald-800 disabled:bg-emerald-400 rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-2"
                                             >
                                                 {verifying ? (
                                                     <>Verifying...</>
@@ -371,7 +411,7 @@ export default function PaymentDetails({ user, onLogout, onNavigate }) {
                                         <button
                                             onClick={handleVerify}
                                             disabled={verifying}
-                                            className="w-full py-3 text-sm font-bold text-white bg-emerald-700 hover:bg-emerald-800 disabled:bg-emerald-400 rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-2"
+                                            className="w-full py-2.5 text-sm font-bold text-white bg-emerald-700 hover:bg-emerald-800 disabled:bg-emerald-400 rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-2"
                                         >
                                             {verifying ? (
                                                 <>Verifying...</>

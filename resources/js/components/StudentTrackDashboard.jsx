@@ -31,13 +31,15 @@ function getBadge(status, payment_status) {
   return STATUS_LABELS['Pending'];
 }
 
-function buildTimeline(status, payment_status) {
+function buildTimeline(status, payment_status, delivery_type) {
   if (status === 'Cancelled') {
     return [
       { step: 'Request Submitted', desc: 'Your application was successfully received.', done: true, active: false },
       { step: 'Cancelled', desc: 'This request has been cancelled.', done: true, active: true },
     ];
   }
+
+  const isDigital = delivery_type === 'digital';
 
   const checks = [
     () => true,
@@ -52,7 +54,7 @@ function buildTimeline(status, payment_status) {
     { step: 'Payment Verified', desc: 'Your processing fee has been confirmed.', key: 'payment' },
     { step: 'Currently Processing', desc: 'The Registrar is now preparing and verifying your academic records.', key: 'processing' },
     { step: 'Ready for Release', desc: 'Your document is prepared and certified, ready for release.', key: 'ready' },
-    { step: 'Claimed', desc: 'Document released to student.', key: 'claimed' },
+    { step: isDigital ? 'Delivered' : 'Claimed', desc: isDigital ? 'Document has been delivered via email.' : 'Document released to student.', key: 'claimed' },
   ];
 
   const activeIndex = (() => {
@@ -189,7 +191,7 @@ export default function StudentTrackDashboard({ studentUser, onLogout, onNavigat
     }
   }, [studentUser]);
 
-  const timeline = request ? buildTimeline(request.status, request.payment_status) : [];
+  const timeline = request ? buildTimeline(request.status, request.payment_status, request.delivery_type) : [];
 
   const openAuth = () => { setAuthModalTab('login'); setAuthModalOpen(true); };
   const closeAuth = () => setAuthModalOpen(false);
@@ -433,7 +435,7 @@ export default function StudentTrackDashboard({ studentUser, onLogout, onNavigat
                   <div className="flex flex-col gap-1">
                     {[FileText, BadgeCheck, Clock, PackageCheck, CheckCheck].map((Icon, index) => {
                       const isLast = index === 4;
-                      const labels = ['Request Submitted', 'Payment Verified', 'Currently Processing', 'Ready for Release', 'Claimed'];
+                      const labels = ['Request Submitted', 'Payment Verified', 'Currently Processing', 'Ready for Release', 'Delivered'];
                       return (
                         <div key={labels[index]} className="flex gap-3">
                           <div className="flex flex-col items-center">

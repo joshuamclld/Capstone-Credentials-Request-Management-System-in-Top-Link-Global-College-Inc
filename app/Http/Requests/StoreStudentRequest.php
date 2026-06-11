@@ -37,6 +37,7 @@ class StoreStudentRequest extends FormRequest
             'selectedSemesters.*' => ['string', Rule::in(self::VALID_SEMESTER_COMBOS)],
             'pages' => 'nullable|integer|min:1',
             'paymentMethod' => 'required|string|in:cash,online',
+            'deliveryType' => 'required|string|in:pickup,digital',
             'purpose' => 'required|string|max:1000',
             'yearLevel' => 'required|string|in:1st Year,2nd Year,3rd Year',
             'section' => 'required|string|in:A,B,C,D,E,F,G,H',

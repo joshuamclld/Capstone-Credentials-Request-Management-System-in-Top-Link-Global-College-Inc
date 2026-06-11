@@ -109,6 +109,10 @@ Route::prefix('admin')->group(function () {
         Route::patch('/requests/{id}', [RegistrarRequestController::class, 'update'])
             ->middleware('admin')
             ->whereNumber('id');
+
+        Route::post('/requests/{id}/send-document', [RegistrarRequestController::class, 'sendDigitalDocument'])
+            ->middleware(['admin', 'throttle:10,1'])
+            ->whereNumber('id');
     });
 });
 

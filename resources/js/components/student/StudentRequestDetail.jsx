@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, BadgeCheck, Clock, PackageCheck, CheckCheck, AlertCircle, XCircle, ArrowLeft } from 'lucide-react';
+import { FileText, BadgeCheck, Clock, PackageCheck, CheckCheck, AlertCircle, XCircle, ArrowLeft, Mail } from 'lucide-react';
 import StudentDashboardLayout from './StudentDashboardLayout';
 
 const STATUS_LABELS = {
@@ -29,13 +29,15 @@ function getBadge(status, payment_status) {
   return STATUS_LABELS['Pending'];
 }
 
-function buildTimeline(status, payment_status) {
+function buildTimeline(status, payment_status, delivery_type) {
   if (status === 'Cancelled') {
     return [
       { step: 'Request Submitted', desc: 'Your application was successfully received.', done: true, active: false },
       { step: 'Cancelled', desc: 'This request has been cancelled.', done: true, active: true },
     ];
   }
+
+  const isDigital = delivery_type === 'digital';
 
   const checks = [
     () => true,
@@ -50,7 +52,7 @@ function buildTimeline(status, payment_status) {
     { step: 'Payment Verified', desc: 'Your processing fee has been confirmed.', key: 'payment' },
     { step: 'Currently Processing', desc: 'The Registrar is now preparing and verifying your academic records.', key: 'processing' },
     { step: 'Ready for Release', desc: 'Your document is prepared and certified, ready for release.', key: 'ready' },
-    { step: 'Claimed', desc: 'Document released to student.', key: 'claimed' },
+    { step: isDigital ? 'Delivered' : 'Claimed', desc: isDigital ? 'Document has been delivered via email.' : 'Document released to student.', key: 'claimed' },
   ];
 
   const activeIndex = (() => {
@@ -207,7 +209,7 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
     setContinueLoading(false);
   };
 
-  const timeline = request ? buildTimeline(request.status, request.payment_status) : [];
+  const timeline = request ? buildTimeline(request.status, request.payment_status, request.delivery_type) : [];
 
   return (
     <StudentDashboardLayout title="Request Details" subtitle={trackingNumber || ''} student={student} onLogout={onLogout} onNavigate={onNavigate} currentPath={currentPath}>
@@ -314,6 +316,18 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
                         : <span className="font-bold text-on-surface">{request.payment_status}</span>;
                     })()}
                   </div>
+                  <div className="flex justify-between border-b border-outline-variant pb-2">
+                    <span className="text-on-surface-variant font-medium">Delivery:</span>
+                    <span className="font-bold text-on-surface">
+                      {request.delivery_type === 'digital' ? 'Digital (Email)' : request.delivery_type === 'physical' ? 'Physical (Pick up)' : 'Physical'}
+                    </span>
+                  </div>
+                  {request.is_digitally_sent && request.digitally_sent_at && (
+                    <div className="flex justify-between pb-2">
+                      <span className="text-on-surface-variant font-medium">Digital Copy Sent:</span>
+                      <span className="font-bold text-on-surface text-right">{new Date(request.digitally_sent_at).toLocaleString()}</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="mt-6 pt-4 border-t-2 border-primary/20 flex justify-between items-center">

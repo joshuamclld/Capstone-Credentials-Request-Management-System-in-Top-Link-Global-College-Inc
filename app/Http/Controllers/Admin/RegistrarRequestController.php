@@ -3,12 +3,15 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Mail\DigitalDocumentMail;
 use App\Models\AuditLog;
 use App\Models\Document;
 use App\Models\Notification;
 use App\Models\StudentRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 
 class RegistrarRequestController extends Controller
 {
@@ -114,6 +117,11 @@ class RegistrarRequestController extends Controller
             'verified_by' => $request->verified_by,
             'verified_at' => $request->verified_at,
             'created_at' => $request->created_at->format('Y-m-d'),
+            'is_digitally_sent' => $request->is_digitally_sent,
+            'digitally_sent_at' => $request->digitally_sent_at,
+            'digitally_sent_by' => $request->digitally_sent_by,
+            'delivery_type' => $request->delivery_type,
+            'digitally_sent_by_name' => $request->digitally_sent_by ? \App\Models\User::find($request->digitally_sent_by)?->name : null,
         ]);
     }
 
@@ -203,6 +211,98 @@ class RegistrarRequestController extends Controller
                 'verified_by' => $studentRequest->verified_by,
                 'verified_at' => $studentRequest->verified_at,
                 'created_at' => $studentRequest->created_at->format('Y-m-d'),
+                'is_digitally_sent' => $studentRequest->is_digitally_sent,
+                'digitally_sent_at' => $studentRequest->digitally_sent_at,
+                'digitally_sent_by' => $studentRequest->digitally_sent_by,
+                'delivery_type' => $studentRequest->delivery_type,
+                'digitally_sent_by_name' => $studentRequest->digitally_sent_by ? \App\Models\User::find($studentRequest->digitally_sent_by)?->name : null,
+            ],
+        ]);
+    }
+
+    public function sendDigitalDocument(Request $request, int $id): JsonResponse
+    {
+        $studentRequest = StudentRequest::find($id);
+
+        if (!$studentRequest) {
+            return response()->json(['success' => false, 'message' => 'Request not found.'], 404);
+        }
+
+        if ($studentRequest->is_digitally_sent) {
+            return response()->json(['success' => false, 'message' => 'Digital document has already been sent.'], 422);
+        }
+
+        if (!in_array($studentRequest->status, ['Ready for Release', 'Claimed'])) {
+            return response()->json(['success' => false, 'message' => 'Document can only be sent when status is Ready for Release or Claimed.'], 422);
+        }
+
+        if (!$studentRequest->email) {
+            return response()->json(['success' => false, 'message' => 'Student has no email address on file.'], 422);
+        }
+
+        $validated = $request->validate([
+            'pdf' => 'required|mimes:pdf|max:10240',
+        ]);
+
+        $user = auth()->user();
+        $documents = Document::whereIn('code', $studentRequest->document_ids ?? [])->get()->keyBy('code');
+        $documentNames = collect($studentRequest->document_ids ?? [])->map(fn ($code) => $documents->get($code)?->name ?? $code)->toArray();
+        $documentName = implode(', ', $documentNames);
+
+        $safeTracking = preg_replace('/[^A-Za-z0-9\-]/', '', $studentRequest->tracking_number);
+        $filename = $safeTracking . '-' . time() . '.pdf';
+
+        $path = $request->file('pdf')->storeAs('documents', $filename, 'local');
+
+        Mail::to($studentRequest->email)->send(new DigitalDocumentMail($studentRequest, $documentName, $path));
+
+        $studentRequest->update([
+            'digital_document_path' => $path,
+            'is_digitally_sent' => true,
+            'digitally_sent_at' => now(),
+            'digitally_sent_by' => $user->id,
+            'delivery_type' => $studentRequest->delivery_type ?: ($studentRequest->status === 'Claimed' ? 'digital' : 'both'),
+        ]);
+
+        AuditLog::create([
+            'action' => 'digital_document_sent',
+            'performed_by' => $user->name,
+            'performed_by_id' => $user->id,
+            'target_type' => 'StudentRequest',
+            'target_id' => $studentRequest->id,
+            'description' => "Sent {$documentName} digitally to {$studentRequest->email}",
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Digital document sent successfully.',
+            'request' => [
+                'id' => $studentRequest->id,
+                'tracking_number' => $studentRequest->tracking_number,
+                'student_name' => $studentRequest->full_name,
+                'student_number' => $studentRequest->student_number,
+                'course' => $studentRequest->course,
+                'year_level' => $studentRequest->year_level,
+                'section' => $studentRequest->section,
+                'email' => $studentRequest->email,
+                'phone' => $studentRequest->contact_number,
+                'purpose' => $studentRequest->purpose,
+                'document_names' => $documentNames,
+                'semesters' => $studentRequest->semesters ?? [],
+                'pages' => $studentRequest->pages,
+                'payment_method' => $studentRequest->payment_method,
+                'payment_status' => $studentRequest->payment_status,
+                'status' => $studentRequest->status,
+                'total_fee' => (float) $studentRequest->total_fee,
+                'remarks' => $studentRequest->remarks ?? '',
+                'verified_by' => $studentRequest->verified_by,
+                'verified_at' => $studentRequest->verified_at,
+                'created_at' => $studentRequest->created_at->format('Y-m-d'),
+                'is_digitally_sent' => true,
+                'digitally_sent_at' => $studentRequest->fresh()->digitally_sent_at,
+                'digitally_sent_by' => $user->id,
+                'delivery_type' => $studentRequest->fresh()->delivery_type,
+                'digitally_sent_by_name' => $user->name,
             ],
         ]);
     }

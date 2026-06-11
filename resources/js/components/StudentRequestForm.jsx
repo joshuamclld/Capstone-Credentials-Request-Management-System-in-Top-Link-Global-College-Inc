@@ -33,6 +33,7 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
   const [selectedSemesters, setSelectedSemesters] = useState([]);
   const [pages, setPages] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState('');
+  const [deliveryType, setDeliveryType] = useState('');
   const [purpose, setPurpose] = useState('');
 
   const [confirmations, setConfirmations] = useState({
@@ -94,6 +95,7 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
     setSelectedSemesters([]);
     setPages(1);
     setPaymentMethod('');
+    setDeliveryType('');
     setPurpose('');
     setConfirmations({
       infoCorrect: false,
@@ -204,6 +206,12 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
       return;
     }
 
+    if (!deliveryType) {
+      setSubmitError('Please select a delivery method.');
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       const response = await fetch('/requests', {
         method: 'POST',
@@ -224,6 +232,7 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
           selectedSemesters: selectedSemesters,
           pages: hasPerPageDoc ? pages : null,
           paymentMethod: paymentMethod,
+          deliveryType: deliveryType,
           purpose: purpose,
         }),
       });
@@ -371,7 +380,7 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
                     }`}>
                     <span className="material-symbols-outlined">store</span>
                   </div>
-                  <span className={`font-label-md text-label-md mt-2 ${step >= 3 ? 'text-primary font-bold' : 'text-on-surface-variant'}`}>Pickup &amp; Pay</span>
+                  <span className={`font-label-md text-label-md mt-2 ${step >= 3 ? 'text-primary font-bold' : 'text-on-surface-variant'}`}>Delivery &amp; Pay</span>
                 </div>
 
                 <div className="z-10 flex flex-col items-center">
@@ -652,25 +661,50 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
                   </div>
                 )}
 
-                {/* STEP 3: Pickup Method & Review */}
+                {/* STEP 3: Delivery & Payment Options */}
                 {step === 3 && (
                   <div className="animate-fade-in-up">
                     <header className="mb-4 sm:mb-8">
-                      <h2 className="font-headline-md text-lg sm:text-headline-md text-primary mb-1 sm:mb-2">Pickup &amp; Payment Options</h2>
-                      <p className="font-body-sm sm:font-body-md text-body-sm sm:text-body-md text-on-surface-variant">Review your request details and pickup method before submitting.</p>
+                      <h2 className="font-headline-md text-lg sm:text-headline-md text-primary mb-1 sm:mb-2">Delivery &amp; Payment Options</h2>
+                      <p className="font-body-sm sm:font-body-md text-body-sm sm:text-body-md text-on-surface-variant">Choose how you want to receive your document and your payment method.</p>
                     </header>
 
+                    {/* Delivery Method */}
                     <div className="max-w-lg mx-auto mb-8">
-                      <div className="p-4 sm:p-6 rounded-lg border-2 border-primary bg-surface-container-low">
-                        <div className="flex items-center gap-3 mb-3">
-                          <span className="material-symbols-outlined p-2 rounded-lg bg-primary-fixed text-primary">
-                            store
-                          </span>
-                          <span className="font-headline-sm text-lg font-bold">Claim at Registrar Office</span>
+                      <h3 className="font-headline-sm text-headline-sm text-on-surface mb-4">Delivery Method</h3>
+                      <div className="space-y-3">
+                        <div
+                          onClick={() => setDeliveryType('pickup')}
+                          className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${deliveryType === 'pickup' ? 'border-primary bg-surface-container-low' : 'border-outline-variant bg-surface-container-lowest'
+                            }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${deliveryType === 'pickup' ? 'border-primary' : 'border-outline'
+                              }`}>
+                              {deliveryType === 'pickup' && <div className="w-2.5 h-2.5 rounded-full bg-primary"></div>}
+                            </div>
+                            <div>
+                              <p className="font-label-md font-bold text-on-surface">Pick up at Registrar Office</p>
+                              <p className="text-body-sm text-on-surface-variant">Visit TLGC campus to claim your requested document.</p>
+                            </div>
+                          </div>
                         </div>
-                        <p className="text-body-sm text-on-surface-variant">
-                          Visit TLGC campus to claim your requested document at the Registrar Office.
-                        </p>
+                        <div
+                          onClick={() => setDeliveryType('digital')}
+                          className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${deliveryType === 'digital' ? 'border-primary bg-surface-container-low' : 'border-outline-variant bg-surface-container-lowest'
+                            }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${deliveryType === 'digital' ? 'border-primary' : 'border-outline'
+                              }`}>
+                              {deliveryType === 'digital' && <div className="w-2.5 h-2.5 rounded-full bg-primary"></div>}
+                            </div>
+                            <div>
+                              <p className="font-label-md font-bold text-on-surface">Digital Copy (Email)</p>
+                              <p className="text-body-sm text-on-surface-variant">Receive a PDF copy of your document via email.</p>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
@@ -688,10 +722,10 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
                               }`}>
                               {paymentMethod === 'cash' && <div className="w-2.5 h-2.5 rounded-full bg-primary"></div>}
                             </div>
-                            <div>
-                              <p className="font-label-md font-bold text-on-surface">Cash Payment</p>
-                              <p className="text-body-sm text-on-surface-variant">Pay at the Registrar Office during claiming.</p>
-                            </div>
+                              <div>
+                                <p className="font-label-md font-bold text-on-surface">Cash Payment</p>
+                                <p className="text-body-sm text-on-surface-variant">{deliveryType === 'digital' ? 'Pay at the Registrar Office on or before processing.' : 'Pay at the Registrar Office during claiming.'}</p>
+                              </div>
                           </div>
                         </div>
                         {window.CRMS_SETTINGS?.enable_online_payment !== false && (
@@ -760,9 +794,9 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
                             <span className="font-bold text-on-surface text-right">{pages}</span>
                           </div>
                         )}
-                        <div className="flex justify-between pb-2">
-                          <span className="text-on-surface-variant font-medium">Pickup Method:</span>
-                          <span className="font-bold text-on-surface">Registrar Office Claim</span>
+                        <div className="flex justify-between border-b border-outline-variant pb-2">
+                          <span className="text-on-surface-variant font-medium">Delivery Method:</span>
+                          <span className="font-bold text-on-surface">{deliveryType === 'pickup' ? 'Pick up at Registrar Office' : 'Digital Copy (Email)'}</span>
                         </div>
                         <div className="flex justify-between border-b border-outline-variant pb-2">
                           <span className="text-on-surface-variant font-medium">Payment Method:</span>

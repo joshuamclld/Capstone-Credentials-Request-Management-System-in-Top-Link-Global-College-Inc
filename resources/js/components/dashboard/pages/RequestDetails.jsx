@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Clock, ArrowLeft, ChevronRight, CreditCard, User, BookOpen, MessageSquare, ShieldAlert, ShieldCheck } from 'lucide-react';
+import { FileText, Clock, ArrowLeft, ChevronRight, CreditCard, User, BookOpen, MessageSquare, ShieldAlert, ShieldCheck, Upload, CheckCircle } from 'lucide-react';
 import DashboardLayout from '../DashboardLayout';
 import DashboardDropdown from '../../common/DashboardDropdown';
 import { registrarSidebarItems } from '../config/sidebarItems';
@@ -22,6 +22,9 @@ export default function RequestDetails({ user, onLogout, onNavigate }) {
     const [error, setError] = useState(null);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState(null);
+    const [sendingDigital, setSendingDigital] = useState(false);
+    const [digitalFile, setDigitalFile] = useState(null);
+    const [digitalMessage, setDigitalMessage] = useState(null);
     const id = window.location.pathname.split('/').filter(Boolean).pop();
 
     useEffect(() => {
@@ -84,17 +87,43 @@ export default function RequestDetails({ user, onLogout, onNavigate }) {
 
     const handleSave = () => doSave(status, remarks);
 
-    const handleQuickAction = (newStatus) => doSave(newStatus, remarks);
+    const canSendDigital = ['Ready for Release', 'Claimed'].includes(request?.status);
+
+    const handleSendDocument = () => {
+        if (sendingDigital || !digitalFile) return;
+        setSendingDigital(true);
+        setDigitalMessage(null);
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        const formData = new FormData();
+        formData.append('pdf', digitalFile);
+        fetch(`/admin/api/requests/${id}/send-document`, {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': csrfToken },
+            body: formData,
+            credentials: 'same-origin',
+        })
+            .then(async (res) => {
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Failed to send document.');
+                return data;
+            })
+            .then((data) => {
+                setDigitalMessage({ type: 'success', text: data.message });
+                setDigitalFile(null);
+                if (data.request) {
+                    setRequest(prev => ({ ...prev, ...data.request }));
+                }
+            })
+            .catch((err) => {
+                setDigitalMessage({ type: 'error', text: err.message });
+            })
+            .finally(() => setSendingDigital(false));
+    };
 
     const statusCfg = (s) => getRequestStatusConfig(s);
     const paymentCfg = (s) => getPaymentStatusConfig(s);
 
     const paymentPaid = request?.payment_status === 'paid';
-
-    const quickActions = [];
-    if (paymentPaid && status === 'Pending') quickActions.push({ label: 'Mark as Processing', target: 'Processing', color: 'bg-blue-600 hover:bg-blue-700' });
-    if (paymentPaid && status === 'Processing') quickActions.push({ label: 'Ready for Release', target: 'Ready for Release', color: 'bg-purple-600 hover:bg-purple-700' });
-    if (paymentPaid && status === 'Ready for Release') quickActions.push({ label: 'Mark as Claimed', target: 'Claimed', color: 'bg-emerald-600 hover:bg-emerald-700' });
 
     if (loading) {
         return (
@@ -293,6 +322,12 @@ export default function RequestDetails({ user, onLogout, onNavigate }) {
                                             {paymentCfg(request.payment_status).label}
                                         </span>
                                     </div>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs font-medium text-slate-500">Delivery</span>
+                                        <span className="text-sm font-medium text-slate-900">
+                                            {request.delivery_type === 'digital' ? 'Digital (Email)' : request.delivery_type === 'physical' ? 'Physical (Pick up)' : 'Physical'}
+                                        </span>
+                                    </div>
                                     <div className="pt-3 border-t border-slate-100">
                                         <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Total Fee</p>
                                         <p className="text-2xl font-bold text-emerald-700">₱ {Number(request.total_fee ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
@@ -346,26 +381,86 @@ export default function RequestDetails({ user, onLogout, onNavigate }) {
                                 </div>
                             </div>
 
-                            {/* Quick Actions */}
-                            {quickActions.length > 0 && (
-                                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                                    <div className="flex items-center gap-2 px-6 py-4 bg-emerald-50 border-b border-emerald-100">
-                                        <ChevronRight className="w-4 h-4 text-emerald-700" />
-                                        <h2 className="text-sm font-bold text-emerald-800">Quick Actions</h2>
-                                    </div>
-                                    <div className="p-6 space-y-3">
-                                        {quickActions.map((action) => (
-                                            <button
-                                                key={action.target}
-                                                onClick={() => handleQuickAction(action.target)}
-                                                disabled={saving}
-                                                className={`w-full py-2.5 text-sm font-bold text-white rounded-lg transition-colors cursor-pointer disabled:opacity-50 ${action.color}`}
-                                            >
-                                                {action.label}
-                                            </button>
-                                        ))}
-                                    </div>
+                            {/* Digital Document — only show if delivery is digital or already sent */}
+                            {(request.delivery_type === 'digital' || request.is_digitally_sent) && (
+                            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                                <div className="flex items-center gap-2 px-6 py-4 bg-emerald-50 border-b border-emerald-100">
+                                    <Upload className="w-4 h-4 text-emerald-700" />
+                                    <h2 className="text-sm font-bold text-emerald-800">Digital Document</h2>
                                 </div>
+                                <div className="p-6 space-y-4">
+                                    {digitalMessage && (
+                                        <div className={`px-3 py-2 rounded-lg text-xs font-medium border ${
+                                            digitalMessage.type === 'success'
+                                                ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                                : 'bg-red-50 text-red-800 border-red-200'
+                                        }`}>
+                                            {digitalMessage.text}
+                                        </div>
+                                    )}
+
+                                    {request.is_digitally_sent ? (
+                                        <div className="flex flex-col items-center gap-2 p-4 bg-emerald-50 rounded-lg border border-emerald-200 text-center">
+                                            <CheckCircle className="w-8 h-8 text-emerald-600" />
+                                            <p className="text-sm font-bold text-emerald-800">Digital Copy Sent</p>
+                                            {request.digitally_sent_at && (
+                                                <p className="text-xs text-emerald-600">
+                                                    Sent: {new Date(request.digitally_sent_at).toLocaleString()}
+                                                </p>
+                                            )}
+                                            {request.digitally_sent_by_name && (
+                                                <p className="text-xs text-emerald-600">
+                                                    Sent by: {request.digitally_sent_by_name}
+                                                </p>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <p className="text-xs text-slate-500 leading-relaxed">
+                                                Upload a signed PDF to send a digital copy to the student's email.
+                                            </p>
+
+                                            <div>
+                                                <label className="block text-xs font-medium text-slate-600 mb-1">Student Email</label>
+                                                <div className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700">
+                                                    {request.email || 'No email on file'}
+                                                </div>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-xs font-medium text-slate-600 mb-1">Upload PDF</label>
+                                                <input
+                                                    type="file"
+                                                    accept=".pdf,application/pdf"
+                                                    onChange={(e) => setDigitalFile(e.target.files[0] || null)}
+                                                    className="w-full text-sm text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer"
+                                                />
+                                                {digitalFile && (
+                                                    <p className="text-xs text-slate-500 mt-1">{digitalFile.name}</p>
+                                                )}
+                                            </div>
+
+                                            <button
+                                                onClick={handleSendDocument}
+                                                disabled={sendingDigital || !digitalFile || !canSendDigital || !request.email}
+                                                className="w-full py-2.5 text-sm font-bold text-white bg-emerald-700 hover:bg-emerald-800 disabled:bg-emerald-400 rounded-lg transition-colors cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                            >
+                                                {sendingDigital ? (
+                                                    'Sending...'
+                                                ) : (
+                                                    <><Upload className="w-4 h-4" /> Send Digital Copy</>
+                                                )}
+                                            </button>
+
+                                            {!canSendDigital && (
+                                                <p className="text-xs text-amber-600 text-center">
+                                                    Status must be Ready for Release or Claimed to send digitally.
+                                                </p>
+                                            )}
+                                        </>
+                                    )}
+                                </div>
+                            </div>
                             )}
 
                         </div>

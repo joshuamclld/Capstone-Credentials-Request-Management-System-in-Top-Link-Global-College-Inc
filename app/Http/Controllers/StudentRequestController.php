@@ -73,6 +73,7 @@ class StudentRequestController extends Controller
                     'section' => $request->section,
                     'remarks' => $request->remarks,
                     'paymongo_checkout_id' => $request->paymongo_checkout_id,
+                    'delivery_type' => $request->delivery_type,
                 ];
             });
 
@@ -124,6 +125,9 @@ class StudentRequestController extends Controller
                 'year_level' => $request->year_level,
                 'section' => $request->section,
                 'paymongo_checkout_id' => $request->paymongo_checkout_id,
+                'is_digitally_sent' => $request->is_digitally_sent,
+                'digitally_sent_at' => $request->digitally_sent_at,
+                'delivery_type' => $request->delivery_type,
             ],
         ]);
     }
@@ -154,6 +158,8 @@ class StudentRequestController extends Controller
             $paymentMethod = $validated['paymentMethod'];
             $paymentStatus = $paymentMethod === 'online' ? 'pending_payment' : 'unpaid';
 
+            $deliveryType = $validated['deliveryType'] === 'pickup' ? 'physical' : 'digital';
+
             $studentRequest = StudentRequest::create([
                 'tracking_number' => $trackingNumber,
                 'student_id' => auth('student')->id(),
@@ -172,6 +178,7 @@ class StudentRequestController extends Controller
                 'status' => 'Pending',
                 'year_level' => $validated['yearLevel'],
                 'section' => $validated['section'],
+                'delivery_type' => $deliveryType,
             ]);
 
             Notification::notifyRole('admin', 'new_request', 'New Credential Request', "{$validated['fullName']} submitted a request", (string) $studentRequest->id, "/admin/requests/{$studentRequest->id}");
@@ -229,6 +236,7 @@ class StudentRequestController extends Controller
                 'created_at' => $request->created_at->format('F d, Y'),
                 'year_level' => $request->year_level,
                 'section' => $request->section,
+                'delivery_type' => $request->delivery_type,
             ],
         ]);
     }
