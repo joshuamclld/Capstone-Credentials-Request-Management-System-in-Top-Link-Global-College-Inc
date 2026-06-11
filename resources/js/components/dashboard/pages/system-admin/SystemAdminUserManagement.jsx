@@ -233,18 +233,18 @@ export default function SystemAdminUserManagement({ user, onLogout, onNavigate, 
             onNavigate={onNavigate}
         >
             <section className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-6 py-5 border-b border-slate-200">
-                    <div className="flex items-center gap-4">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 px-6 py-5 border-b border-slate-200">
+                    <div className="flex items-center gap-3 sm:gap-4">
                         <DashboardSearch value={query} onChange={(e) => { setQuery(e.target.value); setPage(1); }} placeholder="Search users..." />
                         <DashboardDropdown
                             options={roleFilterOptions.map(o => ({ label: o === 'All' ? 'All Roles' : o.replace('_', ' '), value: o }))}
                             value={roleFilter}
                             onChange={(v) => { setRoleFilter(v); setPage(1); }}
                             placeholder="All Roles"
-                            className="w-40"
+                            className="flex-1 sm:w-40"
                         />
                     </div>
-                    <button onClick={openAddModal} className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg transition-colors cursor-pointer">
+                    <button onClick={openAddModal} className="flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-bold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg transition-colors cursor-pointer">
                         <Plus className="w-3.5 h-3.5" />
                         Add User
                     </button>

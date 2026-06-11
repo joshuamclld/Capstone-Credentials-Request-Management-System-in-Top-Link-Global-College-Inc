@@ -27,7 +27,7 @@ export default function NotificationBell({ onNavigate }) {
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
     const fetchNotifications = useCallback(() => {
-        fetch('/admin/notifications', { credentials: 'same-origin' })
+        fetch('/admin/api/notifications', { credentials: 'same-origin' })
             .then(res => res.json())
             .then(data => {
                 setNotifications(data.notifications || []);
@@ -72,7 +72,7 @@ export default function NotificationBell({ onNavigate }) {
                 width: dropdownWidth,
             });
         }
-        fetch('/admin/notifications', { credentials: 'same-origin' })
+        fetch('/admin/api/notifications', { credentials: 'same-origin' })
             .then(res => res.json())
             .then(data => {
                 setNotifications(data.notifications || []);
@@ -193,7 +193,12 @@ export default function NotificationBell({ onNavigate }) {
                                 <CheckCheck className="w-3.5 h-3.5" />
                                 Mark all as read
                             </button>
-                            <span className="text-xs text-slate-400">View all</span>
+                            <button
+                                onClick={() => { setOpen(false); if (onNavigate) onNavigate('/admin/notifications'); }}
+                                className="text-xs text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+                            >
+                                View all
+                            </button>
                         </div>
                     )}
                 </div>

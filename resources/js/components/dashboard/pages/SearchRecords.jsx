@@ -103,17 +103,15 @@ export default function SearchRecords({ user, onLogout, onNavigate }) {
         >
             <section className="bg-white rounded-xl border border-slate-200 overflow-hidden">
                 <div className="px-6 py-5 border-b border-slate-200">
-                    <h2 className="text-base font-bold text-slate-900 mb-3">Search Criteria</h2>
                     <div className="flex flex-wrap items-center gap-3 mb-4">
                         <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Search by:</span>
                         {searchOptions.map((option) => (
                             <label
                                 key={option}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium cursor-pointer transition-colors ${
-                                    searchBy === option
+                                className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium cursor-pointer transition-colors ${searchBy === option
                                         ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
                                         : 'border-slate-300 bg-white text-slate-600 hover:bg-slate-50'
-                                }`}
+                                    }`}
                             >
                                 <input
                                     type="radio"

@@ -54,7 +54,7 @@ export default function RequestManagement({ user, onLogout, onNavigate }) {
 
     const statusFilterMap = {
         'Pending': (req) => req.status === 'Pending',
-        'Payment Pending': (req) => ['unpaid', 'pending_verification'].includes(req.payment_status),
+        'Payment Pending': (req) => ['pending payment'].includes(req.payment_status),
         'Paid': (req) => req.payment_status === 'paid',
         'Processing': (req) => req.status === 'Processing',
         'Ready for Release': (req) => req.status === 'Ready for Release',
@@ -116,10 +116,6 @@ export default function RequestManagement({ user, onLogout, onNavigate }) {
         >
             <section className="bg-white rounded-xl border border-slate-200 overflow-hidden">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-6 py-5 border-b border-slate-200">
-                    <div>
-                        <h2 className="text-base font-bold text-slate-900">All Requests</h2>
-                        <p className="text-xs text-slate-500 mt-0.5">View and manage all credential requests.</p>
-                    </div>
                     <div className="flex items-center gap-3 w-full sm:w-auto">
                         <DashboardDropdown
                             options={filterOptions.map(o => ({ label: o, value: o }))}

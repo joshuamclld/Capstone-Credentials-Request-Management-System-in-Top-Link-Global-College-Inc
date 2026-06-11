@@ -24,7 +24,22 @@ class RegistrarRequestController extends Controller
             'claimed' => StudentRequest::where('status', 'Claimed')->count(),
         ];
 
-        $requests = StudentRequest::latest()->paginate($perPage);
+        $statusFilter = $request->query('status');
+
+        if ($statusFilter === 'claimed') {
+            $requests = StudentRequest::where('status', 'Claimed')
+                ->latest()
+                ->paginate($perPage);
+        } elseif ($statusFilter === 'processable') {
+            $requests = StudentRequest::where(function ($q) {
+                $q->where('payment_status', 'paid')
+                  ->orWhere('status', 'Processing');
+            })->whereNotIn('status', ['Claimed', 'Cancelled'])
+              ->latest()
+              ->paginate($perPage);
+        } else {
+            $requests = StudentRequest::latest()->paginate($perPage);
+        }
 
         $documentCodes = collect($requests->items())->pluck('document_ids')->flatten()->unique()->values()->toArray();
         $documents = Document::whereIn('code', $documentCodes)->get()->keyBy('code');
@@ -43,7 +58,8 @@ class RegistrarRequestController extends Controller
                 'payment_status' => $req->payment_status,
                 'status' => $req->status,
                 'total_fee' => (float) $req->total_fee,
-                'created_at' => $req->created_at->format('Y-m-d'),
+                'created_at' => $req->created_at?->format('Y-m-d') ?? '',
+                'updated_at' => $req->updated_at?->format('Y-m-d') ?? '',
             ];
         });
 

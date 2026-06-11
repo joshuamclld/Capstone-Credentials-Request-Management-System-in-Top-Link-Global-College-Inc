@@ -18,6 +18,7 @@ import RequestDetails from './components/dashboard/pages/RequestDetails';
 import ProcessRequests from './components/dashboard/pages/ProcessRequests';
 import ReleaseCredentials from './components/dashboard/pages/ReleaseCredentials';
 import SearchRecords from './components/dashboard/pages/SearchRecords';
+import NotificationList from './components/dashboard/pages/NotificationList';
 import CashierDashboard from './components/dashboard/pages/CashierDashboard';
 import PaymentQueue from './components/dashboard/pages/PaymentQueue';
 import PaymentDetails from './components/dashboard/pages/PaymentDetails';
@@ -245,6 +246,10 @@ function App() {
       setTimeout(() => navigate('/admin-login'), 0);
       return null;
     }
+  }
+
+  if (currentPath === '/admin/notifications') {
+    return <NotificationList user={user} onLogout={handleLogout} onNavigate={navigate} />;
   }
 
   if (currentPath === '/admin-dashboard') {

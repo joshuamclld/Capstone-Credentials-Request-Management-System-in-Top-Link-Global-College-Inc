@@ -24,7 +24,7 @@ export default function SystemAdminCredentialTypes({ user, onLogout, onNavigate 
 
     const [showModal, setShowModal] = useState(false);
     const [editingDoc, setEditingDoc] = useState(null);
-    const [formData, setFormData] = useState({ code: '', name: '', description: '', price: '', processing_days: '1', is_per_semester: false, is_per_page: false });
+    const [formData, setFormData] = useState({ code: '', name: '', description: '', price: '', processing_days: '1', is_per_semester: false, is_per_page: false, is_active: true });
     const [formError, setFormError] = useState('');
     const [formLoading, setFormLoading] = useState(false);
 
@@ -58,7 +58,7 @@ export default function SystemAdminCredentialTypes({ user, onLogout, onNavigate 
 
     const openEditModal = (d) => {
         setEditingDoc(d);
-        setFormData({ code: d.code, name: d.name, description: d.description || '', price: String(d.price), processing_days: String(d.processing_days), is_per_semester: d.is_per_semester, is_per_page: d.is_per_page });
+        setFormData({ code: d.code, name: d.name, description: d.description || '', price: String(d.price), processing_days: String(d.processing_days), is_per_semester: d.is_per_semester, is_per_page: d.is_per_page, is_active: d.is_active });
         setFormError('');
         setShowModal(true);
     };
@@ -163,6 +163,10 @@ export default function SystemAdminCredentialTypes({ user, onLogout, onNavigate 
                             <input type="checkbox" checked={formData.is_per_page} onChange={(e) => setFormData({ ...formData, is_per_page: e.target.checked })} className="w-4 h-4 text-emerald-700 border-slate-300 rounded focus:ring-emerald-500 cursor-pointer" />
                             <span className="text-xs font-medium text-slate-600">Per Page</span>
                         </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <span className="text-xs font-medium text-slate-600">Active</span>
+                            <input type="checkbox" checked={formData.is_active} onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })} className="w-4 h-4 text-emerald-700 border-slate-300 rounded focus:ring-emerald-500 cursor-pointer" />
+                        </label>
                     </div>
                 </div>
                 <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-200">
@@ -188,9 +192,9 @@ export default function SystemAdminCredentialTypes({ user, onLogout, onNavigate 
             onNavigate={onNavigate}
         >
             <section className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-6 py-5 border-b border-slate-200">
+                <div className="flex items-center gap-4 px-6 py-5 border-b border-slate-200">
                     <DashboardSearch value={query} onChange={(e) => { setQuery(e.target.value); setPage(1); }} placeholder="Search credential types..." />
-                    <button onClick={openAddModal} className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg transition-colors cursor-pointer">
+                    <button onClick={openAddModal} className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg transition-colors cursor-pointer shrink-0">
                         <Plus className="w-3.5 h-3.5" />
                         Add Credential Type
                     </button>

@@ -10,15 +10,9 @@ import DashboardPagination from '../DashboardPagination';
 import DashboardDropdown from '../../common/DashboardDropdown';
 import { cashierSidebarItems } from '../config/sidebarItems';
 
-const tableHeaders = ['Tracking No.', 'Student Name', 'Requested Documents', 'Payment Method', 'Total Fee', 'Payment Status', 'Date Requested', 'Action'];
+const tableHeaders = ['Tracking No.', 'Student Name', 'Requested Documents', 'Payment Method', 'Total Fee', 'Payment Status', 'Request Status', 'Date Requested', 'Action'];
 
 const filterOptions = ['All', 'Cash Payments', 'Online Verification'];
-
-const paymentBadgeStyle = {
-    'unpaid': 'bg-red-50 text-red-700 border-red-200',
-    'pending_verification': 'bg-orange-50 text-orange-700 border-orange-200',
-    'paid': 'bg-emerald-50 text-emerald-700 border-emerald-200',
-};
 
 export default function PaymentQueue({ user, onLogout, onNavigate }) {
     const [query, setQuery] = useState('');
@@ -31,7 +25,7 @@ export default function PaymentQueue({ user, onLogout, onNavigate }) {
 
     const fetchData = (p) => {
         setLoading(true);
-        fetch(`/admin/payments-data?page=${p}`, { credentials: 'same-origin' })
+        fetch(`/admin/payments-data?page=${p}&payment_status=pending`, { credentials: 'same-origin' })
             .then((res) => {
                 if (!res.ok) throw new Error('Failed to fetch');
                 return res.json();
@@ -56,13 +50,7 @@ export default function PaymentQueue({ user, onLogout, onNavigate }) {
         setPage(newPage);
     };
 
-    const paymentBadgeClass = (s) => paymentBadgeStyle[s] || 'bg-slate-100 text-slate-700 border-slate-200';
-
-    const queue = requests.filter(
-        (req) => req.payment_status === 'unpaid' || req.payment_status === 'pending_verification'
-    );
-
-    const filtered = queue.filter((req) => {
+    const filtered = requests.filter((req) => {
         const matchesSearch = req.student_name.toLowerCase().includes(query.toLowerCase()) ||
             req.tracking_number.toLowerCase().includes(query.toLowerCase());
         const matchesFilter = filter === 'All' ||
@@ -78,7 +66,8 @@ export default function PaymentQueue({ user, onLogout, onNavigate }) {
             <td className="px-6 py-4 text-slate-700 max-w-[180px] truncate" title={(req.document_names || []).join(', ')}>{(req.document_names || []).join(', ')}</td>
             <td className="px-6 py-4 text-xs text-slate-600 capitalize">{req.payment_method || 'N/A'}</td>
             <td className="px-6 py-4 text-sm font-medium text-slate-900">₱{(Number(req.total_fee) || 0).toFixed(2)}</td>
-            <td className="px-6 py-4"><span className={`inline-block text-[11px] font-bold px-2.5 py-1 rounded-full border ${paymentBadgeClass(req.payment_status)}`}>{req.payment_status === 'pending_verification' ? 'Pending Verification' : 'Unpaid'}</span></td>
+            <td className="px-6 py-4"><StatusBadge status={req.payment_status} type="payment" /></td>
+            <td className="px-6 py-4"><StatusBadge status={req.status} /></td>
             <td className="px-6 py-4 text-slate-500 text-xs">{req.created_at}</td>
             <td className="px-6 py-4">
                 <button
@@ -119,10 +108,6 @@ export default function PaymentQueue({ user, onLogout, onNavigate }) {
         >
             <section className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-6 py-5 border-b border-slate-200">
-                    <div>
-                        <h2 className="text-base font-bold text-slate-900">Pending Payments</h2>
-                        <p className="text-xs text-slate-500 mt-0.5">Requests waiting for payment verification.</p>
-                    </div>
                     <div className="flex items-center gap-3 w-full sm:w-auto">
                         <DashboardDropdown
                             options={filterOptions.map(o => ({ label: o, value: o }))}
@@ -166,7 +151,8 @@ export default function PaymentQueue({ user, onLogout, onNavigate }) {
                                         { label: 'Documents', value: (item.document_names || []).join(', ') },
                                         { label: 'Method', value: item.payment_method || 'N/A' },
                                         { label: 'Fee', value: `₱${(Number(item.total_fee) || 0).toFixed(2)}` },
-                                        { label: 'Status', value: <span className={`inline-block text-[11px] font-bold px-2.5 py-1 rounded-full border ${paymentBadgeClass(item.payment_status)}`}>{item.payment_status === 'pending_verification' ? 'Pending Verification' : 'Unpaid'}</span> },
+                                        { label: 'Status', value: <StatusBadge status={item.payment_status} type="payment" /> },
+                                        { label: 'Request', value: <StatusBadge status={item.status} /> },
                                         { label: 'Date', value: item.created_at },
                                     ]}
                                     actionLabel="Verify Payment"

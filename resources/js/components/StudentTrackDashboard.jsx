@@ -6,10 +6,10 @@ import StudentMobileNav from './student/StudentMobileNav';
 import StudentAuthModal from './student/StudentAuthModal';
 
 const STATUS_LABELS = {
-  'Pending': { label: 'Pending Review', bg: 'bg-amber-100 text-amber-800 border-amber-300' },
+  'Pending': { label: 'Pending', bg: 'bg-amber-100 text-amber-800 border-amber-300' },
   'Processing': { label: 'Processing', bg: 'bg-blue-100 text-blue-800 border-blue-300' },
   'Ready for Release': { label: 'Ready for Release', bg: 'bg-purple-100 text-purple-800 border-purple-300' },
-  'Claimed': { label: 'Claimed', bg: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
+  'Claimed': { label: 'Claimed', bg: 'bg-slate-200 text-slate-700 border-slate-300' },
   'Cancelled': { label: 'Cancelled', bg: 'bg-red-100 text-red-800 border-red-200' },
 };
 

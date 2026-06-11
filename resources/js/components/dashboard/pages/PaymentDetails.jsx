@@ -2,12 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { LayoutDashboard, Clock, CheckCircle, Search, ArrowLeft, CreditCard, User, BookOpen, ShieldCheck } from 'lucide-react';
 import DashboardLayout from '../DashboardLayout';
 import { cashierSidebarItems } from '../config/sidebarItems';
-
-const paymentBadgeStyle = {
-    'unpaid': 'bg-red-100 text-red-800 border-red-300',
-    'pending_verification': 'bg-orange-100 text-orange-800 border-orange-300',
-    'paid': 'bg-emerald-100 text-emerald-800 border-emerald-300',
-};
+import { getPaymentStatusConfig } from '../../../utils/statusConfig';
 
 export default function PaymentDetails({ user, onLogout, onNavigate }) {
     const [request, setRequest] = useState(null);
@@ -71,8 +66,7 @@ export default function PaymentDetails({ user, onLogout, onNavigate }) {
             });
     };
 
-    const paymentBadgeClass = (s) => paymentBadgeStyle[s] || 'bg-slate-100 text-slate-700 border-slate-200';
-    const paymentLabel = (s) => s === 'pending_verification' ? 'Pending Verification' : s === 'unpaid' ? 'Unpaid' : 'Paid';
+    const paymentCfg = (s) => getPaymentStatusConfig(s);
 
     if (loading) {
         return (
@@ -121,8 +115,8 @@ export default function PaymentDetails({ user, onLogout, onNavigate }) {
                             <h1 className="text-xl font-bold text-slate-900 font-mono tracking-tight">{request.tracking_number}</h1>
                             <p className="text-xs text-slate-500 mt-0.5">Payment verification for credential request</p>
                         </div>
-                        <span className={`inline-flex items-center px-3.5 py-1.5 text-sm font-bold rounded-full border-2 shadow-sm shrink-0 ${paymentBadgeClass(request.payment_status)}`}>
-                            {paymentLabel(request.payment_status)}
+                        <span className={`inline-flex items-center px-3.5 py-1.5 text-sm font-bold rounded-full border-2 shadow-sm shrink-0 ${paymentCfg(request.payment_status).className}`}>
+                            {paymentCfg(request.payment_status).label}
                         </span>
                     </div>
                 </div>
@@ -229,8 +223,8 @@ export default function PaymentDetails({ user, onLogout, onNavigate }) {
                                     </div>
                                     <div className="flex items-center justify-between py-2 border-t border-slate-100">
                                         <span className="text-xs text-slate-500">Status</span>
-                                        <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full border ${paymentBadgeClass(request.payment_status)}`}>
-                                            {paymentLabel(request.payment_status)}
+                                        <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full border ${paymentCfg(request.payment_status).className}`}>
+                                            {paymentCfg(request.payment_status).label}
                                         </span>
                                     </div>
                                     <div className="flex items-center justify-between py-2 border-t border-slate-100">
@@ -262,6 +256,11 @@ export default function PaymentDetails({ user, onLogout, onNavigate }) {
                                                 <p className="text-xs text-emerald-600 mt-1">Payment verified successfully.</p>
                                             )}
                                         </div>
+                                    </div>
+                                ) : request.status === 'Cancelled' ? (
+                                    <div className="flex flex-col items-center gap-3 p-4 bg-red-50 rounded-lg border border-red-200 text-center">
+                                        <p className="text-sm font-bold text-red-800">Request Cancelled</p>
+                                        <p className="text-xs text-red-600">This request has been cancelled. Payment cannot be verified.</p>
                                     </div>
                                 ) : (
                                     <div className="space-y-4">

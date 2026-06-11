@@ -258,6 +258,7 @@ class StudentRequestController extends Controller
         }
 
         $request->status = 'Cancelled';
+        $request->payment_status = 'unpaid';
         $request->save();
 
         $trackingNumberDisplay = $request->tracking_number;

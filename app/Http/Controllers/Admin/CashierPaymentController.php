@@ -25,7 +25,15 @@ class CashierPaymentController extends Controller
             'total_paid' => StudentRequest::where('payment_status', 'paid')->count(),
         ];
 
-        $requests = StudentRequest::latest()->paginate($perPage);
+        $paymentFilter = $request->query('payment_status');
+
+        if ($paymentFilter === 'pending') {
+            $requests = StudentRequest::whereIn('payment_status', ['unpaid', 'pending_verification'])
+                ->latest()
+                ->paginate($perPage);
+        } else {
+            $requests = StudentRequest::latest()->paginate($perPage);
+        }
 
         $documentCodes = collect($requests->items())->pluck('document_ids')->flatten()->unique()->values()->toArray();
         $documents = Document::whereIn('code', $documentCodes)->get()->keyBy('code');
@@ -74,6 +82,10 @@ class CashierPaymentController extends Controller
 
         if (!in_array($studentRequest->payment_status, ['unpaid', 'pending_verification'])) {
             return response()->json(['message' => 'Invalid payment state.'], 422);
+        }
+
+        if ($studentRequest->status === 'Cancelled') {
+            return response()->json(['message' => 'Cannot verify payment for a cancelled request.'], 422);
         }
 
         $studentRequest->payment_status = 'paid';

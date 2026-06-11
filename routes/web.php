@@ -44,7 +44,6 @@ Route::prefix('admin')->group(function () {
     Route::get('/check-auth', [AdminAuthController::class, 'checkAuth']);
 
     // Notification routes
-    Route::get('/notifications', [NotificationController::class, 'index'])->middleware('auth');
     Route::patch('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->middleware('auth')->whereNumber('id');
     Route::patch('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->middleware('auth');
 
@@ -95,6 +94,9 @@ Route::prefix('admin')->group(function () {
 
     // API routes — moved out of SPA page path to avoid hard-refresh conflict
     Route::prefix('api')->group(function () {
+        Route::get('/notifications', [NotificationController::class, 'index'])->middleware('auth');
+        Route::get('/notifications/all', [NotificationController::class, 'getAll'])->middleware('auth');
+
         Route::get('/requests/{id}', [RegistrarRequestController::class, 'show'])
             ->middleware('auth')
             ->whereNumber('id');

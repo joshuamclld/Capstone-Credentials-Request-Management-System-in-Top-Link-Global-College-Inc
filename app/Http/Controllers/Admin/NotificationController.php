@@ -46,4 +46,15 @@ class NotificationController extends Controller
 
         return response()->json(['message' => 'All notifications marked as read.']);
     }
+
+    public function getAll(): JsonResponse
+    {
+        $perPage = (int) request('per_page', 20);
+
+        $notifications = Notification::where('user_id', auth()->id())
+            ->latest()
+            ->paginate($perPage);
+
+        return response()->json($notifications);
+    }
 }

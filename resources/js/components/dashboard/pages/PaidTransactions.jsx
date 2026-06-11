@@ -98,10 +98,6 @@ export default function PaidTransactions({ user, onLogout, onNavigate }) {
         >
             <section className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-6 py-5 border-b border-slate-200">
-                    <div>
-                        <h2 className="text-base font-bold text-slate-900">Completed Payments</h2>
-                        <p className="text-xs text-slate-500 mt-0.5">All payments that have been verified and marked as paid.</p>
-                    </div>
                     <DashboardSearch
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}

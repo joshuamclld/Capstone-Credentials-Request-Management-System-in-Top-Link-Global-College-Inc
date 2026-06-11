@@ -11,7 +11,7 @@ import { systemAdminSidebarItems } from '../../config/sidebarItems';
 
 const tableHeaders = ['Action', 'Performed By', 'Target', 'Description', 'Date & Time'];
 
-const actionFilterOptions = ['All', 'update_status', 'update_remarks', 'verify_payment', 'create_user', 'update_user', 'delete_user', 'create_document', 'update_document', 'deactivate_document', 'update_settings'];
+const actionFilterOptions = ['All', 'update_status', 'update_remarks', 'verify_payment', 'create_user', 'update_user', 'delete_user', 'create_document', 'update_document', 'deactivate_document', 'create_credential_type', 'update_credential_type', 'deactivate_credential_type'];
 
 export default function SystemAdminAuditLogs({ user, onLogout, onNavigate }) {
     const [query, setQuery] = useState('');

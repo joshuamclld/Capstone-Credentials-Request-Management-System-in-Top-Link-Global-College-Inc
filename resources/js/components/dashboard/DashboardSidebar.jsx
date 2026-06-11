@@ -62,10 +62,10 @@ export default function DashboardSidebar({ items, currentUser, sidebarOpen, onCl
                     </div>
                     <button
                         onClick={onLogout}
-                        className="flex items-center justify-center w-9 h-9 rounded-lg text-red-600 hover:bg-red-50 transition-colors cursor-pointer shrink-0"
-                        title="Sign Out"
+                        className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors cursor-pointer shrink-0 text-xs"
                     >
                         <LogOut className="w-4 h-4" />
+                        Sign Out
                     </button>
                 </div>
             </div>

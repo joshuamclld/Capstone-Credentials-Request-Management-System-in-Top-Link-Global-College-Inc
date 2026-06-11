@@ -5,8 +5,8 @@ import StudentDashboardLayout from './StudentDashboardLayout';
 const STATUS_BADGES = {
   'Pending': 'bg-amber-100 text-amber-800 border-amber-300',
   'Processing': 'bg-blue-100 text-blue-800 border-blue-300',
-  'Ready for Release': 'bg-emerald-100 text-emerald-800 border-emerald-300',
-  'Claimed': 'bg-gray-100 text-gray-800 border-gray-300',
+  'Ready for Release': 'bg-purple-100 text-purple-800 border-purple-300',
+  'Claimed': 'bg-slate-200 text-slate-700 border-slate-300',
   'Cancelled': 'bg-red-100 text-red-800 border-red-200',
 };
 
@@ -98,10 +98,10 @@ export default function StudentMyRequests({ student, onLogout, onNavigate, curre
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <span className={`text-label-sm font-bold px-2.5 py-1 rounded-full border ${STATUS_BADGES[req.status] || 'bg-gray-100 text-gray-800 border-gray-300'}`}>
-                        {req.status === 'Ready for Release' ? 'Ready for Release' : req.status}
+                        {req.status}
                       </span>
                       <span className={`text-label-sm font-bold px-2.5 py-1 rounded-full border ${PAYMENT_BADGES[req.payment_status] || 'bg-gray-100 text-gray-800 border-gray-300'}`}>
-                        {req.payment_status === 'pending_verification' ? 'Pending Verification' : req.payment_status === 'paid' ? 'Paid' : 'Unpaid'}
+                        {{ unpaid: 'Unpaid', pending_verification: 'Pending Verification', paid: 'Paid' }[req.payment_status] || req.payment_status}
                       </span>
                     </div>
                   </div>

@@ -26,7 +26,7 @@ export default function ProcessRequests({ user, onLogout, onNavigate }) {
 
     const fetchData = (p) => {
         setLoading(true);
-        fetch(`/admin/requests-data?page=${p}`, { credentials: 'same-origin' })
+        fetch(`/admin/requests-data?page=${p}&status=processable`, { credentials: 'same-origin' })
             .then((res) => {
                 if (!res.ok) throw new Error('Failed to fetch');
                 return res.json();
@@ -51,10 +51,20 @@ export default function ProcessRequests({ user, onLogout, onNavigate }) {
         setPage(newPage);
     };
 
-    const handleProcess = (id) => {
+    const STATUS_TRANSITIONS = {
+        'Pending': { next: 'Processing', label: 'Process Request' },
+        'Processing': { next: 'Ready for Release', label: 'Mark as Ready' },
+        'Ready for Release': { next: 'Claimed', label: 'Mark as Claimed' },
+    };
+
+    const handleProcess = (id, currentStatus) => {
         if (processingId) return;
+        const transition = STATUS_TRANSITIONS[currentStatus];
+        if (!transition) return;
         setProcessingId(id);
         setMessage(null);
+
+        const nextStatus = transition.next;
 
         fetch(`/admin/api/requests/${id}`, {
             method: 'PATCH',
@@ -63,12 +73,12 @@ export default function ProcessRequests({ user, onLogout, onNavigate }) {
                 'X-CSRF-TOKEN': getCsrfToken(),
             },
             credentials: 'same-origin',
-            body: JSON.stringify({ status: 'Processing' }),
+            body: JSON.stringify({ status: nextStatus }),
         })
             .then((res) => res.json())
             .then((data) => {
                 if (data.message && data.request) {
-                    setMessage({ type: 'success', text: 'Request moved to Processing.' });
+                    setMessage({ type: 'success', text: `Request moved to ${nextStatus}.` });
                     fetchData(page);
                 } else {
                     setMessage({ type: 'error', text: data.message || 'Failed to process request.' });
@@ -99,11 +109,11 @@ export default function ProcessRequests({ user, onLogout, onNavigate }) {
             <td className="px-6 py-4 text-slate-500 text-xs">{req.created_at}</td>
             <td className="px-6 py-4">
                 <button
-                    onClick={() => handleProcess(req.id)}
+                    onClick={() => handleProcess(req.id, req.status)}
                     disabled={processingId === req.id}
                     className="px-3 py-1.5 text-xs font-medium text-white bg-emerald-700 hover:bg-emerald-800 disabled:bg-emerald-400 rounded-lg transition-colors cursor-pointer disabled:cursor-not-allowed"
                 >
-                    {processingId === req.id ? 'Processing...' : 'Process Request'}
+                    {processingId === req.id ? 'Processing...' : STATUS_TRANSITIONS[req.status]?.label || 'Process'}
                 </button>
             </td>
         </tr>
@@ -137,19 +147,14 @@ export default function ProcessRequests({ user, onLogout, onNavigate }) {
         >
             <section className="bg-white rounded-xl border border-slate-200 overflow-hidden">
                 {message && (
-                    <div className={`mx-6 mt-5 px-4 py-3 rounded-lg text-sm font-medium border ${
-                        message.type === 'success'
+                    <div className={`mx-6 mt-5 px-4 py-3 rounded-lg text-sm font-medium border ${message.type === 'success'
                             ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                             : 'bg-red-50 text-red-800 border-red-200'
-                    }`}>
+                        }`}>
                         {message.text}
                     </div>
                 )}
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-6 py-5 border-b border-slate-200">
-                    <div>
-                        <h2 className="text-base font-bold text-slate-900">Processing Queue</h2>
-                        <p className="text-xs text-slate-500 mt-0.5">Requests that are paid or currently being processed.</p>
-                    </div>
                     <DashboardSearch
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
@@ -185,8 +190,8 @@ export default function ProcessRequests({ user, onLogout, onNavigate }) {
                                         { label: 'Status', value: <StatusBadge status={item.status} /> },
                                         { label: 'Date', value: item.created_at },
                                     ]}
-                                    actionLabel={processingId === item.id ? 'Processing...' : 'Process Request'}
-                                    onAction={() => handleProcess(item.id)}
+                                    actionLabel={processingId === item.id ? 'Processing...' : STATUS_TRANSITIONS[item.status]?.label || 'Process'}
+                                    onAction={() => handleProcess(item.id, item.status)}
                                     loading={processingId === item.id}
                                 />
                             ))}

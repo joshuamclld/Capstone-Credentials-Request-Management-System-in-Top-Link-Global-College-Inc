@@ -3,6 +3,7 @@ import { FileText, LayoutDashboard, Clock, CheckCircle, Search, ArrowLeft, Chevr
 import DashboardLayout from '../DashboardLayout';
 import DashboardDropdown from '../../common/DashboardDropdown';
 import { registrarSidebarItems } from '../config/sidebarItems';
+import { getRequestStatusConfig, getPaymentStatusConfig } from '../../../utils/statusConfig';
 
 const statusOptions = [
     { label: 'Pending', value: 'Pending' },
@@ -12,22 +13,6 @@ const statusOptions = [
 ];
 
 const paymentLockedStatuses = ['Processing', 'Ready for Release', 'Claimed'];
-
-const requestBadgeStyle = {
-    'Pending': 'bg-amber-100 text-amber-800 border-amber-300',
-    'Payment Pending': 'bg-orange-100 text-orange-800 border-orange-300',
-    'Paid': 'bg-emerald-100 text-emerald-800 border-emerald-300',
-    'Processing': 'bg-blue-100 text-blue-800 border-blue-300',
-    'Ready for Release': 'bg-purple-100 text-purple-800 border-purple-300',
-    'Claimed': 'bg-slate-200 text-slate-700 border-slate-300',
-    'Cancelled': 'bg-red-100 text-red-800 border-red-300',
-};
-
-const paymentBadgeStyle = {
-    'unpaid': 'bg-red-50 text-red-700 border-red-200',
-    'pending_verification': 'bg-orange-50 text-orange-700 border-orange-200',
-    'paid': 'bg-emerald-50 text-emerald-700 border-emerald-200',
-};
 
 export default function RequestDetails({ user, onLogout, onNavigate }) {
     const [request, setRequest] = useState(null);
@@ -101,8 +86,8 @@ export default function RequestDetails({ user, onLogout, onNavigate }) {
 
     const handleQuickAction = (newStatus) => doSave(newStatus, remarks);
 
-    const statusBadgeClass = (s) => requestBadgeStyle[s] || 'bg-slate-100 text-slate-700 border-slate-200';
-    const paymentBadgeClass = (s) => paymentBadgeStyle[s] || 'bg-slate-100 text-slate-700 border-slate-200';
+    const statusCfg = (s) => getRequestStatusConfig(s);
+    const paymentCfg = (s) => getPaymentStatusConfig(s);
 
     const paymentPaid = request?.payment_status === 'paid';
 
@@ -159,8 +144,8 @@ export default function RequestDetails({ user, onLogout, onNavigate }) {
                                 <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Credential Request</p>
                                 <h1 className="text-2xl font-bold text-slate-900 font-mono tracking-tight">{request.tracking_number}</h1>
                             </div>
-                            <span className={`inline-flex items-center px-3 py-1.5 text-sm font-bold rounded-full border shadow-sm ${statusBadgeClass(request.status)}`}>
-                                {request.status}
+                            <span className={`inline-flex items-center px-3 py-1.5 text-sm font-bold rounded-full border shadow-sm ${statusCfg(request.status).className}`}>
+                                {statusCfg(request.status).label}
                             </span>
                         </div>
                         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mt-4 pt-4 border-t border-slate-100 text-xs text-slate-500">
@@ -304,8 +289,8 @@ export default function RequestDetails({ user, onLogout, onNavigate }) {
                                     </div>
                                     <div className="flex items-center justify-between">
                                         <span className="text-xs font-medium text-slate-500">Status</span>
-                                        <span className={`inline-block text-[11px] font-bold px-2.5 py-1 rounded-full border ${paymentBadgeClass(request.payment_status)}`}>
-                                            {request.payment_status === 'pending_verification' ? 'Pending Verification' : request.payment_status === 'unpaid' ? 'Unpaid' : 'Paid'}
+                                        <span className={`inline-block text-[11px] font-bold px-2.5 py-1 rounded-full border ${paymentCfg(request.payment_status).className}`}>
+                                            {paymentCfg(request.payment_status).label}
                                         </span>
                                     </div>
                                     <div className="pt-3 border-t border-slate-100">
