@@ -4,13 +4,6 @@
 
 @section('content')
 
-    {{-- Hero Icon --}}
-    <div style="text-align:center;margin-bottom:16px;">
-        <div style="display:inline-block;width:52px;height:52px;background:#f0fdf4;border-radius:50%;">
-            <div style="font-size:24px;line-height:52px;text-align:center;color:#065f46;">&#128274;</div>
-        </div>
-    </div>
-
     {{-- Title --}}
     <h1 class="header-title" style="font-size:20px;font-weight:700;color:#0f172a;text-align:center;margin:0 0 6px;">
         Verify Your Student Account
@@ -27,14 +20,14 @@
             {{ $otp }}
         </div>
         <div style="font-size:11px;color:#16a34a;margin-top:14px;font-weight:600;letter-spacing:0.3px;">
-            &#9200; Expires in 10 minutes
+            Expires in 10 minutes
         </div>
     </div>
 
     {{-- Security Notice --}}
     <div style="background:#fefce8;border:1px solid #fde68a;border-radius:8px;padding:12px 16px;margin-bottom:24px;">
         <p style="font-size:12px;color:#92400e;margin:0;line-height:1.5;">
-            <strong style="color:#78350f;">&#9888; Security Notice:</strong> Do not share this code with anyone. TLGC will never ask for your OTP.
+            <strong style="color:#78350f;">Security Notice:</strong> Do not share this code with anyone. TLGC will never ask for your OTP.
         </p>
     </div>
 

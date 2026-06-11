@@ -4,13 +4,6 @@
 
 @section('content')
 
-    {{-- Success Icon --}}
-    <div style="text-align:center;margin-bottom:16px;">
-        <div style="display:inline-block;width:52px;height:52px;background:#f0fdf4;border-radius:50%;">
-            <div style="font-size:24px;line-height:52px;text-align:center;color:#065f46;">&#10003;</div>
-        </div>
-    </div>
-
     {{-- Title --}}
     <h1 class="header-title" style="font-size:20px;font-weight:700;color:#0f172a;text-align:center;margin:0 0 6px;">
         Your Requested Document is Ready
@@ -51,7 +44,7 @@
 
     {{-- Attachment Notice --}}
     <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:18px 20px;text-align:center;margin-bottom:24px;">
-        <div style="font-size:13px;color:#065f46;font-weight:700;margin-bottom:4px;">&#128206; Document Attached</div>
+        <div style="font-size:13px;color:#065f46;font-weight:700;margin-bottom:4px;">Document Attached</div>
         <p style="font-size:13px;color:#166534;margin:0;line-height:1.5;">
             Your requested document is attached to this email. Please keep a copy for your records.
         </p>

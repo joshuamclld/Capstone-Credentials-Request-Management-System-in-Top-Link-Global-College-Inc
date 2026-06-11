@@ -181,10 +181,17 @@ function OtpForm({ studentId, onVerified }) {
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+  const [cooldownUntil, setCooldownUntil] = useState(0);
 
   useEffect(() => {
-    if (cooldown > 0) { const t = setTimeout(() => setCooldown(cooldown - 1), 1000); return () => clearTimeout(t); }
-  }, [cooldown]);
+    const tick = () => {
+      const remaining = Math.max(0, Math.floor((cooldownUntil - Date.now()) / 1000));
+      setCooldown(remaining);
+    };
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [cooldownUntil]);
 
   const getCsrf = () => document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
@@ -218,7 +225,7 @@ function OtpForm({ studentId, onVerified }) {
       });
       const data = await res.json();
       if (!res.ok) { setError(data.message || 'Failed to resend OTP.'); setResending(false); return; }
-      setCooldown(60);
+      setCooldownUntil(Date.now() + 60000);
     } catch { setError('Network error. Please check your connection.'); }
     setResending(false);
   };
@@ -238,7 +245,7 @@ function OtpForm({ studentId, onVerified }) {
         <p className="text-body-sm text-on-surface-variant mt-1.5 text-center">Expires in 10 minutes.</p>
       </div>
       <button type="submit" disabled={loading || otp.length !== 6} className="w-full py-2.5 sm:py-4 rounded-lg bg-primary text-on-primary font-bold hover:opacity-90 shadow-lg transition-all cursor-pointer disabled:opacity-50">
-        {loading ? 'Verifying...' : 'Verify Email'}
+        {loading ? 'Verifying...' : 'Verify OTP'}
       </button>
       <div className="text-center">
         <button type="button" onClick={handleResend} disabled={resending || cooldown > 0}
@@ -246,6 +253,10 @@ function OtpForm({ studentId, onVerified }) {
           {cooldown > 0 ? `Resend OTP (${cooldown}s)` : resending ? 'Resending...' : 'Resend OTP'}
         </button>
       </div>
+      <p className="text-center text-body-sm text-on-surface-variant mt-2">
+        Already have an account?{' '}
+        <button type="button" onClick={onSwitchToLogin} className="text-primary font-bold hover:underline cursor-pointer">Sign In</button>
+      </p>
     </form>
   );
 }
@@ -305,10 +316,17 @@ function ForgotOtpForm({ studentId, login, onVerified, onBack }) {
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+  const [cooldownUntil, setCooldownUntil] = useState(0);
 
   useEffect(() => {
-    if (cooldown > 0) { const t = setTimeout(() => setCooldown(cooldown - 1), 1000); return () => clearTimeout(t); }
-  }, [cooldown]);
+    const tick = () => {
+      const remaining = Math.max(0, Math.floor((cooldownUntil - Date.now()) / 1000));
+      setCooldown(remaining);
+    };
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [cooldownUntil]);
 
   const getCsrf = () => document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
@@ -342,7 +360,7 @@ function ForgotOtpForm({ studentId, login, onVerified, onBack }) {
       });
       setResending(false);
     } catch { setResending(false); }
-    setCooldown(60);
+    setCooldownUntil(Date.now() + 60000);
   };
 
   return (

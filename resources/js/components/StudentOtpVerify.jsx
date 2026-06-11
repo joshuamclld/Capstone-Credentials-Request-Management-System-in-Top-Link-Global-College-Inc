@@ -10,6 +10,7 @@ export default function StudentOtpVerify({ onNavigate, onLoginSuccess }) {
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+  const [cooldownUntil, setCooldownUntil] = useState(0);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -18,8 +19,14 @@ export default function StudentOtpVerify({ onNavigate, onLoginSuccess }) {
   }, []);
 
   useEffect(() => {
-    if (cooldown > 0) { const t = setTimeout(() => setCooldown(cooldown - 1), 1000); return () => clearTimeout(t); }
-  }, [cooldown]);
+    const tick = () => {
+      const remaining = Math.max(0, Math.floor((cooldownUntil - Date.now()) / 1000));
+      setCooldown(remaining);
+    };
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [cooldownUntil]);
 
   const getCsrf = () => document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
@@ -54,7 +61,7 @@ export default function StudentOtpVerify({ onNavigate, onLoginSuccess }) {
       });
       const data = await res.json();
       if (!res.ok) { setError(data.message || 'Failed to resend OTP.'); setResending(false); return; }
-      setCooldown(60);
+      setCooldownUntil(Date.now() + 60000);
     } catch { setError('Network error. Please check your connection.'); }
     setResending(false);
   };

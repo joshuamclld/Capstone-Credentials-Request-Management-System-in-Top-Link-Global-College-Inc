@@ -33,8 +33,7 @@
                             <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
                                 <tr>
                                     <td align="center" style="padding:0 20px;">
-                                        <div style="font-size:22px;font-weight:800;color:#065f46;letter-spacing:2px;">TLGC</div>
-                                        <div style="font-size:11px;font-weight:600;color:#065f46;text-transform:uppercase;letter-spacing:1px;margin-top:2px;">Top Link Global College, Inc.</div>
+                                        <div style="font-size:22px;font-weight:700;color:#065f46;text-transform:uppercase;letter-spacing:1px;margin-top:2px;">Top Link Global College, Inc.</div>
                                         <div style="font-size:10px;color:#94a3b8;margin-top:1px;letter-spacing:0.3px;">Credentials Request Management System</div>
                                     </td>
                                 </tr>
