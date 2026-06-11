@@ -15,6 +15,7 @@ const STATUS_LABELS = {
 
 const PAYMENT_LABELS = {
   unpaid: { label: 'Unpaid', bg: 'bg-red-50 text-red-700 border-red-200' },
+  pending_payment: { label: 'Pending Payment', bg: 'bg-amber-50 text-amber-700 border-amber-200' },
   pending_verification: { label: 'Pending Verification', bg: 'bg-orange-50 text-orange-700 border-orange-200' },
   paid: { label: 'Paid', bg: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
 };
@@ -344,16 +345,6 @@ export default function StudentTrackDashboard({ studentUser, onLogout, onNavigat
                         >
                           <XCircle className="w-4 h-4" />
                           {cancelling ? 'Cancelling...' : 'Cancel Request'}
-                        </button>
-                      </div>
-                    )}
-                    {request.status === 'Pending' && !isLoggedIn && (
-                      <div className="mt-6 pt-4 border-t border-outline-variant flex justify-end">
-                        <button
-                          onClick={openAuth}
-                          className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-primary bg-primary/5 border border-primary/30 rounded-lg hover:bg-primary/10 transition-colors cursor-pointer"
-                        >
-                          Sign In to Cancel
                         </button>
                       </div>
                     )}

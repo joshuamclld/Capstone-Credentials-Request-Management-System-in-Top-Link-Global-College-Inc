@@ -20,7 +20,7 @@ export default function PaidTransactions({ user, onLogout, onNavigate }) {
 
     const fetchData = (p) => {
         setLoading(true);
-        fetch(`/admin/payments-data?page=${p}`, { credentials: 'same-origin' })
+        fetch(`/admin/payments-data?page=${p}&payment_status=paid`, { credentials: 'same-origin' })
             .then((res) => {
                 if (!res.ok) throw new Error('Failed to fetch');
                 return res.json();

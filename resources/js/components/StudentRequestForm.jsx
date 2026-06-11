@@ -72,6 +72,9 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
   const [generatedRef, setGeneratedRef] = useState('');
   const [stepError, setStepError] = useState('');
   const [submitError, setSubmitError] = useState('');
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentLoading, setPaymentLoading] = useState(false);
+  const [paymentError, setPaymentError] = useState('');
 
   const getCsrfToken = () =>
     document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
@@ -237,17 +240,51 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
         setIsSubmitting(false);
         return;
       }
-
-      if (data.checkout_url) {
-        window.location.href = data.checkout_url;
-        return;
-      }
       setGeneratedRef(data.tracking_number);
       setIsSubmitting(false);
+      if (paymentMethod === 'online') {
+        setShowPaymentModal(true);
+      }
       setSubmitSuccess(true);
     } catch (err) {
       setSubmitError('Network error. Please check your connection and try again.');
       setIsSubmitting(false);
+    }
+  };
+
+  const handleProceedPayment = async () => {
+    if (paymentLoading) return;
+    setPaymentLoading(true);
+    setPaymentError('');
+    try {
+      const response = await fetch(`/requests/${encodeURIComponent(generatedRef)}/continue-payment`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-CSRF-TOKEN': getCsrfToken(),
+        },
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        setPaymentError(data.message || 'Failed to initiate payment.');
+        setPaymentLoading(false);
+        return;
+      }
+      if (data.already_paid) {
+        setShowPaymentModal(false);
+        setPaymentLoading(false);
+        return;
+      }
+      if (data.checkout_url) {
+        window.location.href = data.checkout_url;
+        return;
+      }
+      setPaymentError('No checkout URL returned.');
+      setPaymentLoading(false);
+    } catch {
+      setPaymentError('Network error. Please try again.');
+      setPaymentLoading(false);
     }
   };
 
@@ -268,12 +305,28 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
               <p className="text-label-sm text-on-surface-variant uppercase tracking-widest mb-1">Reference Number</p>
               <p className="text-lg sm:text-2xl font-bold text-primary tracking-wider">{generatedRef}</p>
             </div>
+            {paymentMethod === 'online' && (
+              <div className="mb-6 p-4 rounded-lg bg-amber-50 border border-amber-200">
+                <p className="text-body-sm text-amber-800 flex items-center gap-2 justify-center">
+                  <span className="material-symbols-outlined text-amber-600 text-[20px]">info</span>
+                  Please proceed to payment to complete your request.
+                </p>
+              </div>
+            )}
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              {paymentMethod === 'online' && (
+                <button
+                  onClick={() => setShowPaymentModal(true)}
+                  className="bg-primary text-on-primary px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-bold hover:opacity-95 transition-all cursor-pointer"
+                >
+                  Proceed to Online Payment
+                </button>
+              )}
               <button
-                onClick={(e) => { e.preventDefault(); onNavigate('/track'); }}
-                className="bg-primary text-on-primary px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-bold hover:opacity-95 transition-all cursor-pointer"
+                onClick={(e) => { e.preventDefault(); onNavigate('/student/requests/' + generatedRef); }}
+                className="bg-primary/10 text-primary px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-bold hover:bg-primary/15 transition-all cursor-pointer"
               >
-                Track Status Page
+                View Request Details
               </button>
               <button
                 onClick={(e) => { e.preventDefault(); setSubmitSuccess(false); resetForm(); }}
@@ -822,7 +875,7 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
                       </>
                     ) : (
                       <>
-                        Submit &amp; Pay
+                      {paymentMethod === 'online' ? 'Submit & Pay' : 'Submit Request'}
                         <span className="material-symbols-outlined">send</span>
                       </>
                     )}
@@ -833,6 +886,41 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
           </div>
         )}
       </div>
+
+      {/* Payment Confirmation Modal */}
+      {showPaymentModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4" onClick={() => !paymentLoading && setShowPaymentModal(false)}>
+          <div className="bg-surface rounded-2xl shadow-xl border border-outline-variant w-full max-w-md p-4 sm:p-6 animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-headline-sm font-bold text-on-surface mb-2">Proceed to Online Payment?</h3>
+            <p className="text-body-sm sm:text-body-md text-on-surface-variant mb-4 sm:mb-6">
+              You will be redirected to PayMongo to complete payment securely.
+            </p>
+
+            {paymentError && (
+              <div className="mb-4 p-3 rounded-lg bg-error/10 border border-error/30">
+                <p className="text-body-sm text-error">{paymentError}</p>
+              </div>
+            )}
+
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowPaymentModal(false)}
+                disabled={paymentLoading}
+                className="px-5 py-2.5 rounded-lg font-label-md font-bold text-on-surface-variant bg-surface-container-high hover:bg-surface-container-higher transition-colors cursor-pointer disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleProceedPayment}
+                disabled={paymentLoading}
+                className="px-5 py-2.5 rounded-lg font-label-md font-bold text-on-primary bg-primary hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                {paymentLoading ? 'Processing...' : 'Continue Payment'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </StudentDashboardLayout>
   );
 }

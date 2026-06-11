@@ -59,6 +59,10 @@ Route::prefix('admin')->group(function () {
         ->middleware('cashier')
         ->whereNumber('id');
 
+    Route::get('/payments/{id}/check-paymongo', [CashierPaymentController::class, 'checkPayMongo'])
+        ->middleware('cashier')
+        ->whereNumber('id');
+
     Route::get('/cashier/online-payment-status', [CashierPaymentController::class, 'getOnlinePaymentStatus'])
         ->middleware('cashier');
 
@@ -121,6 +125,9 @@ Route::get('/requests/{tracking_number}', [StudentRequestController::class, 'sho
     ->middleware('throttle:30,1');
 Route::patch('/requests/{tracking_number}/cancel', [StudentRequestController::class, 'cancel'])
     ->middleware('throttle:5,1');
+Route::post('/requests/{tracking_number}/continue-payment', [StudentRequestController::class, 'continuePayment'])
+    ->middleware('throttle:10,1');
+Route::get('/requests/{tracking_number}/verify-payment', [StudentRequestController::class, 'verifyPayment']);
 Route::get('/documents', [DocumentController::class, 'index']);
 
 // Student Authentication Routes

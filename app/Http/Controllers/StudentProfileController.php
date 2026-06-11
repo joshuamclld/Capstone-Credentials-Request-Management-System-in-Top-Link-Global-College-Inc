@@ -35,6 +35,8 @@ class StudentProfileController extends Controller
         }
 
         $validated = $request->validate([
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:students,email,' . $student->id,
             'contact_number' => 'nullable|string|max:20',
             'address' => 'nullable|string|max:500',

@@ -13,7 +13,7 @@ import { getPaymentStatusConfig } from '../../../utils/statusConfig';
 
 const statDefs = [
     { label: 'Pending Payments', key: 'pending_payments', icon: Clock, iconBg: 'bg-red-50', iconColor: 'text-red-700' },
-    { label: 'Online Verification', key: 'pending_verification', icon: CreditCard, iconBg: 'bg-orange-50', iconColor: 'text-orange-700' },
+    { label: 'Online Payments', key: 'pending_verification', icon: CreditCard, iconBg: 'bg-orange-50', iconColor: 'text-orange-700' },
     { label: 'Paid Today', key: 'paid_today', icon: DollarSign, iconBg: 'bg-emerald-50', iconColor: 'text-emerald-700' },
     { label: 'Total Paid Requests', key: 'total_paid', icon: CheckCircle, iconBg: 'bg-blue-50', iconColor: 'text-blue-700' },
 ];
@@ -34,7 +34,7 @@ export default function CashierDashboard({ user, onLogout, onNavigate }) {
         fetch('/admin/cashier/online-payment-status', { credentials: 'same-origin' })
             .then(r => r.json())
             .then(d => setOnlinePaymentEnabled(d.enabled))
-            .catch(() => {});
+            .catch(() => { });
     };
 
     const fetchData = (p) => {
@@ -82,7 +82,7 @@ export default function CashierDashboard({ user, onLogout, onNavigate }) {
             .then(d => {
                 if (d.success) setOnlinePaymentEnabled(d.enabled);
             })
-            .catch(() => {})
+            .catch(() => { })
             .finally(() => setToggling(false));
     };
 
@@ -169,63 +169,63 @@ export default function CashierDashboard({ user, onLogout, onNavigate }) {
                             />
                         </div>
 
-                <div className="hidden md:block">
-                    <DashboardTable
-                        headers={tableHeaders}
-                        emptyState={
-                            <EmptyState
-                                icon={CreditCard}
-                                title="No Payment Requests"
-                                subtitle="Student payment requests will appear here."
-                            />
-                        }
-                    >
-                        {filtered.map(renderRow)}
-                    </DashboardTable>
-                </div>
-
-                <div className="md:hidden">
-                    {filtered.length > 0 ? (
-                        <div className="divide-y divide-slate-100">
-                            {filtered.map((item) => (
-                                <DashboardMobileCard
-                                    key={item.id}
-                                    title={item.tracking_number}
-                                    subtitle={item.student_name}
-                                    metadata={[
-                                        { label: 'Method', value: item.payment_method || 'N/A' },
-                                        { label: 'Fee', value: `₱${(Number(item.total_fee) || 0).toFixed(2)}` },
-                                        { label: 'Status', value: <span className={`inline-block text-[11px] font-bold px-2.5 py-1 rounded-full border ${getPaymentStatusConfig(item.payment_status).className}`}>{getPaymentStatusConfig(item.payment_status).label}</span> },
-                                        { label: 'Request', value: <StatusBadge status={item.status} /> },
-                                    ]}
-                                    actionLabel="View Payment"
-                                    onAction={() => onNavigate(`/cashier/payments/${item.id}`)}
-                                />
-                            ))}
+                        <div className="hidden md:block">
+                            <DashboardTable
+                                headers={tableHeaders}
+                                emptyState={
+                                    <EmptyState
+                                        icon={CreditCard}
+                                        title="No Payment Requests"
+                                        subtitle="Student payment requests will appear here."
+                                    />
+                                }
+                            >
+                                {filtered.map(renderRow)}
+                            </DashboardTable>
                         </div>
-                    ) : (
-                        <EmptyState
-                            icon={CreditCard}
-                            title="No Payment Requests"
-                            subtitle="Student payment requests will appear here."
-                        />
-                    )}
-                </div>
 
-                <div className="hidden md:block px-6 py-4 border-t border-slate-100">
-                    <DashboardPagination
-                        currentPage={pagination?.current_page || 1}
-                        lastPage={pagination?.last_page || 1}
-                        onPageChange={handlePageChange}
-                    />
-                </div>
-                <div className="md:hidden px-4 py-3 border-t border-slate-100">
-                    <DashboardPagination
-                        currentPage={pagination?.current_page || 1}
-                        lastPage={pagination?.last_page || 1}
-                        onPageChange={handlePageChange}
-                    />
-                </div>
+                        <div className="md:hidden">
+                            {filtered.length > 0 ? (
+                                <div className="divide-y divide-slate-100">
+                                    {filtered.map((item) => (
+                                        <DashboardMobileCard
+                                            key={item.id}
+                                            title={item.tracking_number}
+                                            subtitle={item.student_name}
+                                            metadata={[
+                                                { label: 'Method', value: item.payment_method || 'N/A' },
+                                                { label: 'Fee', value: `₱${(Number(item.total_fee) || 0).toFixed(2)}` },
+                                                { label: 'Status', value: <span className={`inline-block text-[11px] font-bold px-2.5 py-1 rounded-full border ${getPaymentStatusConfig(item.payment_status).className}`}>{getPaymentStatusConfig(item.payment_status).label}</span> },
+                                                { label: 'Request', value: <StatusBadge status={item.status} /> },
+                                            ]}
+                                            actionLabel="View Payment"
+                                            onAction={() => onNavigate(`/cashier/payments/${item.id}`)}
+                                        />
+                                    ))}
+                                </div>
+                            ) : (
+                                <EmptyState
+                                    icon={CreditCard}
+                                    title="No Payment Requests"
+                                    subtitle="Student payment requests will appear here."
+                                />
+                            )}
+                        </div>
+
+                        <div className="hidden md:block px-6 py-4 border-t border-slate-100">
+                            <DashboardPagination
+                                currentPage={pagination?.current_page || 1}
+                                lastPage={pagination?.last_page || 1}
+                                onPageChange={handlePageChange}
+                            />
+                        </div>
+                        <div className="md:hidden px-4 py-3 border-t border-slate-100">
+                            <DashboardPagination
+                                currentPage={pagination?.current_page || 1}
+                                lastPage={pagination?.last_page || 1}
+                                onPageChange={handlePageChange}
+                            />
+                        </div>
                     </section>
                 </>
             )}

@@ -12,6 +12,7 @@ const STATUS_BADGES = {
 
 const PAYMENT_BADGES = {
   unpaid: 'bg-red-50 text-red-700 border-red-200',
+  pending_payment: 'bg-amber-50 text-amber-700 border-amber-200',
   pending_verification: 'bg-orange-50 text-orange-700 border-orange-200',
   paid: 'bg-emerald-50 text-emerald-700 border-emerald-200',
 };
@@ -22,6 +23,8 @@ export default function StudentMyRequests({ student, onLogout, onNavigate, curre
   const [cancelling, setCancelling] = useState(null);
   const [cancelModal, setCancelModal] = useState(null);
   const [cancelError, setCancelError] = useState('');
+  const [continueLoading, setContinueLoading] = useState(null);
+  const [continueError, setContinueError] = useState('');
 
   const getCsrf = () => document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
@@ -35,6 +38,41 @@ export default function StudentMyRequests({ student, onLogout, onNavigate, curre
         setLoading(false);
       })
       .catch(() => setLoading(false));
+  }, []);
+
+  // Re-fetch when tab gains focus (e.g. returning from PayMongo) and auto-sync payments
+  useEffect(() => {
+    const onFocus = () => {
+      fetch('/student/requests', {
+        headers: { 'Accept': 'application/json' },
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            setRequests(data.requests);
+            // Auto-sync unpaid online requests with checkout IDs
+            data.requests.forEach(req => {
+              if (req.payment_method === 'online' && req.payment_status !== 'paid' && req.paymongo_checkout_id) {
+                fetch(`/requests/${encodeURIComponent(req.tracking_number)}/verify-payment`, {
+                  headers: { 'Accept': 'application/json' },
+                })
+                  .then(res => res.json())
+                  .then(syncData => {
+                    if (syncData.success && syncData.payment_status === 'paid') {
+                      setRequests(prev => prev.map(r =>
+                        r.tracking_number === req.tracking_number ? { ...r, payment_status: 'paid' } : r
+                      ));
+                    }
+                  })
+                  .catch(() => {});
+              }
+            });
+          }
+        })
+        .catch(() => {});
+    };
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
   }, []);
 
   const handleCancelClick = (req) => {
@@ -71,10 +109,65 @@ export default function StudentMyRequests({ student, onLogout, onNavigate, curre
     setCancelling(null);
   };
 
+  const handleContinuePayment = async (req) => {
+    if (continueLoading) return;
+    setContinueLoading(req.tracking_number);
+    setContinueError('');
+    try {
+      const res = await fetch(`/requests/${encodeURIComponent(req.tracking_number)}/continue-payment`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-CSRF-TOKEN': getCsrf(),
+        },
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setContinueError(data.message || 'Failed to initiate payment.');
+        setContinueLoading(null);
+        return;
+      }
+      if (data.already_paid) {
+        setRequests(prev => prev.map(r =>
+          r.tracking_number === req.tracking_number ? { ...r, payment_status: 'paid' } : r
+        ));
+        setContinueLoading(null);
+        return;
+      }
+      if (data.checkout_url) {
+        window.location.href = data.checkout_url;
+        return;
+      }
+      setContinueError('No checkout URL returned.');
+      setContinueLoading(null);
+    } catch {
+      setContinueError('Network error. Please try again.');
+      setContinueLoading(null);
+    }
+  };
+
+  const canCancel = (req) => {
+    if (req.status !== 'Pending') return false;
+    if (req.payment_method === 'online' && req.payment_status === 'paid') return false;
+    return true;
+  };
+
+  const showContinuePayment = (req) => {
+    return req.payment_method === 'online'
+      && req.payment_status !== 'paid'
+      && req.status !== 'Cancelled';
+  };
+
   return (
     <>
       <StudentDashboardLayout title="My Requests" subtitle="View and manage all your credential requests." student={student} onLogout={onLogout} onNavigate={onNavigate} currentPath={currentPath}>
         <div className="max-w-container-max mx-auto">
+          {continueError && (
+            <div className="mb-4 p-3 rounded-lg bg-error/10 border border-error/30">
+              <p className="text-body-sm text-error">{continueError}</p>
+            </div>
+          )}
           {loading ? (
             <div className="space-y-3">
               {[1, 2, 3, 4].map(i => <div key={i} className="h-24 bg-surface-container-high rounded-xl animate-pulse" />)}
@@ -101,7 +194,7 @@ export default function StudentMyRequests({ student, onLogout, onNavigate, curre
                         {req.status}
                       </span>
                       <span className={`text-label-sm font-bold px-2.5 py-1 rounded-full border ${PAYMENT_BADGES[req.payment_status] || 'bg-gray-100 text-gray-800 border-gray-300'}`}>
-                        {{ unpaid: 'Unpaid', pending_verification: 'Pending Verification', paid: 'Paid' }[req.payment_status] || req.payment_status}
+                        {{ unpaid: 'Unpaid', pending_payment: 'Pending Payment', pending_verification: 'Pending Verification', paid: 'Paid' }[req.payment_status] || req.payment_status}
                       </span>
                     </div>
                   </div>
@@ -129,20 +222,29 @@ export default function StudentMyRequests({ student, onLogout, onNavigate, curre
                     )}
                   </div>
 
-                  <div className="flex gap-2 pt-2 border-t border-outline-variant">
+                  <div className="flex gap-2 pt-2 border-t border-outline-variant flex-nowrap">
                     <button
                       onClick={() => onNavigate(`/student/requests/${req.tracking_number}`)}
-                      className="px-4 sm:py-2 max-md:py-3 rounded-lg bg-primary text-on-primary font-bold text-label-sm hover:opacity-90 transition-all cursor-pointer"
+                      className="px-3 sm:px-4 py-2 sm:py-2 rounded-lg bg-primary text-on-primary font-bold text-label-sm hover:opacity-90 transition-all cursor-pointer whitespace-nowrap"
                     >
                       View Details
                     </button>
-                    {req.status === 'Pending' && (
+                    {canCancel(req) && (
                       <button
                         onClick={() => handleCancelClick(req)}
                         disabled={cancelling === req.tracking_number}
-                        className="px-4 sm:py-2 max-md:py-3 rounded-lg text-red-700 bg-red-50 border border-red-200 font-bold text-label-sm hover:bg-red-100 transition-all cursor-pointer disabled:opacity-50"
+                        className="px-3 sm:px-4 py-2 sm:py-2 rounded-lg text-red-700 bg-red-50 border border-red-200 font-bold text-label-sm hover:bg-red-100 transition-all cursor-pointer disabled:opacity-50 whitespace-nowrap"
                       >
                         {cancelling === req.tracking_number ? 'Cancelling...' : 'Cancel Request'}
+                      </button>
+                    )}
+                    {showContinuePayment(req) && (
+                      <button
+                        onClick={() => handleContinuePayment(req)}
+                        disabled={continueLoading === req.tracking_number}
+                        className="px-3 sm:px-4 py-2 sm:py-2 rounded-lg text-amber-700 bg-amber-50 border border-amber-200 font-bold text-label-sm hover:bg-amber-100 transition-all cursor-pointer disabled:opacity-50 whitespace-nowrap"
+                      >
+                        {continueLoading === req.tracking_number ? 'Processing...' : 'Continue Payment'}
                       </button>
                     )}
                   </div>

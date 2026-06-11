@@ -8,6 +8,7 @@ export const REQUEST_STATUS_CONFIG = {
 
 export const PAYMENT_STATUS_CONFIG = {
   unpaid: { label: 'Unpaid', className: 'bg-red-50 text-red-700 border-red-200' },
+  pending_payment: { label: 'Pending Payment', className: 'bg-amber-50 text-amber-700 border-amber-200' },
   pending_verification: { label: 'Pending Verification', className: 'bg-orange-50 text-orange-700 border-orange-200' },
   paid: { label: 'Paid', className: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
 };

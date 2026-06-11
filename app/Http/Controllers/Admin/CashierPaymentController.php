@@ -8,6 +8,7 @@ use App\Models\Document;
 use App\Models\Notification;
 use App\Models\StudentRequest;
 use App\Models\SystemSetting;
+use App\Services\PayMongoService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -29,6 +30,10 @@ class CashierPaymentController extends Controller
 
         if ($paymentFilter === 'pending') {
             $requests = StudentRequest::whereIn('payment_status', ['unpaid', 'pending_verification'])
+                ->latest()
+                ->paginate($perPage);
+        } elseif ($paymentFilter === 'paid') {
+            $requests = StudentRequest::where('payment_status', 'paid')
                 ->latest()
                 ->paginate($perPage);
         } else {
@@ -80,7 +85,7 @@ class CashierPaymentController extends Controller
             return response()->json(['message' => 'Payment is already verified.'], 422);
         }
 
-        if (!in_array($studentRequest->payment_status, ['unpaid', 'pending_verification'])) {
+        if (!in_array($studentRequest->payment_status, ['unpaid', 'pending_payment', 'pending_verification'])) {
             return response()->json(['message' => 'Invalid payment state.'], 422);
         }
 
@@ -129,6 +134,85 @@ class CashierPaymentController extends Controller
                 'created_at' => $studentRequest->created_at->format('Y-m-d'),
             ],
         ]);
+    }
+
+    public function checkPayMongo(int $id): JsonResponse
+    {
+        $studentRequest = StudentRequest::find($id);
+
+        if (!$studentRequest) {
+            return response()->json(['message' => 'Request not found.'], 404);
+        }
+
+        if ($studentRequest->payment_method !== 'online') {
+            return response()->json(['message' => 'Not an online payment request.'], 422);
+        }
+
+        if (!$studentRequest->paymongo_checkout_id) {
+            return response()->json(['message' => 'No PayMongo checkout session found.', 'paymongo_status' => null], 200);
+        }
+
+        try {
+            $paymongo = app(PayMongoService::class);
+            $session = $paymongo->retrieveCheckoutSession($studentRequest->paymongo_checkout_id);
+            $attributes = $session['attributes'] ?? [];
+
+            // Try checkout-level payment_status first, then fall back to payment_intent status
+            $paymongoStatus = $attributes['payment_status'] ?? null;
+            if (!$paymongoStatus) {
+                $paymentIntent = $attributes['payment_intent'] ?? [];
+                $intentStatus = $paymentIntent['attributes']['status'] ?? null;
+                // Map payment intent statuses to human-readable values
+                $statusMap = [
+                    'awaiting_payment_method' => 'unpaid',
+                    'awaiting_next_action' => 'unpaid',
+                    'processing' => 'processing',
+                    'succeeded' => 'paid',
+                    'cancelled' => 'cancelled',
+                    'failed' => 'failed',
+                    'expired' => 'expired',
+                ];
+                $paymongoStatus = $statusMap[$intentStatus] ?? $intentStatus;
+            }
+
+            // If PayMongo confirms payment is paid and our DB still shows unpaid, auto-update
+            $wasUpdated = false;
+            if ($paymongoStatus === 'paid' && $studentRequest->payment_status !== 'paid') {
+                $studentRequest->payment_status = 'paid';
+                $studentRequest->verified_by = auth()->user()->name;
+                $studentRequest->verified_by_user_id = auth()->id();
+                $studentRequest->verified_at = now();
+                $studentRequest->save();
+                $wasUpdated = true;
+
+                Notification::notifyRole('admin', 'payment_verified', 'Payment Verified', "Payment auto-verified for {$studentRequest->tracking_number}", (string) $studentRequest->id, "/admin/requests/{$studentRequest->id}", auth()->id());
+
+                AuditLog::create([
+                    'action' => 'verify_payment',
+                    'performed_by' => auth()->user()->name,
+                    'performed_by_id' => auth()->id(),
+                    'target_type' => 'StudentRequest',
+                    'target_id' => $studentRequest->id,
+                    'description' => "Auto-verified PayMongo payment for {$studentRequest->tracking_number} (checkout: {$studentRequest->paymongo_checkout_id})",
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'paymongo_status' => $paymongoStatus,
+                'paymongo_checkout_id' => $studentRequest->paymongo_checkout_id,
+                'payment_status' => $studentRequest->payment_status,
+                'auto_updated' => $wasUpdated,
+            ]);
+        } catch (\RuntimeException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve PayMongo session: ' . $e->getMessage(),
+                'paymongo_status' => null,
+                'paymongo_checkout_id' => $studentRequest->paymongo_checkout_id,
+                'payment_status' => $studentRequest->payment_status,
+            ], 200);
+        }
     }
 
     public function getOnlinePaymentStatus(): JsonResponse

@@ -1,15 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Menu, User, LogOut } from 'lucide-react';
+import { User, LogOut } from 'lucide-react';
 import StudentDashboardSidebar from './StudentDashboardSidebar';
+import StudentBottomNavbar from './StudentBottomNavbar';
 
 export default function StudentDashboardLayout({ title, subtitle, student, onLogout, onNavigate, currentPath, children }) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
-
-  useEffect(() => {
-    setSidebarOpen(false);
-  }, [currentPath]);
 
   useEffect(() => {
     if (!dropdownOpen) return;
@@ -26,30 +22,21 @@ export default function StudentDashboardLayout({ title, subtitle, student, onLog
 
   return (
     <div className="min-h-screen bg-surface flex">
-      {sidebarOpen && (
-        <div className="fixed inset-0 bg-black/40 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
-      )}
-
-      <StudentDashboardSidebar
-        student={student}
-        sidebarOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-        onLogout={onLogout}
-        onNavigate={onNavigate}
-        currentPath={currentPath}
-      />
+      <div className="hidden lg:block">
+        <StudentDashboardSidebar
+          student={student}
+          sidebarOpen={true}
+          onClose={() => {}}
+          onLogout={onLogout}
+          onNavigate={onNavigate}
+          currentPath={currentPath}
+        />
+      </div>
 
       <main className="flex-1 lg:pl-64 min-w-0 flex flex-col">
         <header className="sticky top-0 z-30 bg-surface/80 backdrop-blur-md border-b border-outline-variant">
           <div className="flex items-center justify-between h-20 max-md:h-16 px-margin-mobile md:px-margin-desktop">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-              <button
-                onClick={() => setSidebarOpen(true)}
-                className="lg:hidden p-2.5 -ml-1 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer shrink-0"
-                aria-label="Open sidebar"
-              >
-                <Menu className="w-6 h-6" />
-              </button>
               <div className="min-w-0">
                 <h1 className="text-base sm:text-lg font-bold text-on-surface truncate">{title}</h1>
                 {subtitle && <p className="text-xs text-on-surface-variant truncate hidden sm:block">{subtitle}</p>}
@@ -89,10 +76,12 @@ export default function StudentDashboardLayout({ title, subtitle, student, onLog
           </div>
         </header>
 
-        <div className="flex-1 px-margin-mobile md:px-margin-desktop py-6 sm:py-8">
+        <div className="flex-1 px-margin-mobile md:px-margin-desktop py-6 sm:py-8 pb-24 lg:pb-8">
           {children}
         </div>
       </main>
+
+      <StudentBottomNavbar currentPath={currentPath} onNavigate={onNavigate} />
     </div>
   );
 }

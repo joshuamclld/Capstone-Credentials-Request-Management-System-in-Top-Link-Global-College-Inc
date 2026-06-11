@@ -12,6 +12,7 @@ const STATUS_LABELS = {
 
 const PAYMENT_LABELS = {
   unpaid: { label: 'Unpaid', bg: 'bg-red-50 text-red-700 border-red-200' },
+  pending_payment: { label: 'Pending Payment', bg: 'bg-amber-50 text-amber-700 border-amber-200' },
   pending_verification: { label: 'Pending Verification', bg: 'bg-orange-50 text-orange-700 border-orange-200' },
   paid: { label: 'Paid', bg: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
 };
@@ -71,24 +72,60 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
   const [cancelling, setCancelling] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelModalError, setCancelModalError] = useState('');
+  const [continueLoading, setContinueLoading] = useState(false);
 
   const getCsrfToken = () =>
     document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+  const fetchRequest = React.useCallback(() => {
+    if (!trackingNumber) return Promise.resolve(null);
+    return fetch(`/requests/${encodeURIComponent(trackingNumber)}`, {
+      headers: { 'Accept': 'application/json' },
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setRequest(data.request);
+          return data.request;
+        }
+        return null;
+      })
+      .catch(() => null);
+  }, [trackingNumber]);
+
+  const syncPayment = React.useCallback((req) => {
+    if (!req || req.payment_status === 'paid' || !req.paymongo_checkout_id) return;
+    fetch(`/requests/${encodeURIComponent(trackingNumber)}/verify-payment`, {
+      headers: { 'Accept': 'application/json' },
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.payment_status === 'paid') {
+          setRequest(prev => prev ? { ...prev, payment_status: 'paid' } : prev);
+        }
+      })
+      .catch(() => {});
+  }, [trackingNumber]);
 
   useEffect(() => {
     if (!trackingNumber) return;
     setLoading(true);
     setError('');
-    fetch(`/requests/${encodeURIComponent(trackingNumber)}`, {
-      headers: { 'Accept': 'application/json' },
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (!data.success) { setError(data.message || 'Request not found.'); setLoading(false); return; }
-        setRequest(data.request);
-        setLoading(false);
-      })
-      .catch(() => { setError('Network error.'); setLoading(false); });
+    fetchRequest().then(req => {
+      setLoading(false);
+      if (req) syncPayment(req);
+      else setError('Request not found.');
+    });
+  }, [trackingNumber]);
+
+  // Re-fetch when tab gains focus (e.g. returning from PayMongo)
+  useEffect(() => {
+    const onFocus = () => {
+      if (!trackingNumber) return;
+      fetchRequest().then(req => { if (req) syncPayment(req); });
+    };
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
   }, [trackingNumber]);
 
   const handleCancelClick = () => {
@@ -133,6 +170,43 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
     setCancelModalError('');
   };
 
+  const handleContinuePayment = async () => {
+    if (!request || continueLoading) return;
+    setContinueLoading(true);
+    try {
+      const res = await fetch(`/requests/${encodeURIComponent(request.tracking_number)}/continue-payment`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-CSRF-TOKEN': getCsrfToken(),
+        },
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setContinueLoading(false);
+        return;
+      }
+      if (data.already_paid) {
+        // Re-fetch request to sync with server state
+        const refetch = await fetch(`/requests/${encodeURIComponent(request.tracking_number)}`, {
+          headers: { 'Accept': 'application/json' },
+        });
+        const refetchData = await refetch.json();
+        if (refetchData.success) setRequest(refetchData.request);
+        setContinueLoading(false);
+        return;
+      }
+      if (data.checkout_url) {
+        window.location.href = data.checkout_url;
+        return;
+      }
+    } catch {
+      // ignore
+    }
+    setContinueLoading(false);
+  };
+
   const timeline = request ? buildTimeline(request.status, request.payment_status) : [];
 
   return (
@@ -149,7 +223,7 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
         {loading ? (
           <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-6">
             <div className="space-y-4">
-              {[1,2,3,4,5].map(i => <div key={i} className="h-6 bg-surface-container-high rounded animate-pulse" />)}
+              {[1, 2, 3, 4, 5].map(i => <div key={i} className="h-6 bg-surface-container-high rounded animate-pulse" />)}
             </div>
           </div>
         ) : error ? (
@@ -247,18 +321,27 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
                   <span className="text-2xl font-bold text-primary">₱ {(Number(request.total_fee) || 0).toFixed(2)}</span>
                 </div>
 
-                {request.status === 'Pending' && (
-                  <div className="mt-6 pt-4 border-t border-outline-variant flex justify-end">
+                <div className="mt-6 pt-4 border-t border-outline-variant flex gap-2 justify-end flex-nowrap">
+                  {request.status === 'Pending' && request.payment_status !== 'paid' && (
                     <button
                       onClick={handleCancelClick}
                       disabled={cancelling}
-                      className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 disabled:opacity-50 transition-colors cursor-pointer"
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 disabled:opacity-50 transition-colors cursor-pointer whitespace-nowrap"
                     >
                       <XCircle className="w-4 h-4" />
                       {cancelling ? 'Cancelling...' : 'Cancel Request'}
                     </button>
-                  </div>
-                )}
+                  )}
+                  {request.payment_method === 'online' && request.payment_status !== 'paid' && request.status !== 'Cancelled' && (
+                    <button
+                      onClick={() => handleContinuePayment(request)}
+                      disabled={continueLoading}
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 disabled:opacity-50 transition-colors cursor-pointer whitespace-nowrap"
+                    >
+                      {continueLoading ? 'Processing...' : 'Continue Payment'}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -278,36 +361,33 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
                     return (
                       <div key={item.key || index} className="flex gap-3">
                         <div className="flex flex-col items-center">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                            item.done
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${item.done
                               ? request.status === 'Cancelled' && index === timeline.length - 1
                                 ? 'bg-red-500 text-white shadow-sm'
                                 : 'bg-primary text-on-primary shadow-sm'
                               : item.active
                                 ? 'bg-primary/10 text-primary ring-4 ring-primary/20'
                                 : 'bg-surface-container-low text-on-surface-variant border border-outline-variant'
-                          }`}>
+                            }`}>
                             <IconComponent className="w-4 h-4" />
                           </div>
                           {!isLast && (
-                            <div className={`w-px grow min-h-[24px] ${
-                              item.done
+                            <div className={`w-px grow min-h-[24px] ${item.done
                                 ? request.status === 'Cancelled'
                                   ? 'bg-red-300'
                                   : 'bg-primary/30'
                                 : 'border-l border-dashed border-outline-variant'
-                            }`}></div>
+                              }`}></div>
                           )}
                         </div>
 
                         <div className={`pb-4 pt-0.5 ${!item.done && !item.active ? 'opacity-40' : ''}`}>
-                          <p className={`text-sm font-bold leading-tight ${
-                            item.done
+                          <p className={`text-sm font-bold leading-tight ${item.done
                               ? request.status === 'Cancelled' && index === timeline.length - 1
                                 ? 'text-red-600'
                                 : 'text-primary'
                               : item.active ? 'text-primary' : 'text-on-surface'
-                          }`}>
+                            }`}>
                             {item.step}
                           </p>
                           <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">{item.desc}</p>

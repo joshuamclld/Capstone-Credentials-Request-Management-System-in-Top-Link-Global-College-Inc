@@ -14,7 +14,7 @@ export default function StudentProfile({ student, onLogout, onNavigate, currentP
   const [showConfirm, setShowConfirm] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
 
-  const [form, setForm] = useState({ email: '', contact_number: '', address: '' });
+  const [form, setForm] = useState({ first_name: '', last_name: '', email: '', contact_number: '', address: '' });
   const [passwordForm, setPasswordForm] = useState({ current_password: '', new_password: '', new_password_confirmation: '' });
 
   useEffect(() => {
@@ -23,7 +23,7 @@ export default function StudentProfile({ student, onLogout, onNavigate, currentP
       .then(data => {
         const s = data.student;
         setProfile(s);
-        setForm({ email: s.email || '', contact_number: s.contact_number || '', address: s.address || '' });
+        setForm({ first_name: s.first_name || '', last_name: s.last_name || '', email: s.email || '', contact_number: s.contact_number || '', address: s.address || '' });
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -164,6 +164,18 @@ export default function StudentProfile({ student, onLogout, onNavigate, currentP
         <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-5 sm:p-7 shadow-sm">
           <h3 className="text-base sm:text-lg font-bold text-on-surface mb-4">Personal Information</h3>
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className={labelClass}>First Name</label>
+                <input name="first_name" type="text" value={form.first_name} onChange={handleChange} className={inputClass + (errors.first_name ? ' ' + inputErrorClass : '')} />
+                {errors.first_name && <p className="text-body-xs text-error mt-1">{errors.first_name[0]}</p>}
+              </div>
+              <div>
+                <label className={labelClass}>Last Name</label>
+                <input name="last_name" type="text" value={form.last_name} onChange={handleChange} className={inputClass + (errors.last_name ? ' ' + inputErrorClass : '')} />
+                {errors.last_name && <p className="text-body-xs text-error mt-1">{errors.last_name[0]}</p>}
+              </div>
+            </div>
             <div>
               <label className={labelClass}>Email</label>
               <input name="email" type="email" value={form.email} onChange={handleChange} className={inputClass + (errors.email ? ' ' + inputErrorClass : '')} />
@@ -202,14 +214,6 @@ export default function StudentProfile({ student, onLogout, onNavigate, currentP
                 <div className={readOnlyClass}>{s.course}</div>
               </div>
             )}
-            <div>
-              <label className={labelClass}>Year Level</label>
-              <div className={readOnlyClass}>{s?.year_level || 'N/A'}</div>
-            </div>
-            <div>
-              <label className={labelClass}>Section / Block</label>
-              <div className={readOnlyClass}>{s?.section || 'N/A'}</div>
-            </div>
           </div>
           <p className="text-body-sm text-on-surface-variant mt-4 flex items-center gap-1.5">
             <AlertCircle className="w-3.5 h-3.5 shrink-0" />

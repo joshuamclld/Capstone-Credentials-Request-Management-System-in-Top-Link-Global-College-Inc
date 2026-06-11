@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, Clock, CheckCircle, Search, ArrowLeft, CreditCard, User, BookOpen, ShieldCheck } from 'lucide-react';
+import { LayoutDashboard, Clock, CheckCircle, Search, ArrowLeft, CreditCard, User, BookOpen, ShieldCheck, ExternalLink, AlertCircle } from 'lucide-react';
 import DashboardLayout from '../DashboardLayout';
 import { cashierSidebarItems } from '../config/sidebarItems';
 import { getPaymentStatusConfig } from '../../../utils/statusConfig';
@@ -10,6 +10,8 @@ export default function PaymentDetails({ user, onLogout, onNavigate }) {
     const [error, setError] = useState(null);
     const [verifying, setVerifying] = useState(false);
     const [message, setMessage] = useState(null);
+    const [paymongoChecking, setPaymongoChecking] = useState(false);
+    const [paymongoResult, setPaymongoResult] = useState(null);
 
     const id = window.location.pathname.split('/').filter(Boolean).pop();
 
@@ -34,6 +36,30 @@ export default function PaymentDetails({ user, onLogout, onNavigate }) {
                 setLoading(false);
             });
     }, [id]);
+
+    const handleCheckPayMongo = () => {
+        if (paymongoChecking) return;
+        setPaymongoChecking(true);
+        setPaymongoResult(null);
+        setMessage(null);
+
+        fetch(`/admin/payments/${id}/check-paymongo`, {
+            credentials: 'same-origin',
+        })
+            .then((res) => res.json())
+            .then((data) => {
+                setPaymongoResult(data);
+                if (data.success && data.auto_updated) {
+                    setRequest(prev => prev ? { ...prev, payment_status: 'paid' } : prev);
+                    setMessage({ type: 'success', text: 'PayMongo confirmed payment is complete. Status updated automatically.' });
+                }
+                setPaymongoChecking(false);
+            })
+            .catch(() => {
+                setPaymongoResult({ success: false, message: 'Network error.' });
+                setPaymongoChecking(false);
+            });
+    };
 
     const handleVerify = () => {
         if (verifying) return;
@@ -261,6 +287,81 @@ export default function PaymentDetails({ user, onLogout, onNavigate }) {
                                     <div className="flex flex-col items-center gap-3 p-4 bg-red-50 rounded-lg border border-red-200 text-center">
                                         <p className="text-sm font-bold text-red-800">Request Cancelled</p>
                                         <p className="text-xs text-red-600">This request has been cancelled. Payment cannot be verified.</p>
+                                    </div>
+                                ) : request.payment_method === 'online' ? (
+                                    <div className="space-y-4">
+                                        <p className="text-xs text-slate-500 leading-relaxed">
+                                            This is an online payment request. Check the PayMongo session status below before marking as paid.
+                                        </p>
+
+                                        {/* PayMongo Checkout ID */}
+                                        <div className="bg-slate-50 rounded-lg border border-slate-200 p-3">
+                                            <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">PayMongo Checkout ID</p>
+                                            <p className="text-xs font-mono font-medium text-slate-900 break-all">
+                                                {request.paymongo_checkout_id || 'No checkout session'}
+                                            </p>
+                                        </div>
+
+                                        {/* Check with PayMongo Button */}
+                                        <button
+                                            onClick={handleCheckPayMongo}
+                                            disabled={paymongoChecking}
+                                            className="w-full py-3 text-sm font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 disabled:opacity-50 rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-2"
+                                        >
+                                            {paymongoChecking ? (
+                                                <>Checking...</>
+                                            ) : (
+                                                <><ExternalLink className="w-4 h-4" /> Check with PayMongo</>
+                                            )}
+                                        </button>
+
+                                        {/* PayMongo Result */}
+                                        {paymongoResult && (
+                                            <div className={`rounded-lg border p-3 text-center ${
+                                                paymongoResult.success
+                                                    ? paymongoResult.paymongo_status === 'paid'
+                                                        ? 'bg-emerald-50 border-emerald-200'
+                                                        : 'bg-amber-50 border-amber-200'
+                                                    : 'bg-red-50 border-red-200'
+                                            }`}>
+                                                {paymongoResult.success ? (
+                                                    <>
+                                                        <p className="text-xs font-bold uppercase tracking-wider mb-1 text-slate-500">PayMongo Status</p>
+                                                        <span className={`inline-block text-xs font-bold px-2.5 py-1 rounded-full border ${
+                                                            paymongoResult.paymongo_status === 'paid'
+                                                                ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                                                                : 'bg-amber-100 text-amber-800 border-amber-300'
+                                                        }`}>
+                                                            {paymongoResult.paymongo_status === 'paid' ? 'Paid' : paymongoResult.paymongo_status || 'Unknown'}
+                                                        </span>
+                                                        {paymongoResult.auto_updated && (
+                                                            <p className="text-xs text-emerald-700 mt-2">Payment status auto-updated based on PayMongo confirmation.</p>
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    <div className="flex items-center justify-center gap-2">
+                                                        <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+                                                        <p className="text-xs text-red-700">{paymongoResult.message || 'Failed to check PayMongo.'}</p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        {/* Mark as Paid (manual override) */}
+                                        <div className="border-t border-slate-200 pt-4">
+                                            <p className="text-xs text-slate-400 mb-3">Manual override — only use after verifying the student's payment proof.</p>
+                                            <button
+                                                onClick={handleVerify}
+                                                disabled={verifying}
+                                                className="w-full py-3 text-sm font-bold text-white bg-emerald-700 hover:bg-emerald-800 disabled:bg-emerald-400 rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-2"
+                                            >
+                                                {verifying ? (
+                                                    <>Verifying...</>
+                                                ) : (
+                                                    <><CheckCircle className="w-4 h-4" /> Mark as Paid</>
+                                                )}
+                                            </button>
+                                        </div>
                                     </div>
                                 ) : (
                                     <div className="space-y-4">

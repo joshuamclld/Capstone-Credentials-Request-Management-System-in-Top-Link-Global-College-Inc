@@ -12,7 +12,7 @@ import { cashierSidebarItems } from '../config/sidebarItems';
 
 const tableHeaders = ['Tracking No.', 'Student Name', 'Requested Documents', 'Payment Method', 'Total Fee', 'Payment Status', 'Request Status', 'Date Requested', 'Action'];
 
-const filterOptions = ['All', 'Cash Payments', 'Online Verification'];
+const filterOptions = ['All', 'Cash Payments', 'Online Payments'];
 
 export default function PaymentQueue({ user, onLogout, onNavigate }) {
     const [query, setQuery] = useState('');
@@ -55,7 +55,7 @@ export default function PaymentQueue({ user, onLogout, onNavigate }) {
             req.tracking_number.toLowerCase().includes(query.toLowerCase());
         const matchesFilter = filter === 'All' ||
             (filter === 'Cash Payments' && req.payment_status === 'unpaid') ||
-            (filter === 'Online Verification' && req.payment_status === 'pending_verification');
+            (filter === 'Online Payments' && req.payment_status === 'pending_verification');
         return matchesSearch && matchesFilter;
     });
 
