@@ -14,7 +14,7 @@ export default function StudentProfile({ student, onLogout, onNavigate, currentP
   const [showConfirm, setShowConfirm] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
 
-  const [form, setForm] = useState({ first_name: '', last_name: '', email: '', contact_number: '', address: '' });
+  const [form, setForm] = useState({ first_name: '', last_name: '', email: '', contact_number: '', address: '', student_number: '' });
   const [passwordForm, setPasswordForm] = useState({ current_password: '', new_password: '', new_password_confirmation: '' });
 
   useEffect(() => {
@@ -23,7 +23,7 @@ export default function StudentProfile({ student, onLogout, onNavigate, currentP
       .then(data => {
         const s = data.student;
         setProfile(s);
-        setForm({ first_name: s.first_name || '', last_name: s.last_name || '', email: s.email || '', contact_number: s.contact_number || '', address: s.address || '' });
+        setForm({ first_name: s.first_name || '', last_name: s.last_name || '', email: s.email || '', contact_number: s.contact_number || '', address: s.address || '', student_number: s.student_number || '' });
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -186,6 +186,11 @@ export default function StudentProfile({ student, onLogout, onNavigate, currentP
               <input name="contact_number" type="text" value={form.contact_number} onChange={handleChange} placeholder="Optional" className={inputClass + (errors.contact_number ? ' ' + inputErrorClass : '')} />
               {errors.contact_number && <p className="text-body-xs text-error mt-1">{errors.contact_number[0]}</p>}
             </div>
+            <div>
+              <label className={labelClass}>Student Number</label>
+              <input name="student_number" type="text" value={form.student_number} onChange={handleChange} className={inputClass + (errors.student_number ? ' ' + inputErrorClass : '')} />
+              {errors.student_number && <p className="text-body-xs text-error mt-1">{errors.student_number[0]}</p>}
+            </div>
             {profile?.address !== undefined && (
               <div>
                 <label className={labelClass}>Address</label>
@@ -199,26 +204,6 @@ export default function StudentProfile({ student, onLogout, onNavigate, currentP
               </button>
             </div>
           </form>
-        </div>
-
-        <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-5 sm:p-7 shadow-sm">
-          <h3 className="text-base sm:text-lg font-bold text-on-surface mb-4">Academic Information</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className={labelClass}>Student Number</label>
-              <div className={readOnlyClass}>{s?.student_number}</div>
-            </div>
-            {s?.course && (
-              <div>
-                <label className={labelClass}>Course</label>
-                <div className={readOnlyClass}>{s.course}</div>
-              </div>
-            )}
-          </div>
-          <p className="text-body-sm text-on-surface-variant mt-4 flex items-center gap-1.5">
-            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-            Need changes? Please contact the registrar.
-          </p>
         </div>
 
         <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-5 sm:p-7 shadow-sm">

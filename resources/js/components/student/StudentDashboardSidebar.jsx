@@ -48,25 +48,6 @@ export default function StudentDashboardSidebar({ student, sidebarOpen, onClose,
           </button>
         ))}
       </nav>
-
-      <div className="px-3 py-4 border-t border-outline-variant">
-        <div className="flex items-center gap-3 px-4 py-2 mb-1">
-          <div className="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center text-xs font-bold shrink-0">
-            {student?.first_name?.charAt(0)}
-          </div>
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-on-surface truncate">{student?.first_name} {student?.last_name}</p>
-            <p className="text-[11px] text-on-surface-variant truncate">{student?.email}</p>
-          </div>
-        </div>
-        <button
-          onClick={onLogout}
-          className="flex w-full items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-error hover:bg-error/5 transition-colors cursor-pointer"
-        >
-          <LogOut className="w-4 h-4" />
-          Sign Out
-        </button>
-      </div>
     </aside>
   );
 }

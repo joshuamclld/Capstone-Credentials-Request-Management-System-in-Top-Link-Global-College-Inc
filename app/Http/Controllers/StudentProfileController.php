@@ -40,6 +40,7 @@ class StudentProfileController extends Controller
             'email' => 'required|email|max:255|unique:students,email,' . $student->id,
             'contact_number' => 'nullable|string|max:20',
             'address' => 'nullable|string|max:500',
+            'student_number' => 'required|string|max:50|unique:students,student_number,' . $student->id,
         ]);
 
         $student->update($validated);

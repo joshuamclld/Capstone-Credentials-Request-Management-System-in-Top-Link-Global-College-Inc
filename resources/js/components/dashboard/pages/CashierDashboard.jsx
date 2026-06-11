@@ -139,6 +139,42 @@ export default function CashierDashboard({ user, onLogout, onNavigate }) {
                         ))}
                     </section>
 
+                    {/* Daily Payment Breakdown */}
+                    <section className="bg-white rounded-xl border border-slate-200 shadow-sm mb-8">
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+                            <div>
+                                <h3 className="text-sm font-bold text-slate-900">Today's Collections</h3>
+                                <p className="text-xs text-slate-500 mt-0.5">Daily payment breakdown by method.</p>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-6">
+                            <div className="rounded-xl border border-slate-200 bg-orange-50 p-5">
+                                <div className="flex items-center gap-3 mb-3">
+                                    <div className="w-9 h-9 rounded-lg bg-orange-100 flex items-center justify-center">
+                                        <CreditCard className="w-4 h-4 text-orange-700" />
+                                    </div>
+                                    <div>
+                                        <p className="text-xs font-medium text-slate-500">Online</p>
+                                        <p className="text-sm font-bold text-slate-900">{data.stats?.daily_online_count ?? 0} payment{(data.stats?.daily_online_count ?? 0) !== 1 ? 's' : ''}</p>
+                                    </div>
+                                </div>
+                                <p className="text-xl font-bold text-orange-800">₱{(Number(data.stats?.daily_online_total) || 0).toFixed(2)}</p>
+                            </div>
+                            <div className="rounded-xl border border-slate-200 bg-emerald-50 p-5">
+                                <div className="flex items-center gap-3 mb-3">
+                                    <div className="w-9 h-9 rounded-lg bg-emerald-100 flex items-center justify-center">
+                                        <DollarSign className="w-4 h-4 text-emerald-700" />
+                                    </div>
+                                    <div>
+                                        <p className="text-xs font-medium text-slate-500">Cash</p>
+                                        <p className="text-sm font-bold text-slate-900">{data.stats?.daily_cash_count ?? 0} payment{(data.stats?.daily_cash_count ?? 0) !== 1 ? 's' : ''}</p>
+                                    </div>
+                                </div>
+                                <p className="text-xl font-bold text-emerald-800">₱{(Number(data.stats?.daily_cash_total) || 0).toFixed(2)}</p>
+                            </div>
+                        </div>
+                    </section>
+
                     {/* Online Payment Toggle */}
                     <section className="bg-white rounded-xl border border-slate-200 shadow-sm mb-8">
                         <div className="flex items-center justify-between px-6 py-4">

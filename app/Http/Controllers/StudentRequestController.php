@@ -484,7 +484,7 @@ class StudentRequestController extends Controller
                 if ($trackingNumber) {
                     StudentRequest::where('tracking_number', $trackingNumber)
                         ->whereIn('payment_status', ['pending_payment', 'pending_verification'])
-                        ->update(['payment_status' => 'paid']);
+                        ->update(['payment_status' => 'paid', 'verified_at' => now()]);
                 }
             }
         }

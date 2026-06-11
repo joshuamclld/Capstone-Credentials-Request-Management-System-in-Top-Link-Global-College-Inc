@@ -11,6 +11,7 @@ use App\Models\SystemSetting;
 use App\Services\PayMongoService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class CashierPaymentController extends Controller
 {
@@ -18,12 +19,23 @@ class CashierPaymentController extends Controller
     {
         $perPage = min(max((int) $request->query('per_page', 10), 1), 50);
 
+        $dailyPaid = StudentRequest::where('payment_status', 'paid')
+            ->whereDate(\DB::raw('COALESCE(verified_at, created_at)'), today());
+
+        $dailyOnline = (clone $dailyPaid)->where('payment_method', 'online');
+        $dailyCash = (clone $dailyPaid)->where(function ($q) {
+            $q->where('payment_method', '!=', 'online')->orWhereNull('payment_method');
+        });
+
         $stats = [
             'pending_payments' => StudentRequest::where('payment_status', 'unpaid')->count(),
             'pending_verification' => StudentRequest::where('payment_status', 'pending_verification')->count(),
-            'paid_today' => StudentRequest::where('payment_status', 'paid')
-                ->whereDate('verified_at', today())->count(),
+            'paid_today' => (clone $dailyPaid)->count(),
             'total_paid' => StudentRequest::where('payment_status', 'paid')->count(),
+            'daily_online_count' => $dailyOnline->count(),
+            'daily_online_total' => (float) ($dailyOnline->sum('total_fee') ?? 0),
+            'daily_cash_count' => $dailyCash->count(),
+            'daily_cash_total' => (float) ($dailyCash->sum('total_fee') ?? 0),
         ];
 
         $paymentFilter = $request->query('payment_status');

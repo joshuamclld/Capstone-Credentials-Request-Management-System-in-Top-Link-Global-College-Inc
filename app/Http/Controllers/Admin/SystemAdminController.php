@@ -119,8 +119,8 @@ class SystemAdminController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'data' => $user->only(['id', 'name', 'email', 'role', 'contact_number', 'is_active', 'created_at']),
-            'request_count' => null,
+            'data' => $user->only(['id', 'name', 'email', 'role', 'contact_number', 'is_active', 'created_at', 'updated_at']),
+            'request_count' => StudentRequest::where('verified_by_user_id', $user->id)->count(),
         ]);
     }
 

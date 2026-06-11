@@ -43,7 +43,7 @@ export default function DashboardLayout({ title, subtitle, sidebarItems, current
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
-                            <NotificationBell onNavigate={onNavigate} />
+                            {currentUser?.role !== 'system_admin' && <NotificationBell onNavigate={onNavigate} />}
                             <div className="hidden sm:flex items-center gap-2">
                                 <div className="w-8 h-8 rounded-full bg-emerald-700 text-white flex items-center justify-center text-xs font-bold">
                                     {adminName.charAt(0)}

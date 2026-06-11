@@ -187,7 +187,7 @@ export default function SystemAdminReportsAnalytics({ user, onLogout, onNavigate
                                     xaxis: { categories: credentialCategories, labels: { style: { fontSize: '12px', colors: '#475569', fontWeight: 500 } }, axisBorder: { show: true, color: '#e2e8f0' }, axisTicks: { show: false } },
                                     yaxis: { min: 0, forceNiceScale: true, labels: { style: { fontSize: '12px', colors: '#94a3b8' }, formatter: v => Math.round(v) } },
                                     grid: { show: true, borderColor: '#f1f5f9', strokeDashArray: 5 },
-                                    tooltip: { theme: 'light', style: { fontSize: '12px' }, intersect: false, x: { formatter: (val, { dataPointIndex }) => fullMonth(paddedByType[dataPointIndex]?.month || val) }, y: { formatter: v => `${v} requests` } },
+                                    tooltip: { theme: 'light', style: { fontSize: '12px' }, x: { formatter: (val, { dataPointIndex }) => fullMonth(paddedByType[dataPointIndex]?.month || val) }, y: { formatter: (v, opts) => `${opts?.seriesName || ''}: ${v} request${v !== 1 ? 's' : ''}` } },
                                     legend: { position: 'bottom', fontSize: '12px', fontWeight: 500, itemMargin: { horizontal: 20, vertical: 4 }, markers: { width: 10, height: 10, radius: 2 } },
                                     responsive: [{ breakpoint: 1024, options: { plotOptions: { bar: { columnWidth: '30%' } }, xaxis: { labels: { style: { fontSize: '11px' } } }, legend: { fontSize: '11px' } } }, { breakpoint: 640, options: { legend: { fontSize: '10px' }, xaxis: { labels: { style: { fontSize: '10px' } } }, plotOptions: { bar: { columnWidth: '36%' } } } }],
                                 }}

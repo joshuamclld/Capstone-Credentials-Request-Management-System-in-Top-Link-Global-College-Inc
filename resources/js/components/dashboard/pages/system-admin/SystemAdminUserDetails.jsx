@@ -84,13 +84,6 @@ export default function SystemAdminUserDetails({ user, onLogout, onNavigate }) {
                                 </div>
                             </div>
                             <div className="flex items-center gap-3">
-                                <FileText className="w-4 h-4 text-slate-400" />
-                                <div>
-                                    <p className="text-xs text-slate-500">Requests Submitted</p>
-                                    <p className="text-sm font-medium text-slate-900">{userData.request_count ?? 0}</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-3">
                                 <Calendar className="w-4 h-4 text-slate-400" />
                                 <div>
                                     <p className="text-xs text-slate-500">Date Created</p>
