@@ -19,6 +19,7 @@ class ReportsExport implements FromCollection, WithHeadings, WithMapping, WithCo
     protected string $year;
     protected ?string $status;
     protected ?string $paymentStatus;
+    protected \Illuminate\Support\Collection $allDocs;
 
     public function __construct(string $month, string $year, ?string $status = null, ?string $paymentStatus = null)
     {
@@ -26,6 +27,7 @@ class ReportsExport implements FromCollection, WithHeadings, WithMapping, WithCo
         $this->year = $year;
         $this->status = $status;
         $this->paymentStatus = $paymentStatus;
+        $this->allDocs = Document::all()->keyBy('code');
     }
 
     public function collection(): Collection
@@ -72,9 +74,8 @@ class ReportsExport implements FromCollection, WithHeadings, WithMapping, WithCo
 
     public function map($request): array
     {
-        $documents = Document::whereIn('code', $request->document_ids ?? [])->get()->keyBy('code');
         $documentNames = collect($request->document_ids ?? [])
-            ->map(fn ($code) => $documents->get($code)?->name ?? $code)
+            ->map(fn ($code) => $this->allDocs->get($code)?->name ?? $code)
             ->implode(', ');
 
         return [

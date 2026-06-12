@@ -2,32 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { FileText, BadgeCheck, Clock, PackageCheck, CheckCheck, AlertCircle, XCircle, ArrowLeft, Mail } from 'lucide-react';
 import StudentDashboardLayout from './StudentDashboardLayout';
 import RegistrarRemarksCard from './RegistrarRemarksCard';
-
-const STATUS_LABELS = {
-  'Pending': { label: 'Pending', bg: 'bg-amber-100 text-amber-800 border-amber-300' },
-  'Processing': { label: 'Processing', bg: 'bg-blue-100 text-blue-800 border-blue-300' },
-  'Ready for Release': { label: 'Ready for Release', bg: 'bg-purple-100 text-purple-800 border-purple-300' },
-  'Claimed': { label: 'Claimed', bg: 'bg-slate-200 text-slate-700 border-slate-300' },
-  'Cancelled': { label: 'Cancelled', bg: 'bg-red-100 text-red-800 border-red-200' },
-};
-
-const PAYMENT_LABELS = {
-  unpaid: { label: 'Unpaid', bg: 'bg-red-50 text-red-700 border-red-200' },
-  pending_payment: { label: 'Pending Payment', bg: 'bg-amber-50 text-amber-700 border-amber-200' },
-  pending_verification: { label: 'Pending Verification', bg: 'bg-orange-50 text-orange-700 border-orange-200' },
-  paid: { label: 'Paid', bg: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-};
+import { getRequestStatusConfig, getPaymentStatusConfig } from '../../utils/statusConfig';
 
 const TIMELINE_ICONS = [FileText, BadgeCheck, Clock, PackageCheck, CheckCheck, XCircle];
 
 function getBadge(status, payment_status) {
-  if (status === 'Cancelled') return STATUS_LABELS['Cancelled'];
+  if (status === 'Cancelled') {
+    const c = getRequestStatusConfig('Cancelled');
+    return { label: c.label, bg: c.className };
+  }
   if (status === 'Pending' && payment_status === 'paid') return { label: 'Paid — Awaiting Processing', bg: 'bg-emerald-100 text-emerald-800 border-emerald-300' };
-  if (status === 'Pending') return STATUS_LABELS['Pending'];
-  if (status === 'Processing') return STATUS_LABELS['Processing'];
-  if (status === 'Ready for Release') return STATUS_LABELS['Ready for Release'];
-  if (status === 'Claimed') return STATUS_LABELS['Claimed'];
-  return STATUS_LABELS['Pending'];
+  const c = getRequestStatusConfig(status);
+  return { label: c.label, bg: c.className };
 }
 
 function buildTimeline(status, payment_status, delivery_type) {
@@ -76,6 +62,7 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelModalError, setCancelModalError] = useState('');
   const [continueLoading, setContinueLoading] = useState(false);
+  const [claiming, setClaiming] = useState(false);
 
   const getCsrfToken = () =>
     document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
@@ -107,7 +94,7 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
           setRequest(prev => prev ? { ...prev, payment_status: 'paid' } : prev);
         }
       })
-      .catch(() => {});
+      .catch(err => console.error('Payment sync failed:', err));
   }, [trackingNumber]);
 
   useEffect(() => {
@@ -210,6 +197,28 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
     setContinueLoading(false);
   };
 
+  const handleClaim = async () => {
+    if (!request || claiming) return;
+    setClaiming(true);
+    try {
+      const res = await fetch(`/requests/${encodeURIComponent(request.tracking_number)}/claim`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
+        },
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setRequest(prev => prev ? { ...prev, status: 'Claimed' } : prev);
+      }
+    } catch {
+      // ignore
+    }
+    setClaiming(false);
+  };
+
   const timeline = request ? buildTimeline(request.status, request.payment_status, request.delivery_type) : [];
 
   return (
@@ -306,8 +315,8 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
                   <div className="flex justify-between pb-2">
                     <span className="text-on-surface-variant font-medium">Payment Status:</span>
                     {(() => {
-                      const p = PAYMENT_LABELS[request.payment_status];
-                      return p ? <span className={`${p.bg} px-2 py-0.5 rounded text-xs font-bold border`}>{p.label}</span>
+                      const p = getPaymentStatusConfig(request.payment_status);
+                      return p ? <span className={`${p.className} px-2 py-0.5 rounded text-xs font-bold border`}>{p.label}</span>
                         : <span className="font-bold text-on-surface">{request.payment_status}</span>;
                     })()}
                   </div>
@@ -331,6 +340,16 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
                 </div>
 
                 <div className="mt-6 pt-4 border-t border-outline-variant flex gap-2 justify-end flex-nowrap">
+                  {request.status === 'Ready for Release' && (
+                    <button
+                      onClick={handleClaim}
+                      disabled={claiming}
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 disabled:opacity-50 transition-colors cursor-pointer whitespace-nowrap"
+                    >
+                      <CheckCheck className="w-4 h-4" />
+                      {claiming ? 'Marking...' : 'Mark as Claimed'}
+                    </button>
+                  )}
                   {request.status === 'Pending' && request.payment_status !== 'paid' && (
                     <button
                       onClick={handleCancelClick}

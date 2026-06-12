@@ -49,7 +49,7 @@ class NotificationController extends Controller
 
     public function getAll(): JsonResponse
     {
-        $perPage = (int) request('per_page', 20);
+        $perPage = min((int) request('per_page', 20), 100);
 
         $notifications = Notification::where('user_id', auth()->id())
             ->latest()

@@ -34,7 +34,7 @@ export default function CashierDashboard({ user, onLogout, onNavigate }) {
         fetch('/admin/cashier/online-payment-status', { credentials: 'same-origin' })
             .then(r => r.json())
             .then(d => setOnlinePaymentEnabled(d.enabled))
-            .catch(() => { });
+            .catch(err => console.error('Failed to fetch online payment status:', err));
     };
 
     const fetchData = () => {
@@ -99,7 +99,7 @@ export default function CashierDashboard({ user, onLogout, onNavigate }) {
             .then(d => {
                 if (d.success) setOnlinePaymentEnabled(d.enabled);
             })
-            .catch(() => { })
+            .catch(err => console.error('Failed to toggle online payment:', err))
             .finally(() => setToggling(false));
     };
 

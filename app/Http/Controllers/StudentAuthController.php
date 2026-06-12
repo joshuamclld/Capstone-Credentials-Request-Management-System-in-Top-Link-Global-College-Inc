@@ -8,6 +8,7 @@ use App\Models\Student;
 use App\Models\StudentOtp;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 
@@ -67,24 +68,35 @@ class StudentAuthController extends Controller
             'otp' => 'required|string|size:6',
         ]);
 
-        $otpRecord = StudentOtp::where('student_id', $validated['student_id'])
-            ->where('otp', $validated['otp'])
-            ->where('expires_at', '>', now())
-            ->latest()
-            ->first();
+        $student = DB::transaction(function () use ($validated) {
+            $otpRecord = StudentOtp::where('student_id', $validated['student_id'])
+                ->where('otp', $validated['otp'])
+                ->where('expires_at', '>', now())
+                ->whereNull('verified_at')
+                ->lockForUpdate()
+                ->latest()
+                ->first();
 
-        if (!$otpRecord) {
+            if (!$otpRecord) {
+                return null;
+            }
+
+            $otpRecord->verified_at = now();
+            $otpRecord->save();
+
+            $student = Student::find($validated['student_id']);
+            $student->email_verified_at = now();
+            $student->save();
+
+            return $student;
+        });
+
+        if (!$student) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid or expired OTP.',
             ], 422);
         }
-
-        $student = Student::find($validated['student_id']);
-        $student->email_verified_at = now();
-        $student->save();
-
-        $otpRecord->delete();
 
         auth('student')->login($student);
 

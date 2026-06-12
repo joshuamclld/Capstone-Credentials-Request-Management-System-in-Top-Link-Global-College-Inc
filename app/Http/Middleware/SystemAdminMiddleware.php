@@ -23,6 +23,16 @@ class SystemAdminMiddleware
 
         $user = Auth::user();
 
+        if (!$user->is_active) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Account is deactivated.',
+                ], 403);
+            }
+            abort(403);
+        }
+
         if ($user->role !== 'system_admin' || !$user->hasRole('system_admin')) {
             if ($request->expectsJson()) {
                 return response()->json([

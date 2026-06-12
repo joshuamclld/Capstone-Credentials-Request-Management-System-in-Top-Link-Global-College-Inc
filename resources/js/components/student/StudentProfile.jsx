@@ -14,7 +14,7 @@ export default function StudentProfile({ student, onLogout, onNavigate, currentP
   const [showConfirm, setShowConfirm] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
 
-  const [form, setForm] = useState({ first_name: '', last_name: '', email: '', student_number: '' });
+  const [form, setForm] = useState({ first_name: '', last_name: '', email: '', student_number: '', contact_number: '' });
   const [passwordForm, setPasswordForm] = useState({ current_password: '', new_password: '', new_password_confirmation: '' });
 
   useEffect(() => {
@@ -23,7 +23,7 @@ export default function StudentProfile({ student, onLogout, onNavigate, currentP
       .then(data => {
         const s = data.student;
         setProfile(s);
-        setForm({ first_name: s.first_name || '', last_name: s.last_name || '', email: s.email || '', student_number: s.student_number || '' });
+        setForm({ first_name: s.first_name || '', last_name: s.last_name || '', email: s.email || '', student_number: s.student_number || '', contact_number: s.contact_number || '' });
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -136,7 +136,6 @@ export default function StudentProfile({ student, onLogout, onNavigate, currentP
   const inputClass = 'w-full px-4 py-2 sm:py-3 bg-surface-container-lowest border border-outline-variant rounded-lg focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-body-md';
   const inputErrorClass = 'border-error/50 focus:border-error focus:ring-error/30';
   const labelClass = 'text-label-sm text-on-surface-variant font-medium';
-  const readOnlyClass = 'w-full px-4 py-2 sm:py-3 bg-surface-container-high border border-outline-variant rounded-lg text-body-md text-on-surface-muted cursor-not-allowed';
 
   return (
     <StudentDashboardLayout title="My Profile" subtitle="Manage your account" student={student} onLogout={onLogout} onNavigate={onNavigate} currentPath={currentPath}>

@@ -23,6 +23,16 @@ class AdminMiddleware
 
         $user = Auth::user();
 
+        if (!$user->is_active) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Account is deactivated.',
+                ], 403);
+            }
+            abort(403);
+        }
+
         if ($user->role !== 'admin' || !$user->hasRole('registrar')) {
             if ($request->expectsJson()) {
                 return response()->json([

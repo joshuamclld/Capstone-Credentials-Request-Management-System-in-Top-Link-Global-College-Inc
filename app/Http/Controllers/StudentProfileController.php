@@ -20,7 +20,7 @@ class StudentProfileController extends Controller
         return response()->json([
             'student' => $student->only([
                 'id', 'student_number', 'first_name', 'last_name',
-                'email',
+                'email'
             ]),
         ]);
     }
@@ -46,7 +46,7 @@ class StudentProfileController extends Controller
             'message' => 'Profile updated successfully.',
             'student' => $student->fresh()->only([
                 'id', 'student_number', 'first_name', 'last_name',
-                'email',
+                'email'
             ]),
         ]);
     }

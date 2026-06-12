@@ -72,14 +72,20 @@ export default function ProcessRequests({ user, onLogout, onNavigate }) {
         'Ready for Release': { next: 'Claimed', label: 'Mark as Claimed' },
     };
 
-    const handleProcess = (id, currentStatus) => {
+    const STATUS_REVERSE = {
+        'Processing': { prev: 'Pending', label: 'Revert to Pending' },
+        'Ready for Release': { prev: 'Processing', label: 'Revert to Processing' },
+        'Claimed': { prev: 'Ready for Release', label: 'Revert to Ready' },
+    };
+
+    const handleProcess = (id, currentStatus, reverse = false) => {
         if (processingId) return;
-        const transition = STATUS_TRANSITIONS[currentStatus];
-        if (!transition) return;
+        const target = reverse ? STATUS_REVERSE[currentStatus] : STATUS_TRANSITIONS[currentStatus];
+        if (!target) return;
         setProcessingId(id);
         setMessage(null);
 
-        const nextStatus = transition.next;
+        const nextStatus = reverse ? target.prev : target.next;
 
         fetch(`/admin/api/requests/${id}`, {
             method: 'PATCH',
@@ -113,14 +119,25 @@ export default function ProcessRequests({ user, onLogout, onNavigate }) {
             <td className="px-6 py-4 text-slate-700 max-w-[200px] truncate" title={(req.document_names || []).join(', ')}>{(req.document_names || []).join(', ')}</td>
             <td className="px-6 py-4"><StatusBadge status={req.status} /></td>
             <td className="px-6 py-4 text-slate-500 text-xs">{req.created_at}</td>
-            <td className="px-6 py-4">
-                <button
-                    onClick={() => handleProcess(req.id, req.status)}
-                    disabled={processingId === req.id}
-                    className="px-3 py-1.5 text-xs font-medium text-white bg-emerald-700 hover:bg-emerald-800 disabled:bg-emerald-400 rounded-lg transition-colors cursor-pointer disabled:cursor-not-allowed"
-                >
-                    {processingId === req.id ? 'Processing...' : STATUS_TRANSITIONS[req.status]?.label || 'Process'}
-                </button>
+            <td className="px-6 py-4 flex items-center gap-2">
+                {STATUS_TRANSITIONS[req.status] && (
+                    <button
+                        onClick={() => handleProcess(req.id, req.status)}
+                        disabled={processingId === req.id}
+                        className="px-3 py-1.5 text-xs font-medium text-white bg-emerald-700 hover:bg-emerald-800 disabled:bg-emerald-400 rounded-lg transition-colors cursor-pointer disabled:cursor-not-allowed"
+                    >
+                        {processingId === req.id ? 'Processing...' : STATUS_TRANSITIONS[req.status]?.label || 'Process'}
+                    </button>
+                )}
+                {STATUS_REVERSE[req.status] && (
+                    <button
+                        onClick={() => handleProcess(req.id, req.status, true)}
+                        disabled={processingId === req.id}
+                        className="px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 rounded-lg transition-colors cursor-pointer disabled:cursor-not-allowed"
+                    >
+                        {STATUS_REVERSE[req.status]?.label}
+                    </button>
+                )}
             </td>
         </tr>
     );
@@ -198,6 +215,7 @@ export default function ProcessRequests({ user, onLogout, onNavigate }) {
                                     ]}
                                     actionLabel={processingId === item.id ? 'Processing...' : STATUS_TRANSITIONS[item.status]?.label || 'Process'}
                                     onAction={() => handleProcess(item.id, item.status)}
+                                    secondaryAction={STATUS_REVERSE[item.status] ? { label: STATUS_REVERSE[item.status].label, onAction: () => handleProcess(item.id, item.status, true) } : null}
                                     loading={processingId === item.id}
                                 />
                             ))}

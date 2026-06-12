@@ -57,7 +57,7 @@ export default function NotificationList({ user, onLogout, onNavigate }) {
             method: 'PATCH',
             headers: { 'X-CSRF-TOKEN': csrfToken, 'Content-Type': 'application/json' },
             credentials: 'same-origin',
-        }).catch(() => {});
+        }).catch(err => console.error('Failed to mark notification as read:', err));
         setNotifications(prev => prev.map(n => (n.id === id ? { ...n, is_read: true } : n)));
     };
 
@@ -66,7 +66,7 @@ export default function NotificationList({ user, onLogout, onNavigate }) {
             method: 'PATCH',
             headers: { 'X-CSRF-TOKEN': csrfToken, 'Content-Type': 'application/json' },
             credentials: 'same-origin',
-        }).catch(() => {});
+        }).catch(err => console.error('Failed to mark all as read:', err));
         setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
     };
 

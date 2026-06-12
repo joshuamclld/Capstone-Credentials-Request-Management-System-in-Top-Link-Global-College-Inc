@@ -56,7 +56,7 @@ Route::prefix('admin')->group(function () {
         ->middleware('cashier');
 
     Route::patch('/payments/{id}/verify', [CashierPaymentController::class, 'verify'])
-        ->middleware('cashier')
+        ->middleware(['cashier', 'throttle:20,1'])
         ->whereNumber('id');
 
     Route::get('/payments/{id}/check-paymongo', [CashierPaymentController::class, 'checkPayMongo'])
@@ -124,10 +124,12 @@ Route::get('/system-admin/{any?}', function () { return view('welcome'); })->whe
 
 // Student Request Submission & Tracking
 Route::post('/requests', [StudentRequestController::class, 'store'])
-    ->middleware('throttle:10,1');
+    ->middleware(['auth:student', 'throttle:10,1']);
 Route::get('/requests/{tracking_number}', [StudentRequestController::class, 'show'])
     ->middleware('throttle:30,1');
 Route::patch('/requests/{tracking_number}/cancel', [StudentRequestController::class, 'cancel'])
+    ->middleware(['auth:student', 'throttle:5,1']);
+Route::patch('/requests/{tracking_number}/claim', [StudentRequestController::class, 'claim'])
     ->middleware(['auth:student', 'throttle:5,1']);
 Route::post('/requests/{tracking_number}/continue-payment', [StudentRequestController::class, 'continuePayment'])
     ->middleware(['auth:student', 'throttle:10,1']);
@@ -161,8 +163,10 @@ Route::prefix('student')->group(function () {
 
         // Student Profile (GET moved to /api/ to avoid SPA refresh conflict)
         Route::get('/api/profile', [StudentProfileController::class, 'show']);
-        Route::patch('/profile', [StudentProfileController::class, 'update']);
-        Route::patch('/profile/password', [StudentProfileController::class, 'updatePassword']);
+        Route::patch('/profile', [StudentProfileController::class, 'update'])
+            ->middleware('throttle:20,1');
+        Route::patch('/profile/password', [StudentProfileController::class, 'updatePassword'])
+            ->middleware('throttle:20,1');
     });
 });
 

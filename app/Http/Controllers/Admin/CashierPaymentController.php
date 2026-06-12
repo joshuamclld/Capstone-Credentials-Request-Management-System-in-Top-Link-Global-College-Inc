@@ -18,7 +18,7 @@ class CashierPaymentController extends Controller
 {
     public function getPaymentsData(Request $request): JsonResponse
     {
-        $perPage = max((int) $request->query('per_page', 10), 1);
+        $perPage = min(max((int) $request->query('per_page', 10), 1), 100);
 
         $dailyPaid = StudentRequest::where('payment_status', 'paid')
             ->whereDate(\DB::raw('COALESCE(verified_at, created_at)'), today());
@@ -94,10 +94,6 @@ class CashierPaymentController extends Controller
             return response()->json(['message' => 'Request not found.'], 404);
         }
 
-        if ($studentRequest->payment_status === 'paid') {
-            return response()->json(['message' => 'Payment is already verified.'], 422);
-        }
-
         if (!in_array($studentRequest->payment_status, ['unpaid', 'pending_payment', 'pending_verification'])) {
             return response()->json(['message' => 'Invalid payment state.'], 422);
         }
@@ -106,22 +102,39 @@ class CashierPaymentController extends Controller
             return response()->json(['message' => 'Cannot verify payment for a cancelled request.'], 422);
         }
 
-        $studentRequest->payment_status = 'paid';
-        $studentRequest->verified_by = auth()->user()->name;
-        $studentRequest->verified_by_user_id = auth()->id();
-        $studentRequest->verified_at = now();
-        $studentRequest->save();
+        $alreadyVerified = false;
 
-        Notification::notifyRole('admin', 'payment_verified', 'Payment Verified', "Payment verified for {$studentRequest->tracking_number}", (string) $studentRequest->id, "/admin/requests/{$studentRequest->id}", auth()->id());
+        DB::transaction(function () use ($id, &$alreadyVerified) {
+            $locked = StudentRequest::where('id', $id)->lockForUpdate()->first();
 
-        AuditLog::create([
-            'action' => 'verify_payment',
-            'performed_by' => auth()->user()->name,
-            'performed_by_id' => auth()->id(),
-            'target_type' => 'StudentRequest',
-            'target_id' => $studentRequest->id,
-            'description' => "Verified payment for request {$studentRequest->tracking_number}",
-        ]);
+            if ($locked->payment_status === 'paid') {
+                $alreadyVerified = true;
+                return;
+            }
+
+            $locked->payment_status = 'paid';
+            $locked->verified_by = auth()->user()->name;
+            $locked->verified_by_user_id = auth()->id();
+            $locked->verified_at = now();
+            $locked->save();
+
+            Notification::notifyRole('admin', 'payment_verified', 'Payment Verified', "Payment verified for {$locked->tracking_number}", (string) $locked->id, "/admin/requests/{$locked->id}", auth()->id());
+
+            AuditLog::create([
+                'action' => 'verify_payment',
+                'performed_by' => auth()->user()->name,
+                'performed_by_id' => auth()->id(),
+                'target_type' => 'StudentRequest',
+                'target_id' => $locked->id,
+                'description' => "Verified payment for request {$locked->tracking_number}",
+            ]);
+        });
+
+        if ($alreadyVerified) {
+            return response()->json(['message' => 'Payment already verified.'], 200);
+        }
+
+        $studentRequest->refresh();
 
         $documents = Document::whereIn('code', $studentRequest->document_ids ?? [])->get()->keyBy('code');
         $documentNames = collect($studentRequest->document_ids ?? [])->map(fn ($code) => $documents->get($code)?->name ?? $code)->toArray();

@@ -23,6 +23,16 @@ class CashierMiddleware
 
         $user = Auth::user();
 
+        if (!$user->is_active) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Account is deactivated.',
+                ], 403);
+            }
+            abort(403);
+        }
+
         // Admin (registrar) has intentional oversight access to cashier routes.
         // Cashier requires both the role column and matching Spatie role.
         $hasOversightAccess = $user->role === 'admin';

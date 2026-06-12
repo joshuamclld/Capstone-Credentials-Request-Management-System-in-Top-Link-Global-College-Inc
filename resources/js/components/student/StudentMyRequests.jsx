@@ -1,21 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AlertCircle } from 'lucide-react';
 import StudentDashboardLayout from './StudentDashboardLayout';
-
-const STATUS_BADGES = {
-  'Pending': 'bg-amber-100 text-amber-800 border-amber-300',
-  'Processing': 'bg-blue-100 text-blue-800 border-blue-300',
-  'Ready for Release': 'bg-purple-100 text-purple-800 border-purple-300',
-  'Claimed': 'bg-slate-200 text-slate-700 border-slate-300',
-  'Cancelled': 'bg-red-100 text-red-800 border-red-200',
-};
-
-const PAYMENT_BADGES = {
-  unpaid: 'bg-red-50 text-red-700 border-red-200',
-  pending_payment: 'bg-amber-50 text-amber-700 border-amber-200',
-  pending_verification: 'bg-orange-50 text-orange-700 border-orange-200',
-  paid: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-};
+import { getRequestStatusConfig, getPaymentStatusConfig } from '../../utils/statusConfig';
 
 export default function StudentMyRequests({ student, onLogout, onNavigate, currentPath }) {
   const [requests, setRequests] = useState([]);
@@ -25,6 +11,7 @@ export default function StudentMyRequests({ student, onLogout, onNavigate, curre
   const [cancelError, setCancelError] = useState('');
   const [continueLoading, setContinueLoading] = useState(null);
   const [continueError, setContinueError] = useState('');
+  const [claiming, setClaiming] = useState(null);
 
   const getCsrf = () => document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
@@ -64,12 +51,12 @@ export default function StudentMyRequests({ student, onLogout, onNavigate, curre
                       ));
                     }
                   })
-                  .catch(() => {});
+                  .catch(err => console.error('Payment sync failed:', err));
               }
             });
           }
         })
-        .catch(() => {});
+        .catch(err => console.error('Failed to fetch requests:', err));
     };
     window.addEventListener('focus', onFocus);
     return () => window.removeEventListener('focus', onFocus);
@@ -147,6 +134,30 @@ export default function StudentMyRequests({ student, onLogout, onNavigate, curre
     }
   };
 
+  const handleClaim = async (req) => {
+    if (claiming) return;
+    setClaiming(req.tracking_number);
+    try {
+      const res = await fetch(`/requests/${encodeURIComponent(req.tracking_number)}/claim`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-CSRF-TOKEN': getCsrf(),
+        },
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setRequests(prev => prev.map(r =>
+          r.tracking_number === req.tracking_number ? { ...r, status: 'Claimed' } : r
+        ));
+      }
+    } catch {
+      // ignore
+    }
+    setClaiming(null);
+  };
+
   const canCancel = (req) => {
     if (req.status !== 'Pending') return false;
     if (req.payment_method === 'online' && req.payment_status === 'paid') return false;
@@ -190,11 +201,11 @@ export default function StudentMyRequests({ student, onLogout, onNavigate, curre
                       <p className="text-label-sm text-on-surface-variant">{req.tracking_number}</p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      <span className={`text-label-sm font-bold px-2.5 py-1 rounded-full border ${STATUS_BADGES[req.status] || 'bg-gray-100 text-gray-800 border-gray-300'}`}>
+                      <span className={`text-label-sm font-bold px-2.5 py-1 rounded-full border ${getRequestStatusConfig(req.status).className}`}>
                         {req.status}
                       </span>
-                      <span className={`text-label-sm font-bold px-2.5 py-1 rounded-full border ${PAYMENT_BADGES[req.payment_status] || 'bg-gray-100 text-gray-800 border-gray-300'}`}>
-                        {{ unpaid: 'Unpaid', pending_payment: 'Pending Payment', pending_verification: 'Pending Verification', paid: 'Paid' }[req.payment_status] || req.payment_status}
+                      <span className={`text-label-sm font-bold px-2.5 py-1 rounded-full border ${getPaymentStatusConfig(req.payment_status).className}`}>
+                        {getPaymentStatusConfig(req.payment_status).label}
                       </span>
                     </div>
                   </div>
@@ -245,6 +256,15 @@ export default function StudentMyRequests({ student, onLogout, onNavigate, curre
                         className="px-3 sm:px-4 py-2 sm:py-2 rounded-lg text-amber-700 bg-amber-50 border border-amber-200 font-bold text-label-sm hover:bg-amber-100 transition-all cursor-pointer disabled:opacity-50 whitespace-nowrap"
                       >
                         {continueLoading === req.tracking_number ? 'Processing...' : 'Continue Payment'}
+                      </button>
+                    )}
+                    {req.status === 'Ready for Release' && (
+                      <button
+                        onClick={() => handleClaim(req)}
+                        disabled={claiming === req.tracking_number}
+                        className="px-3 sm:px-4 py-2 sm:py-2 rounded-lg text-emerald-700 bg-emerald-50 border border-emerald-200 font-bold text-label-sm hover:bg-emerald-100 transition-all cursor-pointer disabled:opacity-50 whitespace-nowrap"
+                      >
+                        {claiming === req.tracking_number ? 'Marking...' : 'Mark as Claimed'}
                       </button>
                     )}
                   </div>

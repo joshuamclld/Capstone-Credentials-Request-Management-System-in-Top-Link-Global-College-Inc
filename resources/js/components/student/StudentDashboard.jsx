@@ -1,14 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import StudentDashboardLayout from './StudentDashboardLayout';
-
-const STATUS_BADGES = {
-  'Pending': 'bg-amber-100 text-amber-800 border-amber-300',
-  'Processing': 'bg-blue-100 text-blue-800 border-blue-300',
-  'Ready for Release': 'bg-purple-100 text-purple-800 border-purple-300',
-  'Claimed': 'bg-slate-200 text-slate-700 border-slate-300',
-  'Cancelled': 'bg-red-100 text-red-800 border-red-200',
-};
+import { getRequestStatusConfig } from '../../utils/statusConfig';
 
 const STATUS_SUMMARY = [
   { label: 'Pending', key: 'Pending', bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-800' },
@@ -139,7 +132,7 @@ export default function StudentDashboard({ student, onLogout, onNavigate, curren
                     <p className="text-label-sm text-on-surface-variant">{req.tracking_number} · {req.created_at}</p>
                   </div>
                   <div className="flex items-center gap-3 ml-3">
-                    <span className={`text-label-sm font-bold px-2.5 py-1 rounded-full border shrink-0 ${STATUS_BADGES[req.status] || 'bg-gray-100 text-gray-800 border-gray-300'}`}>
+                    <span className={`text-label-sm font-bold px-2.5 py-1 rounded-full border shrink-0 ${getRequestStatusConfig(req.status).className}`}>
                       {req.status}
                     </span>
                     <span className="material-symbols-outlined text-on-surface-variant text-xl">chevron_right</span>

@@ -44,7 +44,8 @@ function App() {
 
   // Check authentication status on app load
   useEffect(() => {
-    fetch('/admin/check-auth')
+    const controller = new AbortController();
+    fetch('/admin/check-auth', { signal: controller.signal })
       .then(response => response.json())
       .then(data => {
         if (data.status === 'authenticated') {
@@ -56,17 +57,20 @@ function App() {
       .catch(() => {
         setAuthChecked(true);
       });
+    return () => controller.abort();
   }, []);
 
   // Check student authentication status on app load
   useEffect(() => {
-    fetch('/student/check')
+    const controller = new AbortController();
+    fetch('/student/check', { signal: controller.signal })
       .then(res => res.json())
       .then(data => {
         if (data.authenticated) setStudentUser(data.student);
         setStudentAuthChecked(true);
       })
       .catch(() => setStudentAuthChecked(true));
+    return () => controller.abort();
   }, []);
 
   // Listen to popstate event (browser back/forward buttons)
@@ -134,7 +138,7 @@ function App() {
           setUser(data.user);
         }
       })
-      .catch(() => {});
+      .catch(err => console.error('Auth check failed:', err));
   }, []);
 
   const handleLoginSuccess = (userData) => {
@@ -151,8 +155,9 @@ function App() {
   // Poll auth status every 5 minutes to detect session expiry
   useEffect(() => {
     if (!isAuthenticated) return;
+    const controller = new AbortController();
     const interval = setInterval(() => {
-      fetch('/admin/check-auth')
+      fetch('/admin/check-auth', { signal: controller.signal })
         .then(res => res.json())
         .then(data => {
           if (data.status !== 'authenticated') {
@@ -165,7 +170,10 @@ function App() {
           navigate('/admin-login?expired=1');
         });
     }, 5 * 60 * 1000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      controller.abort();
+    };
   }, [isAuthenticated]);
 
   const handleLogout = () => {

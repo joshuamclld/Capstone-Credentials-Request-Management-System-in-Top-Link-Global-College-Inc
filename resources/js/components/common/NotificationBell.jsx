@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Bell, CheckCheck } from 'lucide-react';
 
 function timeAgo(dateString) {
@@ -26,21 +26,24 @@ export default function NotificationBell({ onNavigate }) {
 
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
-    const fetchNotifications = useCallback(() => {
-        fetch('/admin/api/notifications', { credentials: 'same-origin' })
-            .then(res => res.json())
-            .then(data => {
-                setNotifications(data.notifications || []);
-                setUnreadCount(data.unread_count || 0);
-            })
-            .catch(() => {});
-    }, []);
-
     useEffect(() => {
-        fetchNotifications();
-        const interval = setInterval(fetchNotifications, 30000);
-        return () => clearInterval(interval);
-    }, [fetchNotifications]);
+        const controller = new AbortController();
+        const fetchWithSignal = () => {
+            fetch('/admin/api/notifications', { credentials: 'same-origin', signal: controller.signal })
+                .then(res => res.json())
+                .then(data => {
+                    setNotifications(data.notifications || []);
+                    setUnreadCount(data.unread_count || 0);
+                })
+                .catch(err => { if (err.name !== 'AbortError') console.error('Failed to fetch notifications:', err); });
+        };
+        fetchWithSignal();
+        const interval = setInterval(fetchWithSignal, 30000);
+        return () => {
+            clearInterval(interval);
+            controller.abort();
+        };
+    }, []);
 
     useEffect(() => {
         if (!open) return;
@@ -88,7 +91,7 @@ export default function NotificationBell({ onNavigate }) {
             method: 'PATCH',
             headers: { 'X-CSRF-TOKEN': csrfToken, 'Content-Type': 'application/json' },
             credentials: 'same-origin',
-        }).catch(() => {});
+        }).catch(err => console.error('Failed to mark notification as read:', err));
         setNotifications(prev =>
             prev.map(n => (n.id === id ? { ...n, is_read: true } : n))
         );
@@ -100,7 +103,7 @@ export default function NotificationBell({ onNavigate }) {
             method: 'PATCH',
             headers: { 'X-CSRF-TOKEN': csrfToken, 'Content-Type': 'application/json' },
             credentials: 'same-origin',
-        }).catch(() => {});
+        }).catch(err => console.error('Failed to mark all as read:', err));
         setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
         setUnreadCount(0);
     };

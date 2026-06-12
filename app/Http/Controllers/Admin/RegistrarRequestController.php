@@ -10,6 +10,7 @@ use App\Models\Notification;
 use App\Models\StudentRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 
@@ -17,7 +18,7 @@ class RegistrarRequestController extends Controller
 {
     public function getRequestsData(Request $request): JsonResponse
     {
-        $perPage = max((int) $request->query('per_page', 10), 1);
+        $perPage = min(max((int) $request->query('per_page', 10), 1), 100);
 
         $stats = [
             'total' => StudentRequest::count(),
@@ -81,7 +82,7 @@ class RegistrarRequestController extends Controller
     public function show(int $id): JsonResponse
     {
         $user = auth()->user();
-        if (!in_array($user->role, ['admin', 'system_admin', 'cashier']) && !$user->hasRole('registrar')) {
+        if (!in_array($user->role, ['admin', 'cashier', 'system_admin']) && !$user->hasRole('registrar')) {
             return response()->json(['message' => 'Unauthorized access.'], 403);
         }
 
@@ -148,13 +149,22 @@ class RegistrarRequestController extends Controller
                 'Ready for Release' => 'Claimed',
             ];
 
-            if (!isset($allowedTransitions[$currentStatus]) || $allowedTransitions[$currentStatus] !== $newStatus) {
+            $allowedReverseTransitions = [
+                'Processing' => 'Pending',
+                'Ready for Release' => 'Processing',
+                'Claimed' => 'Ready for Release',
+            ];
+
+            $isForward = isset($allowedTransitions[$currentStatus]) && $allowedTransitions[$currentStatus] === $newStatus;
+            $isReverse = isset($allowedReverseTransitions[$currentStatus]) && $allowedReverseTransitions[$currentStatus] === $newStatus;
+
+            if (!$isForward && !$isReverse) {
                 return response()->json([
                     'message' => 'Invalid request status transition.',
                 ], 422);
             }
 
-            if (in_array($newStatus, ['Processing', 'Ready for Release', 'Claimed']) && $studentRequest->payment_status !== 'paid') {
+            if ($isForward && in_array($newStatus, ['Processing', 'Ready for Release', 'Claimed']) && $studentRequest->payment_status !== 'paid') {
                 return response()->json([
                     'message' => 'Payment must be verified before processing this request.',
                 ], 422);
@@ -240,7 +250,7 @@ class RegistrarRequestController extends Controller
             return response()->json(['success' => false, 'message' => 'Student has no email address on file.'], 422);
         }
 
-        $validated = $request->validate([
+        $request->validate([
             'pdf' => 'required|mimes:pdf|max:10240',
         ]);
 
@@ -249,29 +259,44 @@ class RegistrarRequestController extends Controller
         $documentNames = collect($studentRequest->document_ids ?? [])->map(fn ($code) => $documents->get($code)?->name ?? $code)->toArray();
         $documentName = implode(', ', $documentNames);
 
-        $safeTracking = preg_replace('/[^A-Za-z0-9\-]/', '', $studentRequest->tracking_number);
-        $filename = $safeTracking . '-' . time() . '.pdf';
+        try {
+            DB::transaction(function () use ($request, $studentRequest, $user, $documentName, $documentNames) {
+                $safeTracking = preg_replace('/[^A-Za-z0-9\-]/', '', $studentRequest->tracking_number);
+                $filename = $safeTracking . '-' . time() . '.pdf';
+                $path = $request->file('pdf')->storeAs('documents', $filename, 'local');
 
-        $path = $request->file('pdf')->storeAs('documents', $filename, 'local');
+                try {
+                    Mail::to($studentRequest->email)->send(new DigitalDocumentMail($studentRequest, $documentName, $path));
+                } catch (\Exception $e) {
+                    Storage::disk('local')->delete($path);
+                    throw $e;
+                }
 
-        Mail::to($studentRequest->email)->send(new DigitalDocumentMail($studentRequest, $documentName, $path));
+                $studentRequest->update([
+                    'digital_document_path' => $path,
+                    'is_digitally_sent' => true,
+                    'digitally_sent_at' => now(),
+                    'digitally_sent_by' => $user->id,
+                    'delivery_type' => $studentRequest->delivery_type ?: ($studentRequest->status === 'Claimed' ? 'digital' : 'both'),
+                ]);
 
-        $studentRequest->update([
-            'digital_document_path' => $path,
-            'is_digitally_sent' => true,
-            'digitally_sent_at' => now(),
-            'digitally_sent_by' => $user->id,
-            'delivery_type' => $studentRequest->delivery_type ?: ($studentRequest->status === 'Claimed' ? 'digital' : 'both'),
-        ]);
+                AuditLog::create([
+                    'action' => 'digital_document_sent',
+                    'performed_by' => $user->name,
+                    'performed_by_id' => $user->id,
+                    'target_type' => 'StudentRequest',
+                    'target_id' => $studentRequest->id,
+                    'description' => "Sent {$documentName} digitally to {$studentRequest->email}",
+                ]);
+            });
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to send digital document. Please check mail configuration and try again.',
+            ], 500);
+        }
 
-        AuditLog::create([
-            'action' => 'digital_document_sent',
-            'performed_by' => $user->name,
-            'performed_by_id' => $user->id,
-            'target_type' => 'StudentRequest',
-            'target_id' => $studentRequest->id,
-            'description' => "Sent {$documentName} digitally to {$studentRequest->email}",
-        ]);
+        $studentRequest->refresh();
 
         return response()->json([
             'success' => true,
@@ -299,9 +324,9 @@ class RegistrarRequestController extends Controller
                 'verified_at' => $studentRequest->verified_at,
                 'created_at' => $studentRequest->created_at->format('Y-m-d'),
                 'is_digitally_sent' => true,
-                'digitally_sent_at' => $studentRequest->fresh()->digitally_sent_at,
+                'digitally_sent_at' => $studentRequest->digitally_sent_at,
                 'digitally_sent_by' => $user->id,
-                'delivery_type' => $studentRequest->fresh()->delivery_type,
+                'delivery_type' => $studentRequest->delivery_type,
                 'digitally_sent_by_name' => $user->name,
             ],
         ]);

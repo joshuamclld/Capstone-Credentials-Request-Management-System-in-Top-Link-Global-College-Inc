@@ -3,10 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreStudentRequest;
+use App\Models\AuditLog;
 use App\Models\Notification;
 use App\Models\StudentRequest;
 use App\Models\Document;
-use App\Models\User;
 use App\Services\PayMongoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -55,27 +55,33 @@ class StudentRequestController extends Controller
 
         $requests = StudentRequest::where('student_id', $student->id)
             ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(function ($request) {
-                $documents = Document::whereIn('code', $request->document_ids ?? [])->get();
-                return [
-                    'id' => $request->id,
-                    'tracking_number' => $request->tracking_number,
-                    'documents' => $documents->pluck('name')->toArray(),
-                    'semesters' => $request->semesters ?? [],
-                    'pages' => $request->pages,
-                    'payment_method' => $request->payment_method,
-                    'payment_status' => $request->payment_status,
-                    'status' => $request->status,
-                    'total_fee' => (float) $request->total_fee,
-                    'created_at' => $request->created_at->format('F d, Y'),
-                    'year_level' => $request->year_level,
-                    'section' => $request->section,
-                    'remarks' => $request->remarks,
-                    'paymongo_checkout_id' => $request->paymongo_checkout_id,
-                    'delivery_type' => $request->delivery_type,
-                ];
-            });
+            ->get();
+
+        $allDocCodes = $requests->pluck('document_ids')->flatten()->unique()->filter()->toArray();
+        $documents = Document::whereIn('code', $allDocCodes)->get()->keyBy('code');
+
+        $requests = $requests->map(function ($request) use ($documents) {
+            $documentNames = collect($request->document_ids ?? [])
+                ->map(fn ($code) => $documents->get($code)?->name ?? $code)
+                ->toArray();
+            return [
+                'id' => $request->id,
+                'tracking_number' => $request->tracking_number,
+                'documents' => $documentNames,
+                'semesters' => $request->semesters ?? [],
+                'pages' => $request->pages,
+                'payment_method' => $request->payment_method,
+                'payment_status' => $request->payment_status,
+                'status' => $request->status,
+                'total_fee' => (float) $request->total_fee,
+                'created_at' => $request->created_at->format('F d, Y'),
+                'year_level' => $request->year_level,
+                'section' => $request->section,
+                'remarks' => $request->remarks,
+                'paymongo_checkout_id' => $request->paymongo_checkout_id,
+                'delivery_type' => $request->delivery_type,
+            ];
+        });
 
         return response()->json([
             'success' => true,
@@ -289,6 +295,53 @@ class StudentRequestController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Request cancelled successfully.',
+        ]);
+    }
+
+    public function claim(string $trackingNumber)
+    {
+        $student = auth('student')->user();
+
+        $request = StudentRequest::where('tracking_number', $trackingNumber)->first();
+
+        if (!$request) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tracking number not found.',
+            ], 404);
+        }
+
+        if (!$request->student_id || $request->student_id !== $student->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This request does not belong to you.',
+            ], 403);
+        }
+
+        if ($request->status !== 'Ready for Release') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only requests that are Ready for Release can be claimed.',
+            ], 422);
+        }
+
+        $request->status = 'Claimed';
+        $request->save();
+
+        Notification::notifyRole('admin', 'request_claimed', 'Request Claimed', "Request {$request->tracking_number} was marked as claimed by the student.", (string) $request->id, "/admin/requests/{$request->id}");
+
+        AuditLog::create([
+            'action' => 'claim_request',
+            'performed_by' => $student->first_name . ' ' . $student->last_name,
+            'performed_by_id' => $student->id,
+            'target_type' => 'StudentRequest',
+            'target_id' => $request->id,
+            'description' => "Student claimed request {$request->tracking_number}",
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Request marked as claimed successfully.',
         ]);
     }
 

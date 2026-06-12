@@ -9,6 +9,7 @@ export default function DashboardMobileCard({
   onAction,
   loading = false,
   actions = [],
+  secondaryAction = null,
 }) {
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
@@ -58,13 +59,24 @@ export default function DashboardMobileCard({
       )}
 
       {actionLabel && onAction && actions.length === 0 && (
-        <button
-          onClick={onAction}
-          disabled={loading}
-          className="w-full py-2.5 text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 disabled:bg-emerald-400 rounded-lg transition-colors disabled:cursor-not-allowed"
-        >
-          {loading ? 'Processing...' : actionLabel}
-        </button>
+        <div className="flex items-center gap-2 pt-2.5 border-t border-slate-100">
+          <button
+            onClick={onAction}
+            disabled={loading}
+            className="flex-1 py-2.5 text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 disabled:bg-emerald-400 rounded-lg transition-colors disabled:cursor-not-allowed"
+          >
+            {loading ? 'Processing...' : actionLabel}
+          </button>
+          {secondaryAction && (
+            <button
+              onClick={secondaryAction.onAction}
+              disabled={loading}
+              className="flex-1 py-2.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 rounded-lg transition-colors disabled:cursor-not-allowed"
+            >
+              {secondaryAction.label}
+            </button>
+          )}
+        </div>
       )}
     </div>
   );
