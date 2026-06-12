@@ -20,23 +20,31 @@ class CashierPaymentController extends Controller
     {
         $perPage = min(max((int) $request->query('per_page', 10), 1), 100);
 
-        $dailyPaid = StudentRequest::where('payment_status', 'paid')
-            ->whereDate(\DB::raw('COALESCE(verified_at, created_at)'), today());
+        $baseCounts = StudentRequest::selectRaw("
+            SUM(CASE WHEN payment_status = 'unpaid' THEN 1 ELSE 0 END) as pending_payments,
+            SUM(CASE WHEN payment_status = 'pending_verification' THEN 1 ELSE 0 END) as pending_verification,
+            SUM(CASE WHEN payment_status = 'paid' THEN 1 ELSE 0 END) as total_paid
+        ")->first();
 
-        $dailyOnline = (clone $dailyPaid)->where('payment_method', 'online');
-        $dailyCash = (clone $dailyPaid)->where(function ($q) {
-            $q->where('payment_method', '!=', 'online')->orWhereNull('payment_method');
-        });
+        $todayStats = StudentRequest::where('payment_status', 'paid')
+            ->whereDate(\DB::raw('COALESCE(verified_at, created_at)'), today())
+            ->selectRaw("
+                COUNT(*) as paid_today,
+                SUM(CASE WHEN payment_method = 'online' THEN 1 ELSE 0 END) as daily_online_count,
+                SUM(CASE WHEN payment_method = 'online' THEN total_fee ELSE 0 END) as daily_online_total,
+                SUM(CASE WHEN payment_method != 'online' OR payment_method IS NULL THEN 1 ELSE 0 END) as daily_cash_count,
+                SUM(CASE WHEN payment_method != 'online' OR payment_method IS NULL THEN total_fee ELSE 0 END) as daily_cash_total
+            ")->first();
 
         $stats = [
-            'pending_payments' => StudentRequest::where('payment_status', 'unpaid')->count(),
-            'pending_verification' => StudentRequest::where('payment_status', 'pending_verification')->count(),
-            'paid_today' => (clone $dailyPaid)->count(),
-            'total_paid' => StudentRequest::where('payment_status', 'paid')->count(),
-            'daily_online_count' => $dailyOnline->count(),
-            'daily_online_total' => (float) ($dailyOnline->sum('total_fee') ?? 0),
-            'daily_cash_count' => $dailyCash->count(),
-            'daily_cash_total' => (float) ($dailyCash->sum('total_fee') ?? 0),
+            'pending_payments' => (int) $baseCounts->pending_payments,
+            'pending_verification' => (int) $baseCounts->pending_verification,
+            'paid_today' => (int) $todayStats->paid_today,
+            'total_paid' => (int) $baseCounts->total_paid,
+            'daily_online_count' => (int) $todayStats->daily_online_count,
+            'daily_online_total' => (float) ($todayStats->daily_online_total ?? 0),
+            'daily_cash_count' => (int) $todayStats->daily_cash_count,
+            'daily_cash_total' => (float) ($todayStats->daily_cash_total ?? 0),
         ];
 
         $paymentFilter = $request->query('payment_status');
@@ -75,6 +83,7 @@ class CashierPaymentController extends Controller
         });
 
         return response()->json([
+            'success' => true,
             'stats' => $stats,
             'requests' => $formatted,
             'pagination' => [
@@ -140,6 +149,7 @@ class CashierPaymentController extends Controller
         $documentNames = collect($studentRequest->document_ids ?? [])->map(fn ($code) => $documents->get($code)?->name ?? $code)->toArray();
 
         return response()->json([
+            'success' => true,
             'message' => 'Payment verified successfully.',
             'request' => [
                 'id' => $studentRequest->id,
@@ -246,6 +256,7 @@ class CashierPaymentController extends Controller
         $enabled = Cache::get('enable_online_payment', true);
 
         return response()->json([
+            'success' => true,
             'enabled' => $enabled,
         ]);
     }

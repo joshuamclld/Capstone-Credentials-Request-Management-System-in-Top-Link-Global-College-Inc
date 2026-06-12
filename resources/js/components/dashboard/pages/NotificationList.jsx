@@ -84,7 +84,7 @@ export default function NotificationList({ user, onLogout, onNavigate }) {
 
     if (loading) {
         return (
-            <DashboardLayout title="Notifications" subtitle="View all notifications." sidebarItems={sidebarItems} user={user} onLogout={onLogout} onNavigate={onNavigate}>
+            <DashboardLayout title="Notifications" subtitle="View all notifications." sidebarItems={sidebarItems} currentUser={user} onLogout={onLogout} onNavigate={onNavigate}>
                 <div className="flex items-center justify-center py-20 text-slate-500 text-sm">Loading notifications...</div>
             </DashboardLayout>
         );
@@ -92,14 +92,14 @@ export default function NotificationList({ user, onLogout, onNavigate }) {
 
     if (error) {
         return (
-            <DashboardLayout title="Notifications" subtitle="View all notifications." sidebarItems={sidebarItems} user={user} onLogout={onLogout} onNavigate={onNavigate}>
+            <DashboardLayout title="Notifications" subtitle="View all notifications." sidebarItems={sidebarItems} currentUser={user} onLogout={onLogout} onNavigate={onNavigate}>
                 <div className="flex items-center justify-center py-20 text-red-500 text-sm">Error: {error}</div>
             </DashboardLayout>
         );
     }
 
     return (
-        <DashboardLayout title="Notifications" subtitle="View all notifications." sidebarItems={sidebarItems} user={user} onLogout={onLogout} onNavigate={onNavigate}>
+        <DashboardLayout title="Notifications" subtitle="View all notifications." sidebarItems={sidebarItems} currentUser={user} onLogout={onLogout} onNavigate={onNavigate}>
             <section className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-6 py-5 border-b border-slate-200">
                     <p className="text-sm text-slate-500">

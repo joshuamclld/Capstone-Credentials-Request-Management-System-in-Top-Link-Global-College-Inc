@@ -307,7 +307,7 @@ class SystemAdminController extends Controller
         $documents = Document::all()->keyBy('code');
 
         $monthlyRequestsByType = StudentRequest::selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month, document_ids")
-            ->get()
+            ->lazy()
             ->groupBy('month')
             ->map(function ($requests, $month) use ($documents) {
                 $typeCounts = [];

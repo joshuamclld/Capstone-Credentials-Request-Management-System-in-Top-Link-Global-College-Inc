@@ -11,6 +11,7 @@ use App\Services\PayMongoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\URL;
 
 class StudentRequestController extends Controller
 {
@@ -99,41 +100,41 @@ class StudentRequestController extends Controller
             return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
         }
 
-        $request = StudentRequest::where('tracking_number', $trackingNumber)->first();
+        $studentRequest = StudentRequest::where('tracking_number', $trackingNumber)->first();
 
-        if (!$request) {
+        if (!$studentRequest) {
             return response()->json(['success' => false, 'message' => 'Request not found.'], 404);
         }
 
-        if ($request->student_id !== $student->id) {
+        if ($studentRequest->student_id !== $student->id) {
             return response()->json(['success' => false, 'message' => 'Forbidden.'], 403);
         }
 
-        $documents = Document::whereIn('code', $request->document_ids ?? [])->get();
+        $documents = Document::whereIn('code', $studentRequest->document_ids ?? [])->get();
         $documentNames = $documents->pluck('name')->toArray();
         $processingDays = $documents->max('processing_days');
 
         return response()->json([
             'success' => true,
             'request' => [
-                'tracking_number' => $request->tracking_number,
-                'student_name' => $request->full_name,
+                'tracking_number' => $studentRequest->tracking_number,
+                'student_name' => $studentRequest->full_name,
                 'documents' => $documentNames,
-                'semesters' => $request->semesters ?? [],
-                'pages' => $request->pages,
-                'payment_method' => $request->payment_method,
-                'payment_status' => $request->payment_status,
-                'status' => $request->status,
-                'remarks' => $request->remarks,
-                'total_fee' => (float) $request->total_fee,
+                'semesters' => $studentRequest->semesters ?? [],
+                'pages' => $studentRequest->pages,
+                'payment_method' => $studentRequest->payment_method,
+                'payment_status' => $studentRequest->payment_status,
+                'status' => $studentRequest->status,
+                'remarks' => $studentRequest->remarks,
+                'total_fee' => (float) $studentRequest->total_fee,
                 'processing_days' => $processingDays,
-                'created_at' => $request->created_at->format('F d, Y'),
-                'year_level' => $request->year_level,
-                'section' => $request->section,
-                'paymongo_checkout_id' => $request->paymongo_checkout_id,
-                'is_digitally_sent' => $request->is_digitally_sent,
-                'digitally_sent_at' => $request->digitally_sent_at,
-                'delivery_type' => $request->delivery_type,
+                'created_at' => $studentRequest->created_at->format('F d, Y'),
+                'year_level' => $studentRequest->year_level,
+                'section' => $studentRequest->section,
+                'paymongo_checkout_id' => $studentRequest->paymongo_checkout_id,
+                'is_digitally_sent' => $studentRequest->is_digitally_sent,
+                'digitally_sent_at' => $studentRequest->digitally_sent_at,
+                'delivery_type' => $studentRequest->delivery_type,
             ],
         ]);
     }
@@ -208,41 +209,73 @@ class StudentRequestController extends Controller
             return view('welcome');
         }
 
-        $request = StudentRequest::where('tracking_number', $trackingNumber)->first();
+        $studentRequest = StudentRequest::where('tracking_number', $trackingNumber)->first();
 
-        if (!$request) {
+        if (!$studentRequest) {
             return response()->json([
                 'success' => false,
                 'message' => 'Tracking number not found.',
             ], 404);
         }
 
-        $documents = Document::whereIn('code', $request->document_ids)->get();
+        $studentId = auth('student')->id();
+        $isOwner = $studentId !== null && $studentRequest->student_id === $studentId;
+
+        $documents = Document::whereIn('code', $studentRequest->document_ids)->get();
         $documentNames = $documents->pluck('name')->toArray();
         $processingDays = $documents->max('processing_days');
 
-        $studentId = auth('student')->id();
+        if (!$isOwner && $studentRequest->status === 'Claimed') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tracking number not found.',
+            ], 404);
+        }
+
+        if ($isOwner) {
+            return response()->json([
+                'success' => true,
+                'is_authenticated' => true,
+                'is_owner' => true,
+                'request' => [
+                    'tracking_number' => $studentRequest->tracking_number,
+                    'student_name' => $studentRequest->full_name,
+                    'documents' => $documentNames,
+                    'semesters' => $studentRequest->semesters ?? [],
+                    'pages' => $studentRequest->pages,
+                    'payment_method' => $studentRequest->payment_method,
+                    'payment_status' => $studentRequest->payment_status,
+                    'status' => $studentRequest->status,
+                    'remarks' => $studentRequest->remarks,
+                    'total_fee' => (float) $studentRequest->total_fee,
+                    'processing_days' => $processingDays,
+                    'created_at' => $studentRequest->created_at->format('F d, Y'),
+                    'year_level' => $studentRequest->year_level,
+                    'section' => $studentRequest->section,
+                    'delivery_type' => $studentRequest->delivery_type,
+                ],
+            ]);
+        }
 
         return response()->json([
             'success' => true,
-            'is_authenticated' => $studentId !== null,
-            'is_owner' => $studentId !== null && $request->student_id === $studentId,
+            'is_authenticated' => false,
+            'is_owner' => false,
             'request' => [
-                'tracking_number' => $request->tracking_number,
-                'student_name' => $studentId !== null && $request->student_id === $studentId ? $request->full_name : null,
+                'tracking_number' => $studentRequest->tracking_number,
                 'documents' => $documentNames,
-                'semesters' => $request->semesters ?? [],
-                'pages' => $request->pages,
-                'payment_method' => $request->payment_method,
-                'payment_status' => $request->payment_status,
-                'status' => $request->status,
-                'remarks' => $request->remarks,
-                'total_fee' => (float) $request->total_fee,
+                'semesters' => $studentRequest->semesters ?? [],
+                'pages' => $studentRequest->pages,
+                'payment_method' => $studentRequest->payment_method,
+                'payment_status' => $studentRequest->payment_status,
+                'status' => $studentRequest->status,
+                'remarks' => $studentRequest->remarks,
+                'total_fee' => (float) $studentRequest->total_fee,
                 'processing_days' => $processingDays,
-                'created_at' => $request->created_at->format('F d, Y'),
-                'year_level' => $request->year_level,
-                'section' => $request->section,
-                'delivery_type' => $request->delivery_type,
+                'created_at' => $studentRequest->created_at->format('F d, Y'),
+                'year_level' => $studentRequest->year_level,
+                'section' => $studentRequest->section,
+                'delivery_type' => $studentRequest->delivery_type,
             ],
         ]);
     }
@@ -397,7 +430,7 @@ class StudentRequestController extends Controller
                 'amount' => (float) $request->total_fee,
                 'description' => "Credential Request - {$trackingNumber}",
                 'tracking_number' => $trackingNumber,
-                'success_url' => url("/payment/success?tracking_number={$trackingNumber}&session_id={CHECKOUT_SESSION_ID}"),
+                'success_url' => URL::temporarySignedRoute('payment.success', now()->addHours(1), ['tracking_number' => $trackingNumber]) . '&session_id={CHECKOUT_SESSION_ID}',
                 'cancel_url' => url("/payment/failed?tracking_number={$trackingNumber}"),
             ]);
 
@@ -429,52 +462,62 @@ class StudentRequestController extends Controller
             return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
         }
 
-        $request = StudentRequest::where('tracking_number', $trackingNumber)->first();
-        if (!$request) {
+        $studentRequest = StudentRequest::where('tracking_number', $trackingNumber)->first();
+        if (!$studentRequest) {
             return response()->json(['success' => false, 'message' => 'Not found.'], 404);
         }
 
-        if ($request->student_id !== $student->id) {
+        if ($studentRequest->student_id !== $student->id) {
             return response()->json(['success' => false, 'message' => 'Forbidden.'], 403);
         }
 
-        if ($request->payment_status === 'paid') {
+        if ($studentRequest->payment_status === 'paid') {
             return response()->json(['success' => true, 'payment_status' => 'paid']);
         }
-        if (!$request->paymongo_checkout_id) {
-            return response()->json(['success' => true, 'payment_status' => $request->payment_status]);
+        if (!$studentRequest->paymongo_checkout_id) {
+            return response()->json(['success' => true, 'payment_status' => $studentRequest->payment_status]);
         }
 
         try {
             $paymongo = app(PayMongoService::class);
-            $session = $paymongo->retrieveCheckoutSession($request->paymongo_checkout_id);
+            $session = $paymongo->retrieveCheckoutSession($studentRequest->paymongo_checkout_id);
             $status = $this->getPayMongoPaymentStatus($session);
 
             if ($status === 'paid') {
-                $request->payment_status = 'paid';
-                $request->save();
+                $studentRequest->payment_status = 'paid';
+                $studentRequest->save();
                 return response()->json(['success' => true, 'payment_status' => 'paid']);
             }
 
-            return response()->json(['success' => true, 'payment_status' => $request->payment_status]);
+            return response()->json(['success' => true, 'payment_status' => $studentRequest->payment_status]);
         } catch (\RuntimeException $e) {
-            return response()->json(['success' => true, 'payment_status' => $request->payment_status]);
+            Log::error('PayMongo verify-payment failed: ' . $e->getMessage());
+            return response()->json(['success' => false, 'payment_status' => $studentRequest->payment_status, 'message' => 'Unable to verify payment status.'], 502);
         }
     }
 
     public function paymentSuccess(Request $request)
     {
+        if (!$request->hasValidSignature()) {
+            abort(401);
+        }
+
         $trackingNumber = $request->query('tracking_number');
         $sessionId = $request->query('session_id');
 
         if ($trackingNumber) {
-            $studentRequest = StudentRequest::where('tracking_number', $trackingNumber)->first();
+            DB::transaction(function () use ($trackingNumber, $sessionId) {
+                $studentRequest = StudentRequest::where('tracking_number', $trackingNumber)
+                    ->lockForUpdate()
+                    ->first();
 
-            if ($studentRequest && $studentRequest->payment_status !== 'paid') {
+                if (!$studentRequest || $studentRequest->payment_status === 'paid') {
+                    return;
+                }
+
                 try {
                     $paymongo = app(PayMongoService::class);
 
-                    // Use session_id from URL if available and valid, otherwise fall back to stored checkout ID
                     $checkoutId = null;
                     if ($sessionId && $sessionId !== '{CHECKOUT_SESSION_ID}') {
                         $checkoutId = $sessionId;
@@ -495,7 +538,7 @@ class StudentRequestController extends Controller
                 } catch (\RuntimeException $e) {
                     Log::error('PayMongo success verification failed: ' . $e->getMessage());
                 }
-            }
+            });
         }
 
         if ($trackingNumber) {
@@ -534,7 +577,15 @@ class StudentRequestController extends Controller
         }
 
         $event = json_decode($payload, true);
+
+        if (!$event || !isset($event['data']['attributes'])) {
+            Log::warning('PayMongo webhook received malformed payload');
+            return response()->json(['error' => 'Invalid payload'], 400);
+        }
+
         $eventType = $event['data']['attributes']['type'] ?? '';
+
+        Log::info('PayMongo webhook received', ['type' => $eventType]);
 
         if ($eventType === 'checkout_session.payment.paid') {
             $checkoutData = $event['data']['attributes']['data']['attributes'] ?? [];
@@ -548,6 +599,18 @@ class StudentRequestController extends Controller
                         ->update(['payment_status' => 'paid', 'verified_at' => now()]);
                 }
             }
+        } elseif (in_array($eventType, ['checkout_session.payment.failed', 'checkout_session.expired'])) {
+            $checkoutData = $event['data']['attributes']['data']['attributes'] ?? [];
+            $trackingNumber = $checkoutData['metadata']['tracking_number'] ?? null;
+            if ($trackingNumber) {
+                $newStatus = $eventType === 'checkout_session.expired' ? 'expired' : 'failed';
+                StudentRequest::where('tracking_number', $trackingNumber)
+                    ->where('payment_status', 'pending_verification')
+                    ->update(['payment_status' => $newStatus]);
+                Log::info("PayMongo checkout {$newStatus} for request", ['tracking' => $trackingNumber]);
+            }
+        } else {
+            Log::info('Unhandled PayMongo webhook event', ['type' => $eventType]);
         }
 
         return response()->json(['success' => true]);
@@ -572,14 +635,33 @@ class StudentRequestController extends Controller
 
     private function generateTrackingNumber(): string
     {
-        $year = date('Y');
-        $last = StudentRequest::whereYear('created_at', $year)
-            ->lockForUpdate()
-            ->orderBy('id', 'desc')
-            ->first();
+        $maxAttempts = 5;
+        $attempt = 0;
 
-        $nextNumber = $last ? ((int) substr($last->tracking_number, -5)) + 1 : 1;
+        while ($attempt < $maxAttempts) {
+            $year = date('Y');
+            $last = StudentRequest::whereYear('created_at', $year)
+                ->lockForUpdate()
+                ->orderBy('id', 'desc')
+                ->first();
 
-        return sprintf('TLGC-%s-%05d', $year, $nextNumber);
+            $nextNumber = $last ? ((int) substr($last->tracking_number, -5)) + 1 : 1;
+            $trackingNumber = sprintf('TLGC-%s-%05d', $year, $nextNumber);
+
+            try {
+                // Attempt to insert is done outside this method,
+                // but we check existence to avoid retries on DB constraint
+                $exists = StudentRequest::where('tracking_number', $trackingNumber)->exists();
+                if (!$exists) {
+                    return $trackingNumber;
+                }
+            } catch (\Exception $e) {
+                // Fall through to retry
+            }
+
+            $attempt++;
+        }
+
+        throw new \RuntimeException('Unable to generate unique tracking number after ' . $maxAttempts . ' attempts.');
     }
 }

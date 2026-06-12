@@ -20,12 +20,20 @@ class RegistrarRequestController extends Controller
     {
         $perPage = min(max((int) $request->query('per_page', 10), 1), 100);
 
+        $counts = StudentRequest::selectRaw("
+            COUNT(*) as total,
+            SUM(CASE WHEN payment_status IN ('unpaid','pending_verification') THEN 1 ELSE 0 END) as pending_payment,
+            SUM(CASE WHEN status = 'Processing' THEN 1 ELSE 0 END) as processing,
+            SUM(CASE WHEN status = 'Ready for Release' THEN 1 ELSE 0 END) as ready_for_release,
+            SUM(CASE WHEN status = 'Claimed' THEN 1 ELSE 0 END) as claimed
+        ")->first();
+
         $stats = [
-            'total' => StudentRequest::count(),
-            'pending_payment' => StudentRequest::whereIn('payment_status', ['unpaid', 'pending_verification'])->count(),
-            'processing' => StudentRequest::where('status', 'Processing')->count(),
-            'ready_for_release' => StudentRequest::where('status', 'Ready for Release')->count(),
-            'claimed' => StudentRequest::where('status', 'Claimed')->count(),
+            'total' => (int) $counts->total,
+            'pending_payment' => (int) $counts->pending_payment,
+            'processing' => (int) $counts->processing,
+            'ready_for_release' => (int) $counts->ready_for_release,
+            'claimed' => (int) $counts->claimed,
         ];
 
         $statusFilter = $request->query('status');
@@ -68,6 +76,7 @@ class RegistrarRequestController extends Controller
         });
 
         return response()->json([
+            'success' => true,
             'stats' => $stats,
             'requests' => $formatted,
             'pagination' => [
@@ -96,6 +105,7 @@ class RegistrarRequestController extends Controller
         $documentNames = collect($request->document_ids ?? [])->map(fn ($code) => $documents->get($code)?->name ?? $code)->toArray();
 
         return response()->json([
+            'success' => true,
             'id' => $request->id,
             'tracking_number' => $request->tracking_number,
             'student_name' => $request->full_name,
@@ -198,6 +208,7 @@ class RegistrarRequestController extends Controller
         $documentNames = collect($studentRequest->document_ids ?? [])->map(fn ($code) => $documents->get($code)?->name ?? $code)->toArray();
 
         return response()->json([
+            'success' => true,
             'message' => 'Request updated successfully.',
             'request' => [
                 'id' => $studentRequest->id,

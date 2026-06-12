@@ -14,7 +14,7 @@ export default function StudentProfile({ student, onLogout, onNavigate, currentP
   const [showConfirm, setShowConfirm] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
 
-  const [form, setForm] = useState({ first_name: '', last_name: '', email: '', student_number: '', contact_number: '' });
+  const [form, setForm] = useState({ first_name: '', last_name: '', email: '', student_number: '', course: '', year_level: '', section: '' });
   const [passwordForm, setPasswordForm] = useState({ current_password: '', new_password: '', new_password_confirmation: '' });
 
   useEffect(() => {
@@ -23,7 +23,7 @@ export default function StudentProfile({ student, onLogout, onNavigate, currentP
       .then(data => {
         const s = data.student;
         setProfile(s);
-        setForm({ first_name: s.first_name || '', last_name: s.last_name || '', email: s.email || '', student_number: s.student_number || '', contact_number: s.contact_number || '' });
+        setForm({ first_name: s.first_name || '', last_name: s.last_name || '', email: s.email || '', student_number: s.student_number || '', course: s.course || '', year_level: s.year_level || '', section: s.section || '' });
         setLoading(false);
       })
       .catch(() => setLoading(false));

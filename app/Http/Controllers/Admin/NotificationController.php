@@ -22,6 +22,7 @@ class NotificationController extends Controller
             ->count();
 
         return response()->json([
+            'success' => true,
             'notifications' => $notifications,
             'unread_count' => $unreadCount,
         ]);
@@ -35,7 +36,7 @@ class NotificationController extends Controller
 
         $notification->update(['is_read' => true]);
 
-        return response()->json(['message' => 'Notification marked as read.']);
+        return response()->json(['success' => true, 'message' => 'Notification marked as read.']);
     }
 
     public function markAllAsRead(): JsonResponse
@@ -44,7 +45,7 @@ class NotificationController extends Controller
             ->where('is_read', false)
             ->update(['is_read' => true]);
 
-        return response()->json(['message' => 'All notifications marked as read.']);
+        return response()->json(['success' => true, 'message' => 'All notifications marked as read.']);
     }
 
     public function getAll(): JsonResponse
@@ -55,6 +56,15 @@ class NotificationController extends Controller
             ->latest()
             ->paginate($perPage);
 
-        return response()->json($notifications);
+        return response()->json([
+            'success' => true,
+            'notifications' => $notifications->items(),
+            'pagination' => [
+                'current_page' => $notifications->currentPage(),
+                'last_page' => $notifications->lastPage(),
+                'per_page' => $notifications->perPage(),
+                'total' => $notifications->total(),
+            ],
+        ]);
     }
 }

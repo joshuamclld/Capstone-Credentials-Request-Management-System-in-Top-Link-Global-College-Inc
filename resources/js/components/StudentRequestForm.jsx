@@ -13,7 +13,7 @@ const DOCUMENT_META = {
   'good-moral': { icon: 'verified', color: 'secondary', daysLabel: 'Same Day' },
   registration: { icon: 'assignment', color: 'tertiary', daysLabel: 'Same Day' },
   grades: { icon: 'school', color: 'on-surface-variant', tag: 'Per Semester', daysLabel: 'Every Friday' },
-  tor: { icon: 'history_edu', color: 'primary', tag: 'Most Requested', daysLabel: '7 Working Days' },
+  tor: { icon: 'history_edu', color: 'primary', daysLabel: '7 Working Days' },
 };
 
 export default function StudentRequestForm({ onNavigate, student, onLogout, currentPath }) {

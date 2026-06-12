@@ -32,7 +32,7 @@ class StoreStudentRequest extends FormRequest
             'email' => 'required|email|max:255',
             'course' => 'required|string|max:255',
             'selectedDocs' => 'required|array|min:1',
-            'selectedDocs.*' => 'required|string|exists:documents,code',
+            'selectedDocs.*' => 'required|string|exists:documents,code,is_active,1',
             'selectedSemesters' => 'nullable|array',
             'selectedSemesters.*' => ['string', Rule::in(self::VALID_SEMESTER_COMBOS)],
             'pages' => 'nullable|integer|min:1',

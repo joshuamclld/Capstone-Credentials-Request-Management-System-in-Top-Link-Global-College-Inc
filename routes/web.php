@@ -171,7 +171,7 @@ Route::prefix('student')->group(function () {
 });
 
 // PayMongo Payment Routes
-Route::get('/payment/success', [StudentRequestController::class, 'paymentSuccess']);
+Route::get('/payment/success', [StudentRequestController::class, 'paymentSuccess'])->name('payment.success');
 Route::get('/payment/failed', [StudentRequestController::class, 'paymentFailed']);
 Route::post('/webhooks/paymongo', [StudentRequestController::class, 'webhook']);
 

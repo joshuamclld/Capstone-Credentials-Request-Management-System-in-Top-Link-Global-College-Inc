@@ -18,9 +18,10 @@ class StudentProfileController extends Controller
         }
 
         return response()->json([
+            'success' => true,
             'student' => $student->only([
                 'id', 'student_number', 'first_name', 'last_name',
-                'email'
+                'email', 'course', 'year_level', 'section'
             ]),
         ]);
     }
@@ -38,15 +39,19 @@ class StudentProfileController extends Controller
             'last_name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:students,email,' . $student->id,
             'student_number' => 'required|string|max:50|unique:students,student_number,' . $student->id,
+            'course' => 'nullable|string|max:255',
+            'year_level' => 'nullable|string|max:255',
+            'section' => 'nullable|string|max:255',
         ]);
 
         $student->update($validated);
 
         return response()->json([
+            'success' => true,
             'message' => 'Profile updated successfully.',
             'student' => $student->fresh()->only([
                 'id', 'student_number', 'first_name', 'last_name',
-                'email'
+                'email', 'course', 'year_level', 'section'
             ]),
         ]);
     }
@@ -75,6 +80,7 @@ class StudentProfileController extends Controller
         ]);
 
         return response()->json([
+            'success' => true,
             'message' => 'Password updated successfully.',
         ]);
     }

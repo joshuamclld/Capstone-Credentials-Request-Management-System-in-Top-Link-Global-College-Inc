@@ -30,3 +30,51 @@ export function getPaymentStatusConfig(status) {
 export function getBooleanStatusConfig(status) {
   return BOOLEAN_STATUS_CONFIG[status] || { label: status, className: 'bg-slate-100 text-slate-700 border-slate-200' };
 }
+
+export function getBadge(status, payment_status) {
+  if (status === 'Cancelled') {
+    const c = getRequestStatusConfig('Cancelled');
+    return { label: c.label, bg: c.className };
+  }
+  if (status === 'Pending' && payment_status === 'paid') return { label: 'Paid — Awaiting Processing', bg: 'bg-emerald-100 text-emerald-800 border-emerald-300' };
+  const c = getRequestStatusConfig(status);
+  return { label: c.label, bg: c.className };
+}
+
+export function buildTimeline(status, payment_status, delivery_type) {
+  if (status === 'Cancelled') {
+    return [
+      { step: 'Request Submitted', desc: 'Your application was successfully received.', done: true, active: false },
+      { step: 'Cancelled', desc: 'This request has been cancelled.', done: true, active: true },
+    ];
+  }
+
+  const isDigital = delivery_type === 'digital';
+
+  const checks = [
+    () => true,
+    () => payment_status === 'paid',
+    () => ['Processing', 'Ready for Release', 'Claimed'].includes(status),
+    () => ['Ready for Release', 'Claimed'].includes(status),
+    () => status === 'Claimed',
+  ];
+
+  const steps = [
+    { step: 'Request Submitted', desc: 'Your application was successfully received by the Registrar\'s Office.', key: 'submitted' },
+    { step: 'Payment Verified', desc: 'Your processing fee has been confirmed.', key: 'payment' },
+    { step: 'Currently Processing', desc: 'The Registrar is now preparing and verifying your academic records.', key: 'processing' },
+    { step: 'Ready for Release', desc: 'Your document is prepared and certified, ready for release.', key: 'ready' },
+    { step: isDigital ? 'Delivered' : 'Claimed', desc: isDigital ? 'Document has been delivered via email.' : 'Document released to student.', key: 'claimed' },
+  ];
+
+  const activeIndex = (() => {
+    const idx = checks.findIndex((check) => !check());
+    return idx === -1 ? steps.length - 1 : idx;
+  })();
+
+  return steps.map((s, i) => ({
+    ...s,
+    done: checks[i](),
+    active: i === activeIndex,
+  }));
+}
