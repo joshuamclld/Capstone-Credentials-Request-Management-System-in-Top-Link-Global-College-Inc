@@ -223,7 +223,7 @@ class StudentRequestController extends Controller
             'is_owner' => $studentId !== null && $request->student_id === $studentId,
             'request' => [
                 'tracking_number' => $request->tracking_number,
-                'student_name' => $request->full_name,
+                'student_name' => $studentId !== null && $request->student_id === $studentId ? $request->full_name : null,
                 'documents' => $documentNames,
                 'semesters' => $request->semesters ?? [],
                 'pages' => $request->pages,

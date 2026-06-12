@@ -12,28 +12,27 @@ import { registrarSidebarItems } from '../config/sidebarItems';
 const tableHeaders = ['Reference No.', 'Student Name', 'Documents', 'Current Status', 'Date Requested', 'Action'];
 
 export default function ProcessRequests({ user, onLogout, onNavigate }) {
+    const ITEMS_PER_PAGE = 10;
     const [query, setQuery] = useState('');
-    const [requests, setRequests] = useState([]);
+    const [allRequests, setAllRequests] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [page, setPage] = useState(1);
-    const [pagination, setPagination] = useState(null);
     const [processingId, setProcessingId] = useState(null);
     const [message, setMessage] = useState(null);
 
     const getCsrfToken = () =>
         document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
-    const fetchData = (p) => {
+    const fetchData = () => {
         setLoading(true);
-        fetch(`/admin/requests-data?page=${p}&status=processable`, { credentials: 'same-origin' })
+        fetch(`/admin/requests-data?per_page=9999&status=processable`, { credentials: 'same-origin' })
             .then((res) => {
                 if (!res.ok) throw new Error('Failed to fetch');
                 return res.json();
             })
             .then((json) => {
-                setRequests(json.requests);
-                setPagination(json.pagination);
+                setAllRequests(json.requests);
                 setLoading(false);
             })
             .catch((err) => {
@@ -43,13 +42,29 @@ export default function ProcessRequests({ user, onLogout, onNavigate }) {
     };
 
     useEffect(() => {
-        fetchData(page);
-    }, [page]);
+        fetchData();
+    }, []);
+
+    const processable = allRequests.filter(
+        (req) => (req.payment_status === 'paid' || req.status === 'Processing') && !['Claimed', 'Cancelled'].includes(req.status)
+    );
+
+    const filtered = processable.filter((req) =>
+        req.student_name.toLowerCase().includes(query.toLowerCase()) ||
+        req.tracking_number.toLowerCase().includes(query.toLowerCase())
+    );
+
+    const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+    const pageRecords = filtered.slice(
+        (page - 1) * ITEMS_PER_PAGE,
+        page * ITEMS_PER_PAGE
+    );
 
     const handlePageChange = (newPage) => {
-        if (newPage < 1 || (pagination && newPage > pagination.last_page)) return;
-        setPage(newPage);
+        if (newPage >= 1 && newPage <= totalPages) setPage(newPage);
     };
+
+    useEffect(() => { setPage(1); }, [query]);
 
     const STATUS_TRANSITIONS = {
         'Pending': { next: 'Processing', label: 'Process Request' },
@@ -79,7 +94,7 @@ export default function ProcessRequests({ user, onLogout, onNavigate }) {
             .then((data) => {
                 if (data.message && data.request) {
                     setMessage({ type: 'success', text: `Request moved to ${nextStatus}.` });
-                    fetchData(page);
+                    fetchData();
                 } else {
                     setMessage({ type: 'error', text: data.message || 'Failed to process request.' });
                 }
@@ -90,15 +105,6 @@ export default function ProcessRequests({ user, onLogout, onNavigate }) {
                 setProcessingId(null);
             });
     };
-
-    const processable = requests.filter(
-        (req) => (req.payment_status === 'paid' || req.status === 'Processing') && !['Claimed', 'Cancelled'].includes(req.status)
-    );
-
-    const filtered = processable.filter((req) =>
-        req.student_name.toLowerCase().includes(query.toLowerCase()) ||
-        req.tracking_number.toLowerCase().includes(query.toLowerCase())
-    );
 
     const renderRow = (req) => (
         <tr key={req.id} className="hover:bg-slate-50 transition-colors">
@@ -173,14 +179,14 @@ export default function ProcessRequests({ user, onLogout, onNavigate }) {
                             />
                         }
                     >
-                        {filtered.map(renderRow)}
+                        {pageRecords.map(renderRow)}
                     </DashboardTable>
                 </div>
 
-                <div className="md:hidden">
-                    {filtered.length > 0 ? (
-                        <div className="divide-y divide-slate-100">
-                            {filtered.map((item) => (
+                        <div className="md:hidden">
+                            {pageRecords.length > 0 ? (
+                                <div className="divide-y divide-slate-100">
+                                    {pageRecords.map((item) => (
                                 <DashboardMobileCard
                                     key={item.id}
                                     title={item.tracking_number}
@@ -207,15 +213,15 @@ export default function ProcessRequests({ user, onLogout, onNavigate }) {
 
                 <div className="hidden md:block px-6 py-4 border-t border-slate-100">
                     <DashboardPagination
-                        currentPage={pagination?.current_page || 1}
-                        lastPage={pagination?.last_page || 1}
+                        currentPage={page}
+                        lastPage={totalPages}
                         onPageChange={handlePageChange}
                     />
                 </div>
                 <div className="md:hidden px-4 py-3 border-t border-slate-100">
                     <DashboardPagination
-                        currentPage={pagination?.current_page || 1}
-                        lastPage={pagination?.last_page || 1}
+                        currentPage={page}
+                        lastPage={totalPages}
                         onPageChange={handlePageChange}
                     />
                 </div>

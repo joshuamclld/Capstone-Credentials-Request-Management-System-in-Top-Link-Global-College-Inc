@@ -92,7 +92,7 @@ export default function PaymentDetails({ user, onLogout, onNavigate }) {
             });
     };
 
-    const paymentCfg = (s) => getPaymentStatusConfig(s);
+    const paymentCfg = (s, reqStatus) => getPaymentStatusConfig(reqStatus === 'Cancelled' ? 'cancelled' : s);
     const requestCfg = (s) => getRequestStatusConfig(s);
 
     if (loading) {
@@ -168,8 +168,8 @@ export default function PaymentDetails({ user, onLogout, onNavigate }) {
                                 </p>
                             </div>
                             <div className="flex flex-wrap items-center gap-2 shrink-0">
-                                <span className={`inline-flex items-center px-3 py-1.5 text-xs font-bold rounded-full border ${paymentCfg(request.payment_status).className}`}>
-                                    {paymentCfg(request.payment_status).label}
+                                <span className={`inline-flex items-center px-3 py-1.5 text-xs font-bold rounded-full border ${paymentCfg(request.payment_status, request.status).className}`}>
+                                    {paymentCfg(request.payment_status, request.status).label}
                                 </span>
                                 <span className={`inline-flex items-center px-3 py-1.5 text-xs font-bold rounded-full border ${requestCfg(request.status).className}`}>
                                     {requestCfg(request.status).label}
@@ -282,8 +282,8 @@ export default function PaymentDetails({ user, onLogout, onNavigate }) {
                                     </div>
                                     <div className="flex items-center justify-between py-2 border-t border-slate-100">
                                         <span className="text-xs text-slate-500">Payment Status</span>
-                                        <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full border ${paymentCfg(request.payment_status).className}`}>
-                                            {paymentCfg(request.payment_status).label}
+                                        <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full border ${paymentCfg(request.payment_status, request.status).className}`}>
+                                            {paymentCfg(request.payment_status, request.status).label}
                                         </span>
                                     </div>
                                     <div className="flex items-center justify-between py-2 border-t border-slate-100">

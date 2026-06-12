@@ -187,7 +187,7 @@ export default function StudentTrackDashboard({ studentUser, onLogout, onNavigat
       })
         .then(res => res.json())
         .then(data => { if (data.success) { setRequest(data.request); setIsOwner(!!data.is_owner); } })
-        .catch(() => {});
+        .catch(() => { });
     }
   }, [studentUser]);
 
@@ -199,16 +199,7 @@ export default function StudentTrackDashboard({ studentUser, onLogout, onNavigat
   const handleAuthLoginSuccess = (studentData) => {
     closeAuth();
     if (onStudentLogin) onStudentLogin(studentData);
-    if (request) {
-      fetch(`/requests/${encodeURIComponent(request.tracking_number)}`, {
-        headers: { 'Accept': 'application/json' },
-      })
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) { setRequest(data.request); setIsOwner(!!data.is_owner); }
-        })
-        .catch(() => {});
-    }
+    onNavigate('/student/dashboard');
   };
 
   return (
@@ -273,10 +264,6 @@ export default function StudentTrackDashboard({ studentUser, onLogout, onNavigat
 
                     <div className="space-y-3">
                       <div className="flex justify-between border-b border-outline-variant pb-2">
-                        <span className="text-on-surface-variant font-medium">Student:</span>
-                        <span className="font-bold text-on-surface">{request.student_name}</span>
-                      </div>
-                      <div className="flex justify-between border-b border-outline-variant pb-2">
                         <span className="text-on-surface-variant font-medium">Document(s):</span>
                         <span className="font-bold text-on-surface text-right">{(request.documents || []).join(', ')}</span>
                       </div>
@@ -312,12 +299,6 @@ export default function StudentTrackDashboard({ studentUser, onLogout, onNavigat
                         <span className="text-on-surface-variant font-medium">Processing Time:</span>
                         <span className="font-bold text-on-surface">{request.processing_days} Working Day(s)</span>
                       </div>
-                      {request.remarks && (
-                        <div className="flex justify-between border-b border-outline-variant pb-2">
-                          <span className="text-on-surface-variant font-medium">Remarks:</span>
-                          <span className="font-bold text-on-surface text-right">{request.remarks}</span>
-                        </div>
-                      )}
                       <div className="flex justify-between border-b border-outline-variant pb-2">
                         <span className="text-on-surface-variant font-medium">Payment Method:</span>
                         <span className="font-bold text-on-surface">{request.payment_method === 'cash' ? 'Cash Payment' : request.payment_method === 'online' ? 'Online Payment' : request.payment_method}</span>
@@ -360,7 +341,7 @@ export default function StudentTrackDashboard({ studentUser, onLogout, onNavigat
                       Your request information will appear here after entering a valid reference number.
                     </p>
                     <div className="w-full space-y-3">
-                      {['Student', 'Document(s)', 'Request Date', 'Processing Time', 'Payment Method', 'Payment Status'].map((label) => (
+                      {['Document(s)', 'Request Date', 'Processing Time', 'Payment Method', 'Payment Status'].map((label) => (
                         <div key={label} className="flex justify-between border-b border-outline-variant pb-2">
                           <span className="text-on-surface-variant font-medium">{label}:</span>
                           <span className="w-28 h-4 rounded bg-slate-100 animate-pulse" />
@@ -393,36 +374,33 @@ export default function StudentTrackDashboard({ studentUser, onLogout, onNavigat
                       return (
                         <div key={item.key || index} className="flex gap-3">
                           <div className="flex flex-col items-center">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                              item.done
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${item.done
                                 ? request.status === 'Cancelled' && index === timeline.length - 1
                                   ? 'bg-red-500 text-white shadow-sm'
                                   : 'bg-primary text-on-primary shadow-sm'
                                 : item.active
                                   ? 'bg-primary/10 text-primary ring-4 ring-primary/20'
                                   : 'bg-surface-container-low text-on-surface-variant border border-outline-variant'
-                            }`}>
+                              }`}>
                               <IconComponent className="w-4 h-4" />
                             </div>
                             {!isLast && (
-                              <div className={`w-px grow min-h-[24px] ${
-                                item.done
+                              <div className={`w-px grow min-h-[24px] ${item.done
                                   ? request.status === 'Cancelled'
                                     ? 'bg-red-300'
                                     : 'bg-primary/30'
                                   : 'border-l border-dashed border-outline-variant'
-                              }`}></div>
+                                }`}></div>
                             )}
                           </div>
 
                           <div className={`pb-4 pt-0.5 ${!item.done && !item.active ? 'opacity-40' : ''}`}>
-                            <p className={`text-sm font-bold leading-tight ${
-                              item.done
+                            <p className={`text-sm font-bold leading-tight ${item.done
                                 ? request.status === 'Cancelled' && index === timeline.length - 1
                                   ? 'text-red-600'
                                   : 'text-primary'
                                 : item.active ? 'text-primary' : 'text-on-surface'
-                            }`}>
+                              }`}>
                               {item.step}
                             </p>
                             <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">{item.desc}</p>

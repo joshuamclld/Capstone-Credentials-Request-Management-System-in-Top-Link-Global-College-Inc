@@ -93,6 +93,7 @@ function App() {
 
   const handleStudentModalLogin = (studentData) => {
     setStudentUser(studentData);
+    navigate('/student/dashboard');
   };
 
   // Auto-redirect authenticated students away from guest pages

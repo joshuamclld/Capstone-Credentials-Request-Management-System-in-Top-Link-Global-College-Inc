@@ -17,11 +17,11 @@
         @vite(['resources/css/app.css', 'resources/js/app.jsx'])
 
         @php
-            $onlinePayment = \App\Models\SystemSetting::getValue('enable_online_payment', 'true');
+            $onlineEnabled = Illuminate\Support\Facades\Cache::get('enable_online_payment', true);
         @endphp
         <script>
             window.CRMS_SETTINGS = {
-                enable_online_payment: {{ $onlinePayment === 'true' || $onlinePayment === true ? 'true' : 'false' }},
+                enable_online_payment: {{ $onlineEnabled ? 'true' : 'false' }},
             };
         </script>
     </head>

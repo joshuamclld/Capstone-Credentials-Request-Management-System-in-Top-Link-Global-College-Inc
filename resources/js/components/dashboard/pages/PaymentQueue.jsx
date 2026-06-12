@@ -15,24 +15,23 @@ const tableHeaders = ['Tracking No.', 'Student Name', 'Requested Documents', 'Pa
 const filterOptions = ['All', 'Cash Payments', 'Online Payments'];
 
 export default function PaymentQueue({ user, onLogout, onNavigate }) {
+    const ITEMS_PER_PAGE = 10;
     const [query, setQuery] = useState('');
     const [filter, setFilter] = useState('All');
-    const [requests, setRequests] = useState([]);
+    const [allRequests, setAllRequests] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [page, setPage] = useState(1);
-    const [pagination, setPagination] = useState(null);
 
-    const fetchData = (p) => {
+    const fetchData = () => {
         setLoading(true);
-        fetch(`/admin/payments-data?page=${p}&payment_status=pending`, { credentials: 'same-origin' })
+        fetch(`/admin/payments-data?per_page=9999&payment_status=pending`, { credentials: 'same-origin' })
             .then((res) => {
                 if (!res.ok) throw new Error('Failed to fetch');
                 return res.json();
             })
             .then((json) => {
-                setRequests(json.requests);
-                setPagination(json.pagination);
+                setAllRequests(json.requests);
                 setLoading(false);
             })
             .catch((err) => {
@@ -42,22 +41,35 @@ export default function PaymentQueue({ user, onLogout, onNavigate }) {
     };
 
     useEffect(() => {
-        fetchData(page);
-    }, [page]);
+        fetchData();
+    }, []);
 
-    const handlePageChange = (newPage) => {
-        if (newPage < 1 || (pagination && newPage > pagination.last_page)) return;
-        setPage(newPage);
-    };
+    const sortedRequests = [...allRequests].sort((a, b) => {
+        if (a.status === 'Cancelled' && b.status !== 'Cancelled') return 1;
+        if (a.status !== 'Cancelled' && b.status === 'Cancelled') return -1;
+        return 0;
+    });
 
-    const filtered = requests.filter((req) => {
+    const filtered = sortedRequests.filter((req) => {
         const matchesSearch = req.student_name.toLowerCase().includes(query.toLowerCase()) ||
             req.tracking_number.toLowerCase().includes(query.toLowerCase());
         const matchesFilter = filter === 'All' ||
-            (filter === 'Cash Payments' && req.payment_status === 'unpaid') ||
+            (filter === 'Cash Payments' && req.payment_status === 'unpaid' && req.status !== 'Cancelled') ||
             (filter === 'Online Payments' && req.payment_status === 'pending_verification');
         return matchesSearch && matchesFilter;
     });
+
+    const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+    const pageRecords = filtered.slice(
+        (page - 1) * ITEMS_PER_PAGE,
+        page * ITEMS_PER_PAGE
+    );
+
+    const handlePageChange = (newPage) => {
+        if (newPage >= 1 && newPage <= totalPages) setPage(newPage);
+    };
+
+    useEffect(() => { setPage(1); }, [query, filter]);
 
     const renderRow = (req) => (
         <tr key={req.id} className="hover:bg-slate-50 transition-colors">
@@ -66,7 +78,7 @@ export default function PaymentQueue({ user, onLogout, onNavigate }) {
             <td className="px-6 py-4 text-slate-700 max-w-[180px] truncate" title={(req.document_names || []).join(', ')}>{(req.document_names || []).join(', ')}</td>
             <td className="px-6 py-4 text-xs text-slate-600 capitalize">{req.payment_method || 'N/A'}</td>
             <td className="px-6 py-4 text-sm font-medium text-slate-900">₱{(Number(req.total_fee) || 0).toFixed(2)}</td>
-            <td className="px-6 py-4"><StatusBadge status={req.payment_status} type="payment" /></td>
+            <td className="px-6 py-4"><StatusBadge status={req.status === 'Cancelled' ? 'cancelled' : req.payment_status} type="payment" /></td>
             <td className="px-6 py-4"><StatusBadge status={req.status} /></td>
             <td className="px-6 py-4 text-slate-500 text-xs">{req.created_at}</td>
             <td className="px-6 py-4">
@@ -135,14 +147,14 @@ export default function PaymentQueue({ user, onLogout, onNavigate }) {
                             />
                         }
                     >
-                        {filtered.map(renderRow)}
+                        {pageRecords.map(renderRow)}
                     </DashboardTable>
                 </div>
 
-                <div className="md:hidden">
-                    {filtered.length > 0 ? (
-                        <div className="divide-y divide-slate-100">
-                            {filtered.map((item) => (
+                        <div className="md:hidden">
+                            {pageRecords.length > 0 ? (
+                                <div className="divide-y divide-slate-100">
+                                    {pageRecords.map((item) => (
                                 <DashboardMobileCard
                                     key={item.id}
                                     title={item.tracking_number}
@@ -151,7 +163,7 @@ export default function PaymentQueue({ user, onLogout, onNavigate }) {
                                         { label: 'Documents', value: (item.document_names || []).join(', ') },
                                         { label: 'Method', value: item.payment_method || 'N/A' },
                                         { label: 'Fee', value: `₱${(Number(item.total_fee) || 0).toFixed(2)}` },
-                                        { label: 'Status', value: <StatusBadge status={item.payment_status} type="payment" /> },
+                                        { label: 'Status', value: <StatusBadge status={item.status === 'Cancelled' ? 'cancelled' : item.payment_status} type="payment" /> },
                                         { label: 'Request', value: <StatusBadge status={item.status} /> },
                                         { label: 'Date', value: item.created_at },
                                     ]}
@@ -171,15 +183,15 @@ export default function PaymentQueue({ user, onLogout, onNavigate }) {
 
                 <div className="hidden md:block px-6 py-4 border-t border-slate-100">
                     <DashboardPagination
-                        currentPage={pagination?.current_page || 1}
-                        lastPage={pagination?.last_page || 1}
+                        currentPage={page}
+                        lastPage={totalPages}
                         onPageChange={handlePageChange}
                     />
                 </div>
                 <div className="md:hidden px-4 py-3 border-t border-slate-100">
                     <DashboardPagination
-                        currentPage={pagination?.current_page || 1}
-                        lastPage={pagination?.last_page || 1}
+                        currentPage={page}
+                        lastPage={totalPages}
                         onPageChange={handlePageChange}
                     />
                 </div>

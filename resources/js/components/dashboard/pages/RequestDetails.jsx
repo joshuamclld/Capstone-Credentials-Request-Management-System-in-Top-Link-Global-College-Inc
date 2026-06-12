@@ -21,6 +21,7 @@ export default function RequestDetails({ user, onLogout, onNavigate }) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [saving, setSaving] = useState(false);
+    const [remarksSaving, setRemarksSaving] = useState(false);
     const [message, setMessage] = useState(null);
     const [sendingDigital, setSendingDigital] = useState(false);
     const [digitalFile, setDigitalFile] = useState(null);
@@ -87,6 +88,39 @@ export default function RequestDetails({ user, onLogout, onNavigate }) {
 
     const handleSave = () => doSave(status, remarks);
 
+    const handleSaveRemarks = () => {
+        if (remarksSaving) return;
+        setRemarksSaving(true);
+        setMessage(null);
+
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+        fetch(`/admin/api/requests/${id}`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({ remarks }),
+        })
+            .then((res) => res.json())
+            .then((data) => {
+                if (data.message) {
+                    setMessage({ type: 'success', text: 'Remarks saved successfully.' });
+                    setRequest(data.request);
+                    setRemarks(data.request.remarks || '');
+                } else {
+                    setMessage({ type: 'error', text: 'Failed to save remarks.' });
+                }
+                setRemarksSaving(false);
+            })
+            .catch(() => {
+                setMessage({ type: 'error', text: 'An error occurred while saving.' });
+                setRemarksSaving(false);
+            });
+    };
+
     const canSendDigital = ['Ready for Release', 'Claimed'].includes(request?.status);
 
     const handleSendDocument = () => {
@@ -121,7 +155,7 @@ export default function RequestDetails({ user, onLogout, onNavigate }) {
     };
 
     const statusCfg = (s) => getRequestStatusConfig(s);
-    const paymentCfg = (s) => getPaymentStatusConfig(s);
+    const paymentCfg = (s, reqStatus) => getPaymentStatusConfig(reqStatus === 'Cancelled' ? 'cancelled' : s);
 
     const paymentPaid = request?.payment_status === 'paid';
 
@@ -296,7 +330,16 @@ export default function RequestDetails({ user, onLogout, onNavigate }) {
                                     rows={4}
                                     className="w-full border border-slate-300 rounded-lg px-4 py-3 text-sm bg-white text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 resize-none"
                                 />
-                                <p className="text-[11px] text-slate-400 mt-1.5">Remarks are for internal registrar use only.</p>
+                                <div className="flex items-center justify-between mt-3">
+                                    <p className="text-[11px] text-slate-400">Remarks are for internal registrar use only.</p>
+                                    <button
+                                        onClick={handleSaveRemarks}
+                                        disabled={remarksSaving}
+                                        className="px-4 py-2 text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 disabled:bg-emerald-400 rounded-lg transition-colors cursor-pointer"
+                                    >
+                                        {remarksSaving ? 'Saving...' : 'Save Remarks'}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -318,8 +361,8 @@ export default function RequestDetails({ user, onLogout, onNavigate }) {
                                     </div>
                                     <div className="flex items-center justify-between">
                                         <span className="text-xs font-medium text-slate-500">Status</span>
-                                        <span className={`inline-block text-[11px] font-bold px-2.5 py-1 rounded-full border ${paymentCfg(request.payment_status).className}`}>
-                                            {paymentCfg(request.payment_status).label}
+                                        <span className={`inline-block text-[11px] font-bold px-2.5 py-1 rounded-full border ${paymentCfg(request.payment_status, request.status).className}`}>
+                                            {paymentCfg(request.payment_status, request.status).label}
                                         </span>
                                     </div>
                                     <div className="flex items-center justify-between">

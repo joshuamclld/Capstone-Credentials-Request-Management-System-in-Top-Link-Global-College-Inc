@@ -14,24 +14,23 @@ const tableHeaders = ['Reference No.', 'Student Name', 'Documents', 'Payment Sta
 const searchOptions = ['Student Name', 'Student ID', 'Reference Number'];
 
 export default function SearchRecords({ user, onLogout, onNavigate }) {
+    const ITEMS_PER_PAGE = 10;
     const [query, setQuery] = useState('');
     const [searchBy, setSearchBy] = useState('Student Name');
-    const [records, setRecords] = useState([]);
+    const [allRecords, setAllRecords] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [page, setPage] = useState(1);
-    const [pagination, setPagination] = useState(null);
 
-    const fetchData = (p) => {
+    const fetchData = () => {
         setLoading(true);
-        fetch(`/admin/requests-data?page=${p}`, { credentials: 'same-origin' })
+        fetch(`/admin/requests-data?per_page=9999`, { credentials: 'same-origin' })
             .then((res) => {
                 if (!res.ok) throw new Error('Failed to fetch');
                 return res.json();
             })
             .then((json) => {
-                setRecords(json.requests);
-                setPagination(json.pagination);
+                setAllRecords(json.requests);
                 setLoading(false);
             })
             .catch((err) => {
@@ -41,15 +40,10 @@ export default function SearchRecords({ user, onLogout, onNavigate }) {
     };
 
     useEffect(() => {
-        fetchData(page);
-    }, [page]);
+        fetchData();
+    }, []);
 
-    const handlePageChange = (newPage) => {
-        if (newPage < 1 || (pagination && newPage > pagination.last_page)) return;
-        setPage(newPage);
-    };
-
-    const filtered = records.filter((rec) => {
+    const filtered = allRecords.filter((rec) => {
         const q = query.toLowerCase();
         if (!q) return true;
         switch (searchBy) {
@@ -63,6 +57,18 @@ export default function SearchRecords({ user, onLogout, onNavigate }) {
                 return true;
         }
     });
+
+    const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+    const pageRecords = filtered.slice(
+        (page - 1) * ITEMS_PER_PAGE,
+        page * ITEMS_PER_PAGE
+    );
+
+    const handlePageChange = (newPage) => {
+        if (newPage >= 1 && newPage <= totalPages) setPage(newPage);
+    };
+
+    useEffect(() => { setPage(1); }, [query, searchBy]);
 
     const renderRow = (rec) => (
         <tr key={rec.id} className="hover:bg-slate-50 transition-colors">
@@ -149,14 +155,14 @@ export default function SearchRecords({ user, onLogout, onNavigate }) {
                             />
                         }
                     >
-                        {filtered.map(renderRow)}
+                        {pageRecords.map(renderRow)}
                     </DashboardTable>
                 </div>
 
-                <div className="md:hidden">
-                    {filtered.length > 0 ? (
-                        <div className="divide-y divide-slate-100">
-                            {filtered.map((item) => (
+                        <div className="md:hidden">
+                            {pageRecords.length > 0 ? (
+                                <div className="divide-y divide-slate-100">
+                                    {pageRecords.map((item) => (
                                 <DashboardMobileCard
                                     key={item.id}
                                     title={item.tracking_number}
@@ -181,8 +187,8 @@ export default function SearchRecords({ user, onLogout, onNavigate }) {
 
                 <div className="px-6 py-4 border-t border-slate-100">
                     <DashboardPagination
-                        currentPage={pagination?.current_page || 1}
-                        lastPage={pagination?.last_page || 1}
+                        currentPage={page}
+                        lastPage={totalPages}
                         onPageChange={handlePageChange}
                     />
                 </div>

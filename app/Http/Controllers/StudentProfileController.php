@@ -20,8 +20,7 @@ class StudentProfileController extends Controller
         return response()->json([
             'student' => $student->only([
                 'id', 'student_number', 'first_name', 'last_name',
-                'email', 'contact_number', 'address', 'course',
-                'year_level', 'section',
+                'email',
             ]),
         ]);
     }
@@ -38,8 +37,6 @@ class StudentProfileController extends Controller
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:students,email,' . $student->id,
-            'contact_number' => 'nullable|string|max:20',
-            'address' => 'nullable|string|max:500',
             'student_number' => 'required|string|max:50|unique:students,student_number,' . $student->id,
         ]);
 
@@ -49,8 +46,7 @@ class StudentProfileController extends Controller
             'message' => 'Profile updated successfully.',
             'student' => $student->fresh()->only([
                 'id', 'student_number', 'first_name', 'last_name',
-                'email', 'contact_number', 'address', 'course',
-                'year_level', 'section',
+                'email',
             ]),
         ]);
     }

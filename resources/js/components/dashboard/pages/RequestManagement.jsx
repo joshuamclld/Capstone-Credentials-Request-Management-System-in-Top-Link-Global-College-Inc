@@ -17,24 +17,23 @@ const filterOptions = [
 ];
 
 export default function RequestManagement({ user, onLogout, onNavigate }) {
+    const ITEMS_PER_PAGE = 10;
     const [query, setQuery] = useState('');
     const [filter, setFilter] = useState('All');
-    const [requests, setRequests] = useState([]);
+    const [allRequests, setAllRequests] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [page, setPage] = useState(1);
-    const [pagination, setPagination] = useState(null);
 
-    const fetchData = (p) => {
+    const fetchData = () => {
         setLoading(true);
-        fetch(`/admin/requests-data?page=${p}`, { credentials: 'same-origin' })
+        fetch(`/admin/requests-data?per_page=9999`, { credentials: 'same-origin' })
             .then((res) => {
                 if (!res.ok) throw new Error('Failed to fetch');
                 return res.json();
             })
             .then((json) => {
-                setRequests(json.requests);
-                setPagination(json.pagination);
+                setAllRequests(json.requests);
                 setLoading(false);
             })
             .catch((err) => {
@@ -44,13 +43,8 @@ export default function RequestManagement({ user, onLogout, onNavigate }) {
     };
 
     useEffect(() => {
-        fetchData(page);
-    }, [page]);
-
-    const handlePageChange = (newPage) => {
-        if (newPage < 1 || (pagination && newPage > pagination.last_page)) return;
-        setPage(newPage);
-    };
+        fetchData();
+    }, []);
 
     const statusFilterMap = {
         'Pending': (req) => req.status === 'Pending',
@@ -61,12 +55,24 @@ export default function RequestManagement({ user, onLogout, onNavigate }) {
         'Claimed': (req) => req.status === 'Claimed',
     };
 
-    const filtered = requests.filter((req) => {
+    const filtered = allRequests.filter((req) => {
         const matchesSearch = req.student_name.toLowerCase().includes(query.toLowerCase()) ||
             req.tracking_number.toLowerCase().includes(query.toLowerCase());
         const matchesFilter = filter === 'All' || (statusFilterMap[filter]?.(req) ?? false);
         return matchesSearch && matchesFilter;
     });
+
+    const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+    const pageRecords = filtered.slice(
+        (page - 1) * ITEMS_PER_PAGE,
+        page * ITEMS_PER_PAGE
+    );
+
+    const handlePageChange = (newPage) => {
+        if (newPage >= 1 && newPage <= totalPages) setPage(newPage);
+    };
+
+    useEffect(() => { setPage(1); }, [query, filter]);
 
     const renderRow = (req) => (
         <tr key={req.id} className="hover:bg-slate-50 transition-colors">
@@ -143,14 +149,14 @@ export default function RequestManagement({ user, onLogout, onNavigate }) {
                             />
                         }
                     >
-                        {filtered.map(renderRow)}
+                        {pageRecords.map(renderRow)}
                     </DashboardTable>
                 </div>
 
-                <div className="md:hidden">
-                    {filtered.length > 0 ? (
-                        <div className="divide-y divide-slate-100">
-                            {filtered.map((item) => (
+                        <div className="md:hidden">
+                            {pageRecords.length > 0 ? (
+                                <div className="divide-y divide-slate-100">
+                                    {pageRecords.map((item) => (
                                 <DashboardMobileCard
                                     key={item.id}
                                     title={item.tracking_number}
@@ -178,8 +184,8 @@ export default function RequestManagement({ user, onLogout, onNavigate }) {
 
                 <div className="px-6 py-4 border-t border-slate-100">
                     <DashboardPagination
-                        currentPage={pagination?.current_page || 1}
-                        lastPage={pagination?.last_page || 1}
+                        currentPage={page}
+                        lastPage={totalPages}
                         onPageChange={handlePageChange}
                     />
                 </div>

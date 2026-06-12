@@ -14,7 +14,7 @@ export default function StudentProfile({ student, onLogout, onNavigate, currentP
   const [showConfirm, setShowConfirm] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
 
-  const [form, setForm] = useState({ first_name: '', last_name: '', email: '', contact_number: '', address: '', student_number: '' });
+  const [form, setForm] = useState({ first_name: '', last_name: '', email: '', student_number: '' });
   const [passwordForm, setPasswordForm] = useState({ current_password: '', new_password: '', new_password_confirmation: '' });
 
   useEffect(() => {
@@ -23,7 +23,7 @@ export default function StudentProfile({ student, onLogout, onNavigate, currentP
       .then(data => {
         const s = data.student;
         setProfile(s);
-        setForm({ first_name: s.first_name || '', last_name: s.last_name || '', email: s.email || '', contact_number: s.contact_number || '', address: s.address || '', student_number: s.student_number || '' });
+        setForm({ first_name: s.first_name || '', last_name: s.last_name || '', email: s.email || '', student_number: s.student_number || '' });
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -156,7 +156,7 @@ export default function StudentProfile({ student, onLogout, onNavigate, currentP
             <div>
               <h2 className="text-lg sm:text-xl font-bold text-on-surface">{s?.last_name}, {s?.first_name}</h2>
               <p className="text-body-md text-on-surface-variant">{s?.student_number}</p>
-              {s?.course && <p className="text-body-sm text-on-surface-variant">{s.course}</p>}
+
             </div>
           </div>
         </div>
@@ -182,22 +182,10 @@ export default function StudentProfile({ student, onLogout, onNavigate, currentP
               {errors.email && <p className="text-body-xs text-error mt-1">{errors.email[0]}</p>}
             </div>
             <div>
-              <label className={labelClass}>Contact Number</label>
-              <input name="contact_number" type="text" value={form.contact_number} onChange={handleChange} placeholder="Optional" className={inputClass + (errors.contact_number ? ' ' + inputErrorClass : '')} />
-              {errors.contact_number && <p className="text-body-xs text-error mt-1">{errors.contact_number[0]}</p>}
-            </div>
-            <div>
               <label className={labelClass}>Student Number</label>
               <input name="student_number" type="text" value={form.student_number} onChange={handleChange} className={inputClass + (errors.student_number ? ' ' + inputErrorClass : '')} />
               {errors.student_number && <p className="text-body-xs text-error mt-1">{errors.student_number[0]}</p>}
             </div>
-            {profile?.address !== undefined && (
-              <div>
-                <label className={labelClass}>Address</label>
-                <textarea name="address" value={form.address} onChange={handleChange} placeholder="Optional" rows="2" className={inputClass + ' resize-none' + (errors.address ? ' ' + inputErrorClass : '')} />
-                {errors.address && <p className="text-body-xs text-error mt-1">{errors.address[0]}</p>}
-              </div>
-            )}
             <div className="pt-2">
               <button type="submit" disabled={saving} className="px-5 py-2.5 rounded-lg bg-primary text-on-primary font-bold text-label-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer">
                 {saving ? 'Saving...' : 'Update Profile'}

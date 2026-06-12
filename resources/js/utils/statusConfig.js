@@ -11,6 +11,7 @@ export const PAYMENT_STATUS_CONFIG = {
   pending_payment: { label: 'Pending Payment', className: 'bg-amber-50 text-amber-700 border-amber-200' },
   pending_verification: { label: 'Pending Verification', className: 'bg-orange-50 text-orange-700 border-orange-200' },
   paid: { label: 'Paid', className: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  cancelled: { label: 'Cancelled', className: 'bg-red-100 text-red-800 border-red-200' },
 };
 
 export const BOOLEAN_STATUS_CONFIG = {

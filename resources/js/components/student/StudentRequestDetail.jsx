@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FileText, BadgeCheck, Clock, PackageCheck, CheckCheck, AlertCircle, XCircle, ArrowLeft, Mail } from 'lucide-react';
 import StudentDashboardLayout from './StudentDashboardLayout';
+import RegistrarRemarksCard from './RegistrarRemarksCard';
 
 const STATUS_LABELS = {
   'Pending': { label: 'Pending', bg: 'bg-amber-100 text-amber-800 border-amber-300' },
@@ -298,12 +299,6 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
                     <span className="text-on-surface-variant font-medium">Processing Time:</span>
                     <span className="font-bold text-on-surface">{request.processing_days} Working Day(s)</span>
                   </div>
-                  {request.remarks && (
-                    <div className="flex justify-between border-b border-outline-variant pb-2">
-                      <span className="text-on-surface-variant font-medium">Remarks:</span>
-                      <span className="font-bold text-on-surface text-right">{request.remarks}</span>
-                    </div>
-                  )}
                   <div className="flex justify-between border-b border-outline-variant pb-2">
                     <span className="text-on-surface-variant font-medium">Payment Method:</span>
                     <span className="font-bold text-on-surface">{request.payment_method === 'cash' ? 'Cash Payment' : request.payment_method === 'online' ? 'Online Payment' : request.payment_method}</span>
@@ -357,6 +352,8 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
                   )}
                 </div>
               </div>
+
+              <RegistrarRemarksCard remarks={request.remarks} />
             </div>
 
             <div className="lg:col-span-5">

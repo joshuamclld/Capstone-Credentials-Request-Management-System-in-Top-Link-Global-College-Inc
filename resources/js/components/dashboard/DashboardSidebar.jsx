@@ -13,17 +13,20 @@ export default function DashboardSidebar({ items, currentUser, sidebarOpen, onCl
     };
 
     return (
-        <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-white border-r border-emerald-100 flex flex-col transition-transform duration-300 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-            <div className="px-6 py-6 border-b border-emerald-100">
+        <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-primary border-r border-primary-container flex flex-col transition-transform duration-300 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+            <div className="px-6 py-6 border-b border-primary-container">
                 <div className="flex items-center gap-3">
                     <img
                         alt="TLGC Logo"
-                        className="w-10 h-10 object-contain shrink-0"
+                        className="w-10 h-10 object-contain"
                         src="/images/logo.png"
+                        onError={(e) => {
+                            e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24' fill='%23154412'%3E%3Cpath d='M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72z'/%3E%3C/svg%3E";
+                        }}
                     />
                     <div>
-                        <h1 className="text-sm font-bold text-emerald-900 leading-tight">Top Link Global College</h1>
-                        <p className="text-[10px] text-emerald-600 uppercase tracking-wider font-medium">Credentials Management</p>
+                        <h1 className="text-sm font-bold text-on-primary leading-tight">Top Link Global College</h1>
+                        <p className="text-[10px] text-on-primary/70 uppercase tracking-wider font-medium">Credentials Management</p>
                     </div>
                 </div>
             </div>
@@ -41,8 +44,8 @@ export default function DashboardSidebar({ items, currentUser, sidebarOpen, onCl
                             }
                         }}
                         className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive(item)
-                            ? 'bg-emerald-50 text-emerald-800 font-semibold'
-                            : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                            ? 'bg-white/10 text-white font-semibold'
+                            : 'text-on-primary/70 hover:bg-primary/20 hover:text-on-primary'
                             }`}
                     >
                         <item.icon className="w-4 h-4 shrink-0" />
@@ -51,18 +54,18 @@ export default function DashboardSidebar({ items, currentUser, sidebarOpen, onCl
                 ))}
             </nav>
 
-            <div className="px-4 py-4 border-t border-emerald-100">
+            <div className="px-4 py-4 border-t border-primary-container">
                 <div className="flex items-center gap-3 px-4 py-2">
-                    <div className="w-8 h-8 rounded-full bg-emerald-700 text-white flex items-center justify-center text-xs font-bold shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center text-xs font-bold shrink-0">
                         {adminName.charAt(0)}
                     </div>
                     <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-slate-900 truncate">{adminName}</p>
-                        <p className="text-[11px] text-slate-500 truncate">{adminEmail || 'Administrator'}</p>
+                        <p className="text-sm font-medium text-on-primary truncate">{adminName}</p>
+                        <p className="text-[11px] text-on-primary/70 truncate">{adminEmail || 'Administrator'}</p>
                     </div>
                     <button
                         onClick={onLogout}
-                        className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors cursor-pointer shrink-0 text-xs"
+                        className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-red-300 hover:bg-red-500/20 transition-colors cursor-pointer shrink-0 text-xs"
                     >
                         <LogOut className="w-4 h-4" />
                         Sign Out

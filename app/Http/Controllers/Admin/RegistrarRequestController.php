@@ -17,7 +17,7 @@ class RegistrarRequestController extends Controller
 {
     public function getRequestsData(Request $request): JsonResponse
     {
-        $perPage = min(max((int) $request->query('per_page', 10), 1), 50);
+        $perPage = max((int) $request->query('per_page', 10), 1);
 
         $stats = [
             'total' => StudentRequest::count(),
@@ -134,20 +134,20 @@ class RegistrarRequestController extends Controller
         }
 
         $validated = $request->validate([
-            'status' => 'required|string|in:Pending,Processing,Ready for Release,Claimed',
+            'status' => 'nullable|string|in:Pending,Processing,Ready for Release,Claimed',
             'remarks' => 'nullable|string|max:1000',
         ]);
 
-        $allowedTransitions = [
-            'Pending' => 'Processing',
-            'Processing' => 'Ready for Release',
-            'Ready for Release' => 'Claimed',
-        ];
-
-        $newStatus = $validated['status'];
         $currentStatus = $studentRequest->status;
+        $newStatus = $validated['status'] ?? $currentStatus;
 
-        if ($currentStatus !== $newStatus) {
+        if ($newStatus !== $currentStatus) {
+            $allowedTransitions = [
+                'Pending' => 'Processing',
+                'Processing' => 'Ready for Release',
+                'Ready for Release' => 'Claimed',
+            ];
+
             if (!isset($allowedTransitions[$currentStatus]) || $allowedTransitions[$currentStatus] !== $newStatus) {
                 return response()->json([
                     'message' => 'Invalid request status transition.',
@@ -169,12 +169,12 @@ class RegistrarRequestController extends Controller
 
         $studentRequest->save();
 
-        if ($currentStatus !== $newStatus) {
+        if ($newStatus !== $currentStatus) {
             Notification::notifyRole('admin', 'status_update', 'Request Status Updated', "Request {$studentRequest->tracking_number} moved to {$newStatus}", (string) $studentRequest->id, "/admin/requests/{$studentRequest->id}", auth()->id());
         }
 
         AuditLog::create([
-            'action' => $currentStatus !== $newStatus ? 'update_status' : 'update_remarks',
+            'action' => $newStatus !== $currentStatus ? 'update_status' : 'update_remarks',
             'performed_by' => auth()->user()->name,
             'performed_by_id' => auth()->id(),
             'target_type' => 'StudentRequest',

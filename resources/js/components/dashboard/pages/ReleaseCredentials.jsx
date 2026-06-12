@@ -12,23 +12,22 @@ import { registrarSidebarItems } from '../config/sidebarItems';
 const tableHeaders = ['Reference No.', 'Student Name', 'Documents', 'Status', 'Date Requested', 'Date Claimed'];
 
 export default function ReleaseCredentials({ user, onLogout, onNavigate }) {
+    const ITEMS_PER_PAGE = 10;
     const [query, setQuery] = useState('');
-    const [requests, setRequests] = useState([]);
+    const [allRequests, setAllRequests] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [page, setPage] = useState(1);
-    const [pagination, setPagination] = useState(null);
 
-    const fetchData = (p) => {
+    const fetchData = () => {
         setLoading(true);
-        fetch(`/admin/requests-data?page=${p}&status=claimed`, { credentials: 'same-origin' })
+        fetch(`/admin/requests-data?per_page=9999&status=claimed`, { credentials: 'same-origin' })
             .then((res) => {
                 if (!res.ok) throw new Error('Failed to fetch');
                 return res.json();
             })
             .then((json) => {
-                setRequests(json.requests);
-                setPagination(json.pagination);
+                setAllRequests(json.requests);
                 setLoading(false);
             })
             .catch((err) => {
@@ -38,17 +37,25 @@ export default function ReleaseCredentials({ user, onLogout, onNavigate }) {
     };
 
     useEffect(() => {
-        fetchData(page);
-    }, [page]);
+        fetchData();
+    }, []);
 
-    const handlePageChange = (np) => {
-        if (np >= 1 && pagination && np <= pagination.last_page) setPage(np);
-    };
-
-    const filtered = requests.filter((req) =>
+    const filtered = allRequests.filter((req) =>
         req.student_name.toLowerCase().includes(query.toLowerCase()) ||
         req.tracking_number.toLowerCase().includes(query.toLowerCase())
     );
+
+    const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+    const pageRecords = filtered.slice(
+        (page - 1) * ITEMS_PER_PAGE,
+        page * ITEMS_PER_PAGE
+    );
+
+    const handlePageChange = (np) => {
+        if (np >= 1 && np <= totalPages) setPage(np);
+    };
+
+    useEffect(() => { setPage(1); }, [query]);
 
     const renderRow = (req) => (
         <tr key={req.id} className="hover:bg-slate-50 transition-colors">
@@ -107,14 +114,14 @@ export default function ReleaseCredentials({ user, onLogout, onNavigate }) {
                             />
                         }
                     >
-                        {filtered.map(renderRow)}
+                        {pageRecords.map(renderRow)}
                     </DashboardTable>
                 </div>
 
-                <div className="md:hidden">
-                    {filtered.length > 0 ? (
-                        <div className="divide-y divide-slate-100">
-                            {filtered.map((item) => (
+                        <div className="md:hidden">
+                            {pageRecords.length > 0 ? (
+                                <div className="divide-y divide-slate-100">
+                                    {pageRecords.map((item) => (
                                 <DashboardMobileCard
                                     key={item.id}
                                     title={item.tracking_number}
@@ -136,16 +143,12 @@ export default function ReleaseCredentials({ user, onLogout, onNavigate }) {
                     )}
                 </div>
 
-                {pagination && (
-                    <div className="hidden md:block px-6 py-4 border-t border-slate-100">
-                        <DashboardPagination currentPage={pagination.current_page} lastPage={pagination.last_page} onPageChange={handlePageChange} />
-                    </div>
-                )}
-                {pagination && (
-                    <div className="md:hidden px-4 py-3 border-t border-slate-100">
-                        <DashboardPagination currentPage={pagination.current_page} lastPage={pagination.last_page} onPageChange={handlePageChange} />
-                    </div>
-                )}
+                <div className="hidden md:block px-6 py-4 border-t border-slate-100">
+                    <DashboardPagination currentPage={page} lastPage={totalPages} onPageChange={handlePageChange} />
+                </div>
+                <div className="md:hidden px-4 py-3 border-t border-slate-100">
+                    <DashboardPagination currentPage={page} lastPage={totalPages} onPageChange={handlePageChange} />
+                </div>
             </section>
         </DashboardLayout>
     );

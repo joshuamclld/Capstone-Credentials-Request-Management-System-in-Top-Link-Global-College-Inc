@@ -7,17 +7,18 @@ use App\Models\AuditLog;
 use App\Models\Document;
 use App\Models\Notification;
 use App\Models\StudentRequest;
-use App\Models\SystemSetting;
+
 use App\Services\PayMongoService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class CashierPaymentController extends Controller
 {
     public function getPaymentsData(Request $request): JsonResponse
     {
-        $perPage = min(max((int) $request->query('per_page', 10), 1), 50);
+        $perPage = max((int) $request->query('per_page', 10), 1);
 
         $dailyPaid = StudentRequest::where('payment_status', 'paid')
             ->whereDate(\DB::raw('COALESCE(verified_at, created_at)'), today());
@@ -229,10 +230,10 @@ class CashierPaymentController extends Controller
 
     public function getOnlinePaymentStatus(): JsonResponse
     {
-        $enabled = SystemSetting::getValue('enable_online_payment', 'true');
+        $enabled = Cache::get('enable_online_payment', true);
 
         return response()->json([
-            'enabled' => $enabled === 'true' || $enabled === true,
+            'enabled' => $enabled,
         ]);
     }
 
@@ -240,7 +241,7 @@ class CashierPaymentController extends Controller
     {
         $request->validate(['enabled' => 'required|boolean']);
 
-        SystemSetting::setValue('enable_online_payment', $request->input('enabled') ? 'true' : 'false');
+        Cache::forever('enable_online_payment', $request->input('enabled'));
 
         return response()->json([
             'success' => true,

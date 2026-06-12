@@ -21,12 +21,12 @@ const statDefs = [
 const tableHeaders = ['Tracking No.', 'Student Name', 'Payment Method', 'Total Fee', 'Payment Status', 'Request Status', 'Action'];
 
 export default function CashierDashboard({ user, onLogout, onNavigate }) {
+    const ITEMS_PER_PAGE = 10;
     const [query, setQuery] = useState('');
     const [data, setData] = useState({ stats: null, requests: [] });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [page, setPage] = useState(1);
-    const [pagination, setPagination] = useState(null);
     const [onlinePaymentEnabled, setOnlinePaymentEnabled] = useState(true);
     const [toggling, setToggling] = useState(false);
 
@@ -37,16 +37,15 @@ export default function CashierDashboard({ user, onLogout, onNavigate }) {
             .catch(() => { });
     };
 
-    const fetchData = (p) => {
+    const fetchData = () => {
         setLoading(true);
-        fetch(`/admin/payments-data?page=${p}`, { credentials: 'same-origin' })
+        fetch(`/admin/payments-data?per_page=9999`, { credentials: 'same-origin' })
             .then((res) => {
                 if (!res.ok) throw new Error('Failed to fetch');
                 return res.json();
             })
             .then((json) => {
                 setData(json);
-                setPagination(json.pagination);
                 setLoading(false);
             })
             .catch((err) => {
@@ -56,14 +55,32 @@ export default function CashierDashboard({ user, onLogout, onNavigate }) {
     };
 
     useEffect(() => {
-        fetchData(page);
+        fetchData();
         fetchOnlinePaymentStatus();
-    }, [page]);
+    }, []);
+
+    const sortedRequests = [...data.requests].sort((a, b) => {
+        if (a.status === 'Cancelled' && b.status !== 'Cancelled') return 1;
+        if (a.status !== 'Cancelled' && b.status === 'Cancelled') return -1;
+        return 0;
+    });
+
+    const filtered = sortedRequests.filter((req) =>
+        req.student_name.toLowerCase().includes(query.toLowerCase()) ||
+        req.tracking_number.toLowerCase().includes(query.toLowerCase())
+    );
+
+    const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+    const pageRecords = filtered.slice(
+        (page - 1) * ITEMS_PER_PAGE,
+        page * ITEMS_PER_PAGE
+    );
 
     const handlePageChange = (newPage) => {
-        if (newPage < 1 || (pagination && newPage > pagination.last_page)) return;
-        setPage(newPage);
+        if (newPage >= 1 && newPage <= totalPages) setPage(newPage);
     };
+
+    useEffect(() => { setPage(1); }, [query]);
 
     const handleToggleOnlinePayment = () => {
         if (toggling) return;
@@ -86,18 +103,13 @@ export default function CashierDashboard({ user, onLogout, onNavigate }) {
             .finally(() => setToggling(false));
     };
 
-    const filtered = data.requests.filter((req) =>
-        req.student_name.toLowerCase().includes(query.toLowerCase()) ||
-        req.tracking_number.toLowerCase().includes(query.toLowerCase())
-    );
-
     const renderRow = (req) => (
         <tr key={req.id} className="hover:bg-slate-50 transition-colors">
             <td className="px-6 py-4 font-mono text-xs font-medium text-emerald-700">{req.tracking_number}</td>
             <td className="px-6 py-4 font-medium text-slate-900">{req.student_name}</td>
             <td className="px-6 py-4 text-xs text-slate-600 capitalize">{req.payment_method || 'N/A'}</td>
             <td className="px-6 py-4 text-sm font-medium text-slate-900">₱{(Number(req.total_fee) || 0).toFixed(2)}</td>
-            <td className="px-6 py-4"><span className={`inline-block text-[11px] font-bold px-2.5 py-1 rounded-full border ${getPaymentStatusConfig(req.payment_status).className}`}>{getPaymentStatusConfig(req.payment_status).label}</span></td>
+            <td className="px-6 py-4"><span className={`inline-block text-[11px] font-bold px-2.5 py-1 rounded-full border ${getPaymentStatusConfig(req.status === 'Cancelled' ? 'cancelled' : req.payment_status).className}`}>{getPaymentStatusConfig(req.status === 'Cancelled' ? 'cancelled' : req.payment_status).label}</span></td>
             <td className="px-6 py-4"><StatusBadge status={req.status} /></td>
             <td className="px-6 py-4">
                 <button
@@ -216,14 +228,14 @@ export default function CashierDashboard({ user, onLogout, onNavigate }) {
                                     />
                                 }
                             >
-                                {filtered.map(renderRow)}
+                                {pageRecords.map(renderRow)}
                             </DashboardTable>
                         </div>
 
                         <div className="md:hidden">
-                            {filtered.length > 0 ? (
+                            {pageRecords.length > 0 ? (
                                 <div className="divide-y divide-slate-100">
-                                    {filtered.map((item) => (
+                                    {pageRecords.map((item) => (
                                         <DashboardMobileCard
                                             key={item.id}
                                             title={item.tracking_number}
@@ -231,7 +243,7 @@ export default function CashierDashboard({ user, onLogout, onNavigate }) {
                                             metadata={[
                                                 { label: 'Method', value: item.payment_method || 'N/A' },
                                                 { label: 'Fee', value: `₱${(Number(item.total_fee) || 0).toFixed(2)}` },
-                                                { label: 'Status', value: <span className={`inline-block text-[11px] font-bold px-2.5 py-1 rounded-full border ${getPaymentStatusConfig(item.payment_status).className}`}>{getPaymentStatusConfig(item.payment_status).label}</span> },
+                                                { label: 'Status', value: <span className={`inline-block text-[11px] font-bold px-2.5 py-1 rounded-full border ${getPaymentStatusConfig(item.status === 'Cancelled' ? 'cancelled' : item.payment_status).className}`}>{getPaymentStatusConfig(item.status === 'Cancelled' ? 'cancelled' : item.payment_status).label}</span> },
                                                 { label: 'Request', value: <StatusBadge status={item.status} /> },
                                             ]}
                                             actionLabel="View Payment"
@@ -250,15 +262,15 @@ export default function CashierDashboard({ user, onLogout, onNavigate }) {
 
                         <div className="hidden md:block px-6 py-4 border-t border-slate-100">
                             <DashboardPagination
-                                currentPage={pagination?.current_page || 1}
-                                lastPage={pagination?.last_page || 1}
+                                currentPage={page}
+                                lastPage={totalPages}
                                 onPageChange={handlePageChange}
                             />
                         </div>
                         <div className="md:hidden px-4 py-3 border-t border-slate-100">
                             <DashboardPagination
-                                currentPage={pagination?.current_page || 1}
-                                lastPage={pagination?.last_page || 1}
+                                currentPage={page}
+                                lastPage={totalPages}
                                 onPageChange={handlePageChange}
                             />
                         </div>

@@ -47,14 +47,14 @@ export default function StudentNavbar({ student, onLogout, onNavigate, onOpenAut
           <div className="flex items-center gap-3 cursor-pointer" onClick={(e) => { e.preventDefault(); onNavigate('/'); }}>
             <img
               alt="TLGC Logo"
-              className="max-md:h-10 h-14 w-auto object-contain"
+              className="max-md:h-10 h-10 w-auto object-contain"
               src="/images/logo.png"
               onError={(e) => {
                 e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 24 24' fill='%231a6e38'%3E%3Cpath d='M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72z'/%3E%3C/svg%3E";
               }}
             />
             <div className="flex flex-col">
-              <span className="text-headline-sm font-bold text-primary leading-tight">TLGC</span>
+              <span className="text-headline-xs font-bold text-primary leading-tight">Top Link Global College</span>
               <span className="max-sm:hidden text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider">Credentials Request Management System</span>
             </div>
           </div>
@@ -113,13 +113,13 @@ export default function StudentNavbar({ student, onLogout, onNavigate, onOpenAut
 
         {/* Drawer panel */}
         <div
-          className={`fixed top-0 left-0 h-screen w-[85%] max-w-sm bg-white shadow-2xl transition-transform duration-300 flex flex-col ${menuOpen ? 'translate-x-0' : '-translate-x-full'
+          className={`fixed top-0 left-0 h-screen w-[85%] max-w-sm bg-primary shadow-2xl transition-transform duration-300 flex flex-col ${menuOpen ? 'translate-x-0' : '-translate-x-full'
             }`}
         >
           {/* Drawer header */}
           <div className="flex justify-end px-5 py-4 shrink-0">
-            <button onClick={close} className="h-10 w-10 rounded-full hover:bg-surface-container-high flex items-center justify-center transition-colors cursor-pointer" aria-label="Close menu">
-              <X className="w-5 h-5 text-on-surface-variant" />
+            <button onClick={close} className="h-10 w-10 rounded-full hover:bg-primary/20 flex items-center justify-center transition-colors cursor-pointer" aria-label="Close menu">
+              <X className="w-5 h-5 text-on-primary/70" />
             </button>
           </div>
 
@@ -129,7 +129,7 @@ export default function StudentNavbar({ student, onLogout, onNavigate, onOpenAut
               {student ? (
                 <button
                   onClick={() => { close(); onNavigate('/student/dashboard'); }}
-                  className={`w-full text-left px-4 py-3 rounded-xl text-body-md font-medium transition-all cursor-pointer ${currentPath === '/student/dashboard' ? 'text-primary bg-primary/10 font-bold' : 'text-on-surface hover:bg-surface-container-high'
+                  className={`w-full text-left px-4 py-3 rounded-xl text-body-md font-medium transition-all cursor-pointer ${currentPath === '/student/dashboard' ? 'text-white bg-white/10 font-semibold' : 'text-on-primary/70 hover:bg-primary/20'
                     }`}
                 >
                   Dashboard
@@ -137,7 +137,7 @@ export default function StudentNavbar({ student, onLogout, onNavigate, onOpenAut
               ) : (
                 <button
                   onClick={() => { close(); onNavigate('/'); }}
-                  className={`w-full text-left px-4 py-3 rounded-xl text-body-md font-medium transition-all cursor-pointer ${currentPath === '/' ? 'text-primary bg-primary/10 font-bold' : 'text-on-surface hover:bg-surface-container-high'
+                  className={`w-full text-left px-4 py-3 rounded-xl text-body-md font-medium transition-all cursor-pointer ${currentPath === '/' ? 'text-white bg-white/10 font-semibold' : 'text-on-primary/70 hover:bg-primary/20'
                     }`}
                 >
                   Home
@@ -146,7 +146,7 @@ export default function StudentNavbar({ student, onLogout, onNavigate, onOpenAut
               {student && (
                 <button
                   onClick={() => { close(); onNavigate('/request'); }}
-                  className={`w-full text-left px-4 py-3 rounded-xl text-body-md font-medium transition-all cursor-pointer ${currentPath === '/request' ? 'text-primary bg-primary/10 font-bold' : 'text-on-surface hover:bg-surface-container-high'
+                  className={`w-full text-left px-4 py-3 rounded-xl text-body-md font-medium transition-all cursor-pointer ${currentPath === '/request' ? 'text-white bg-white/10 font-semibold' : 'text-on-primary/70 hover:bg-primary/20'
                     }`}
                 >
                   Request Documents
@@ -155,7 +155,7 @@ export default function StudentNavbar({ student, onLogout, onNavigate, onOpenAut
               {student && (
                 <button
                   onClick={() => { close(); onNavigate('/student/requests'); }}
-                  className={`w-full text-left px-4 py-3 rounded-xl text-body-md font-medium transition-all cursor-pointer ${currentPath === '/student/requests' ? 'text-primary bg-primary/10 font-bold' : 'text-on-surface hover:bg-surface-container-high'
+                  className={`w-full text-left px-4 py-3 rounded-xl text-body-md font-medium transition-all cursor-pointer ${currentPath === '/student/requests' ? 'text-white bg-white/10 font-semibold' : 'text-on-primary/70 hover:bg-primary/20'
                     }`}
                 >
                   My Requests
@@ -163,7 +163,7 @@ export default function StudentNavbar({ student, onLogout, onNavigate, onOpenAut
               )}
               <button
                 onClick={() => { close(); onNavigate('/track'); }}
-                className={`w-full text-left px-4 py-3 rounded-xl text-body-md font-medium transition-all cursor-pointer ${currentPath === '/track' ? 'text-primary bg-primary/10 font-bold' : 'text-on-surface hover:bg-surface-container-high'
+                className={`w-full text-left px-4 py-3 rounded-xl text-body-md font-medium transition-all cursor-pointer ${currentPath === '/track' ? 'text-white bg-white/10 font-semibold' : 'text-on-primary/70 hover:bg-primary/20'
                   }`}
               >
                 Track Request
@@ -172,16 +172,16 @@ export default function StudentNavbar({ student, onLogout, onNavigate, onOpenAut
           </div>
 
           {/* Bottom section */}
-          <div className="shrink-0 border-t border-outline-variant px-5 py-4 space-y-1">
+          <div className="shrink-0 border-t border-primary-container px-5 py-4 space-y-1">
             {student ? (
               <>
-                <div className="px-4 py-2 border-b border-outline-variant mb-1">
-                  <p className="font-bold text-body-md text-on-surface truncate">{student.first_name} {student.last_name}</p>
-                  <p className="text-label-sm text-on-surface-variant truncate">{student.email}</p>
+                <div className="px-4 py-2 border-b border-primary-container mb-1">
+                  <p className="font-bold text-body-md text-on-primary truncate">{student.first_name} {student.last_name}</p>
+                  <p className="text-label-sm text-on-primary/70 truncate">{student.email}</p>
                 </div>
                 <button
                   onClick={() => { close(); onLogout(); }}
-                  className="w-full text-left px-4 py-3 rounded-xl text-body-md font-medium text-error hover:bg-error/5 transition-colors cursor-pointer"
+                  className="w-full text-left px-4 py-3 rounded-xl text-body-md font-medium text-red-300 hover:bg-red-500/20 transition-colors cursor-pointer"
                 >
                   Sign Out
                 </button>
@@ -189,7 +189,7 @@ export default function StudentNavbar({ student, onLogout, onNavigate, onOpenAut
             ) : (
               <button
                 onClick={() => { close(); onOpenAuth('login'); }}
-                className="w-full text-left px-4 py-3 rounded-xl text-body-md font-medium text-on-surface hover:bg-surface-container-high transition-colors cursor-pointer"
+                className="w-full text-left px-4 py-3 rounded-xl text-body-md font-medium text-on-primary hover:bg-primary/20 transition-colors cursor-pointer"
               >
                 Sign In
               </button>

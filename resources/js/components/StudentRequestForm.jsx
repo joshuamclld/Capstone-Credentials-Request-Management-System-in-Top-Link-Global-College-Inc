@@ -44,6 +44,7 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
 
   const [documents, setDocuments] = useState([]);
   const [docsLoading, setDocsLoading] = useState(true);
+  const [onlinePaymentEnabled, setOnlinePaymentEnabled] = useState(true);
 
   const isAuthenticated = Boolean(student);
 
@@ -62,7 +63,8 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
     fetch('/documents', { headers: { 'Accept': 'application/json' } })
       .then(res => res.json())
       .then(data => {
-        setDocuments(data);
+        setDocuments(Array.isArray(data) ? data : data.documents);
+        setOnlinePaymentEnabled(data.online_payment_enabled ?? true);
         setDocsLoading(false);
       })
       .catch(() => setDocsLoading(false));
@@ -728,7 +730,7 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
                               </div>
                           </div>
                         </div>
-                        {window.CRMS_SETTINGS?.enable_online_payment !== false && (
+                        {onlinePaymentEnabled && (
                           <div
                             onClick={() => setPaymentMethod('online')}
                             className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${paymentMethod === 'online' ? 'border-primary bg-surface-container-low' : 'border-outline-variant bg-surface-container-lowest'
