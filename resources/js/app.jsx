@@ -232,13 +232,13 @@ function App() {
     const isRegistrarPath = registrarPaths.some(p => currentPath === p || (currentPath.startsWith('/admin/requests/') && p === '/admin/requests'));
     const isCashierPath = currentPath.startsWith('/cashier');
 
-    if (isRegistrarPath && user.role !== 'admin') {
+    if (isRegistrarPath && user.role !== 'registrar') {
       const fallback = user.role === 'system_admin' ? '/system-admin-dashboard' : '/cashier-dashboard';
       setTimeout(() => navigate(fallback), 0);
       return null;
     }
 
-    if (isCashierPath && user.role !== 'cashier' && user.role !== 'admin') {
+    if (isCashierPath && user.role !== 'cashier' && user.role !== 'registrar') {
       const fallback = user.role === 'system_admin' ? '/system-admin-dashboard' : '/admin-dashboard';
       setTimeout(() => navigate(fallback), 0);
       return null;
@@ -246,13 +246,20 @@ function App() {
 
     const isSystemAdminPath = currentPath.startsWith('/system-admin-') || currentPath.startsWith('/system-admin/');
     if (isSystemAdminPath && user.role !== 'system_admin') {
-      const fallback = user.role === 'admin' ? '/admin-dashboard' : '/cashier-dashboard';
+      const fallback = user.role === 'registrar' ? '/admin-dashboard' : '/cashier-dashboard';
       setTimeout(() => navigate(fallback), 0);
       return null;
     }
 
+    // Non-super-admin system_admin cannot access user management
+    const isUserMgmtPath = currentPath === '/system-admin/users' || currentPath.startsWith('/system-admin/users/');
+    if (isUserMgmtPath && user.role === 'system_admin' && !user.is_super_admin) {
+      setTimeout(() => navigate('/system-admin-dashboard'), 0);
+      return null;
+    }
+
     // Unknown role — redirect to login
-    if (user.role !== 'admin' && user.role !== 'cashier' && user.role !== 'system_admin') {
+    if (user.role !== 'registrar' && user.role !== 'cashier' && user.role !== 'system_admin') {
       setTimeout(() => navigate('/admin-login'), 0);
       return null;
     }

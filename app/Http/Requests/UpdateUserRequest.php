@@ -18,8 +18,9 @@ class UpdateUserRequest extends FormRequest
             'name' => 'sometimes|string|max:255',
             'email' => ['sometimes', 'email', 'max:255', Rule::unique('users', 'email')->ignore($this->route('id'))],
             'password' => 'nullable|string|min:8',
-            'role' => 'sometimes|string|in:admin,cashier,system_admin',
+            'role' => 'sometimes|string|in:registrar,cashier,system_admin',
             'is_active' => 'sometimes|boolean',
+            'is_super_admin' => 'sometimes|boolean',
             'contact_number' => 'nullable|string|max:20',
         ];
     }

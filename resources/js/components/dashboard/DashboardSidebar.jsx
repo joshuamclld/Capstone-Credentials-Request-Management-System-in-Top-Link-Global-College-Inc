@@ -12,6 +12,10 @@ export default function DashboardSidebar({ items, currentUser, sidebarOpen, onCl
         return false;
     };
 
+    const visibleItems = items.filter(
+        (item) => !item.superAdminOnly || currentUser?.is_super_admin,
+    );
+
     return (
         <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-primary border-r border-primary-container flex flex-col transition-transform duration-300 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
             <div className="px-6 py-6 border-b border-primary-container">
@@ -32,7 +36,7 @@ export default function DashboardSidebar({ items, currentUser, sidebarOpen, onCl
             </div>
 
             <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
-                {items.map((item) => (
+                {visibleItems.map((item) => (
                     <a
                         key={item.label}
                         href={item.path || '#'}

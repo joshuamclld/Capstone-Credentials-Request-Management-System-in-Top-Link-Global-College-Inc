@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, Clock, CheckCircle, Search, CreditCard } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
 import DashboardLayout from '../DashboardLayout';
 import DashboardSearch from '../DashboardSearch';
 import DashboardTable from '../DashboardTable';

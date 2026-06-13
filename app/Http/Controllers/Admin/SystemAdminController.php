@@ -33,21 +33,6 @@ class SystemAdminController extends Controller
         ]);
     }
 
-    private function syncRole(User $user): void
-    {
-        $map = [
-            'admin' => 'registrar',
-            'cashier' => 'cashier',
-            'system_admin' => 'system_admin',
-        ];
-
-        $spatieRole = $map[$user->role] ?? null;
-
-        if ($spatieRole) {
-            $user->syncRoles([$spatieRole]);
-        }
-    }
-
     // ─── Dashboard ───────────────────────────────────────────────────────────
 
     public function dashboard(): JsonResponse
@@ -86,6 +71,11 @@ class SystemAdminController extends Controller
 
     public function getUsers(Request $request): JsonResponse
     {
+        $user = auth()->user();
+        if ($user->role === 'system_admin' && !$user->is_super_admin) {
+            return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
+        }
+
         $query = User::query();
 
         if ($search = $request->input('search')) {
@@ -115,43 +105,65 @@ class SystemAdminController extends Controller
 
     public function showUser(int $id): JsonResponse
     {
+        $authUser = auth()->user();
+        if ($authUser->role === 'system_admin' && !$authUser->is_super_admin) {
+            return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
+        }
+
         $user = User::findOrFail($id);
 
         return response()->json([
             'status' => 'success',
-            'data' => $user->only(['id', 'name', 'email', 'role', 'contact_number', 'is_active', 'created_at', 'updated_at']),
+            'data' => $user->only(['id', 'name', 'email', 'role', 'contact_number', 'is_active', 'is_super_admin', 'created_at', 'updated_at']),
             'request_count' => StudentRequest::where('verified_by_user_id', $user->id)->count(),
         ]);
     }
 
     public function storeUser(StoreUserRequest $request): JsonResponse
     {
+        $authUser = auth()->user();
+        if ($authUser->role === 'system_admin' && !$authUser->is_super_admin) {
+            return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
+        }
+
         $data = $request->validated();
         $data['password'] = Hash::make($data['password']);
         $data['email_verified_at'] = now();
+        $data['is_super_admin'] = false;
 
         $user = User::create($data);
-
-        $this->syncRole($user);
 
         $this->audit('create_user', 'User', $user->id, "Created user {$user->name} ({$user->email})");
 
         return response()->json([
             'status' => 'success',
             'message' => 'User created successfully.',
-            'data' => $user->only(['id', 'name', 'email', 'role', 'contact_number', 'is_active', 'created_at']),
+            'data' => $user->only(['id', 'name', 'email', 'role', 'contact_number', 'is_active', 'is_super_admin', 'created_at']),
         ], 201);
     }
 
     public function updateUser(UpdateUserRequest $request, int $id): JsonResponse
     {
+        $authUser = auth()->user();
+        if ($authUser->role === 'system_admin' && !$authUser->is_super_admin) {
+            return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
+        }
+
         $user = User::findOrFail($id);
 
-        if ($user->id === auth()->id() && $request->has('is_active') && !$request->input('is_active')) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'You cannot deactivate your own account.',
-            ], 422);
+        if ($user->id === auth()->id()) {
+            if ($request->has('is_active') && !$request->input('is_active')) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'You cannot deactivate your own account.',
+                ], 422);
+            }
+            if ($request->has('is_super_admin') && !$request->input('is_super_admin')) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'You cannot remove your own super admin privileges.',
+                ], 422);
+            }
         }
 
         $data = $request->validated();
@@ -164,19 +176,22 @@ class SystemAdminController extends Controller
 
         $user->update($data);
 
-        $this->syncRole($user);
-
         $this->audit('update_user', 'User', $user->id, "Updated user {$user->name} ({$user->email})");
 
         return response()->json([
             'status' => 'success',
             'message' => 'User updated successfully.',
-            'data' => $user->fresh()->only(['id', 'name', 'email', 'role', 'contact_number', 'is_active', 'created_at', 'updated_at']),
+            'data' => $user->fresh()->only(['id', 'name', 'email', 'role', 'contact_number', 'is_active', 'is_super_admin', 'created_at', 'updated_at']),
         ]);
     }
 
     public function deleteUser(int $id): JsonResponse
     {
+        $authUser = auth()->user();
+        if ($authUser->role === 'system_admin' && !$authUser->is_super_admin) {
+            return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
+        }
+
         $user = User::findOrFail($id);
 
         if ($user->id === auth()->id()) {
@@ -280,9 +295,12 @@ class SystemAdminController extends Controller
         $month = $request->input('month', date('Y-m'));
 
         $totalRequests = StudentRequest::count();
-        $totalPaid = StudentRequest::where('payment_status', 'paid')->count();
-        $totalRevenue = StudentRequest::where('payment_status', 'paid')->sum('total_fee');
-        $avgFee = StudentRequest::where('payment_status', 'paid')->avg('total_fee');
+        $totalPaid = StudentRequest::where('payment_status', 'paid')
+            ->whereRaw("DATE_FORMAT(created_at, '%Y-%m') = ?", [$month])->count();
+        $totalRevenue = StudentRequest::where('payment_status', 'paid')
+            ->whereRaw("DATE_FORMAT(created_at, '%Y-%m') = ?", [$month])->sum('total_fee');
+        $avgFee = StudentRequest::where('payment_status', 'paid')
+            ->whereRaw("DATE_FORMAT(created_at, '%Y-%m') = ?", [$month])->avg('total_fee');
 
         $monthlyRequests = StudentRequest::selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month, COUNT(*) as count")
             ->groupBy('month')

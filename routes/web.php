@@ -19,7 +19,7 @@ Route::get('/', function () {
 Route::get('/admin-login', function () {
     if (Auth::check()) {
         $role = Auth::user()->role;
-        if ($role === 'admin') return redirect('/admin-dashboard');
+        if ($role === 'registrar') return redirect('/admin-dashboard');
         if ($role === 'cashier') return redirect('/cashier-dashboard');
         if ($role === 'system_admin') return redirect('/system-admin-dashboard');
     }
@@ -42,7 +42,7 @@ Route::prefix('admin')->group(function () {
     Route::post('/logout', [AdminAuthController::class, 'logout'])
         ->middleware('auth');
 
-    Route::get('/check-auth', [AdminAuthController::class, 'checkAuth']);
+    Route::get('/check-auth', [AdminAuthController::class, 'checkAuth'])->middleware('throttle:60,1');
 
     // Notification routes
     Route::patch('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->middleware('auth')->whereNumber('id');
@@ -153,8 +153,8 @@ Route::prefix('student')->group(function () {
         ->middleware('throttle:5,1');
     Route::post('/reset-password', [StudentAuthController::class, 'resetPassword'])
         ->middleware('throttle:5,1');
-    Route::post('/logout', [StudentAuthController::class, 'logout']);
-    Route::get('/check', [StudentAuthController::class, 'check']);
+    Route::post('/logout', [StudentAuthController::class, 'logout'])->middleware('auth:student');
+    Route::get('/check', [StudentAuthController::class, 'check'])->middleware('throttle:60,1');
 
     // Student Request Management (authenticated)
     Route::middleware('auth:student')->group(function () {

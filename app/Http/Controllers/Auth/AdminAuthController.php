@@ -37,7 +37,7 @@ class AdminAuthController extends Controller
                 ], 403);
             }
 
-            if (!in_array($user->role, ['admin', 'cashier', 'system_admin'])) {
+            if (!in_array($user->role, ['registrar', 'cashier', 'system_admin'])) {
                 Auth::logout();
                 return response()->json([
                     'status' => 'error',
@@ -50,7 +50,7 @@ class AdminAuthController extends Controller
             return response()->json([
                 'status' => 'success',
                 'message' => 'Login successful',
-                'user' => $user->only(['id', 'name', 'email', 'role', 'contact_number', 'is_active']),
+                'user' => $user->only(['id', 'name', 'email', 'role', 'contact_number', 'is_active', 'is_super_admin']),
             ]);
         }
 
@@ -86,10 +86,10 @@ class AdminAuthController extends Controller
      */
     public function checkAuth(Request $request): JsonResponse
     {
-        if (Auth::check() && (Auth::user()->is_active ?? true) && in_array(Auth::user()->role, ['admin', 'cashier', 'system_admin'])) {
+        if (Auth::check() && (Auth::user()->is_active ?? true) && in_array(Auth::user()->role, ['registrar', 'cashier', 'system_admin'])) {
             return response()->json([
                 'status' => 'authenticated',
-                'user' => Auth::user()->only(['id', 'name', 'email', 'role', 'contact_number', 'is_active']),
+                'user' => Auth::user()->only(['id', 'name', 'email', 'role', 'contact_number', 'is_active', 'is_super_admin']),
             ]);
         }
 

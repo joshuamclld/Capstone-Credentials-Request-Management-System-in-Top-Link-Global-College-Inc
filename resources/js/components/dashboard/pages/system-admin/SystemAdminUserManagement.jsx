@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Eye, Edit, ToggleLeft, Plus, X, Check } from 'lucide-react';
+import { Users, Eye, Edit, ToggleLeft, Plus, X, Check, Shield, ShieldOff } from 'lucide-react';
 import DashboardLayout from '../../DashboardLayout';
 import DashboardSearch from '../../DashboardSearch';
 import DashboardTable from '../../DashboardTable';
@@ -14,14 +14,22 @@ import { systemAdminSidebarItems } from '../../config/sidebarItems';
 const tableHeaders = ['Name', 'Email', 'Role', 'Status', 'Date Created', 'Action'];
 
 const roleColors = {
-    admin: 'bg-blue-100 text-blue-800 border-blue-300',
+    registrar: 'bg-blue-100 text-blue-800 border-blue-300',
     cashier: 'bg-emerald-100 text-emerald-800 border-emerald-300',
     system_admin: 'bg-purple-100 text-purple-800 border-purple-300',
 };
 
-const roleFilterOptions = ['All', 'admin', 'cashier', 'system_admin'];
+const roleFilterOptions = ['All', 'registrar', 'cashier', 'system_admin'];
 
 export default function SystemAdminUserManagement({ user, onLogout, onNavigate, onUserUpdate }) {
+    if (user?.role === 'system_admin' && !user?.is_super_admin) {
+        return (
+            <DashboardLayout title="User Management" subtitle="Managing system users" sidebarItems={systemAdminSidebarItems} currentUser={user} roleLabel="System Administrator" onLogout={onLogout} onNavigate={onNavigate}>
+                <EmptyState icon={Users} title="Access Denied" subtitle="You do not have permission to manage users." />
+            </DashboardLayout>
+        );
+    }
+
     const [query, setQuery] = useState('');
     const [debouncedQuery, setDebouncedQuery] = useState('');
     const [roleFilter, setRoleFilter] = useState('All');
@@ -116,6 +124,30 @@ export default function SystemAdminUserManagement({ user, onLogout, onNavigate, 
             .finally(() => { setFormLoading(false); });
     };
 
+    const handleToggleSuperAdmin = (u) => {
+        fetch(`/admin/system/users/${u.id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
+            },
+            body: JSON.stringify({ is_super_admin: !u.is_super_admin }),
+            credentials: 'same-origin',
+        })
+            .then(async (r) => {
+                const d = await r.json();
+                if (r.ok) {
+                    setToggleMessage({ type: 'success', text: 'Super admin privileges updated.' });
+                    fetchUsers(page);
+                } else {
+                    setToggleMessage({ type: 'error', text: d.message || 'Failed to update.' });
+                }
+            })
+            .catch(() => {
+                setToggleMessage({ type: 'error', text: 'Network error. Please try again.' });
+            });
+    };
+
     const handleToggleActive = (u) => {
         fetch(`/admin/system/users/${u.id}`, {
             method: 'PUT',
@@ -153,13 +185,18 @@ export default function SystemAdminUserManagement({ user, onLogout, onNavigate, 
             <td className="px-6 py-4 text-slate-500 text-xs">{new Date(u.created_at).toLocaleDateString()}</td>
             <td className="px-6 py-4">
                 <div className="flex items-center gap-1.5">
-                    <button onClick={() => onNavigate(`/system-admin/users/${u.id}`)} className="p-1.5 text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer" title="View User">
+                    <button onClick={() => onNavigate(`/system-admin/users/${u.id}`)} className="p-1.5 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors cursor-pointer" title="View User">
                         <Eye className="w-4 h-4" />
                     </button>
-                    <button onClick={() => openEditModal(u)} className="p-1.5 text-slate-400 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer" title="Edit User">
+                    <button onClick={() => openEditModal(u)} className="p-1.5 text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors cursor-pointer" title="Edit User">
                         <Edit className="w-4 h-4" />
                     </button>
-                    <button onClick={() => handleToggleActive(u)} className={`p-1.5 rounded-lg transition-colors cursor-pointer ${u.is_active ? 'text-slate-400 hover:text-red-700 hover:bg-red-50' : 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50'}`} title={u.is_active ? 'Deactivate' : 'Activate'}>
+                    {u.role === 'system_admin' && u.id !== user.id && (
+                        <button onClick={() => handleToggleSuperAdmin(u)} className={`p-1.5 rounded-lg transition-colors cursor-pointer ${u.is_super_admin ? 'text-purple-700 bg-purple-50 hover:bg-purple-100' : 'text-slate-400 bg-slate-50 hover:bg-slate-100'}`} title={u.is_super_admin ? 'Revoke super admin' : 'Grant super admin'}>
+                            {u.is_super_admin ? <Shield className="w-4 h-4" /> : <ShieldOff className="w-4 h-4" />}
+                        </button>
+                    )}
+                    <button onClick={() => handleToggleActive(u)} className={`p-1.5 rounded-lg transition-colors cursor-pointer ${u.is_active ? 'text-red-700 bg-red-50 hover:bg-red-100' : 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100'}`} title={u.is_active ? 'Deactivate' : 'Activate'}>
                         {u.is_active ? <ToggleLeft className="w-4 h-4" /> : <Check className="w-4 h-4" />}
                     </button>
                 </div>
@@ -197,7 +234,7 @@ export default function SystemAdminUserManagement({ user, onLogout, onNavigate, 
                           value={formData.role}
                           onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                           options={[
-                            { value: 'admin', label: 'Admin (Registrar)' },
+                            { value: 'registrar', label: 'Registrar' },
                             { value: 'cashier', label: 'Cashier' },
                             { value: 'system_admin', label: 'System Administrator' },
                           ]}

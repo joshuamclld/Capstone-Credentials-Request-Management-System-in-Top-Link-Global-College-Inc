@@ -33,7 +33,7 @@ class SystemAdminMiddleware
             abort(403);
         }
 
-        if ($user->role !== 'system_admin' || !$user->hasRole('system_admin')) {
+        if ($user->role !== 'system_admin') {
             if ($request->expectsJson()) {
                 return response()->json([
                     'status' => 'error',

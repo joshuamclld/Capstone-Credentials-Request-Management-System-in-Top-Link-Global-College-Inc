@@ -19,8 +19,14 @@ class RegistrarRequestController extends Controller
     public function getRequestsData(Request $request): JsonResponse
     {
         $perPage = min(max((int) $request->query('per_page', 10), 1), 100);
+        $daily = $request->boolean('daily');
 
-        $counts = StudentRequest::selectRaw("
+        $statsQuery = StudentRequest::query();
+        if ($daily) {
+            $statsQuery->whereDate('created_at', today());
+        }
+
+        $counts = (clone $statsQuery)->selectRaw("
             COUNT(*) as total,
             SUM(CASE WHEN payment_status IN ('unpaid','pending_verification') THEN 1 ELSE 0 END) as pending_payment,
             SUM(CASE WHEN status = 'Processing' THEN 1 ELSE 0 END) as processing,
@@ -28,29 +34,40 @@ class RegistrarRequestController extends Controller
             SUM(CASE WHEN status = 'Claimed' THEN 1 ELSE 0 END) as claimed
         ")->first();
 
+        $claimedThisMonth = StudentRequest::where('status', 'Claimed')
+            ->whereMonth('updated_at', now()->month)
+            ->whereYear('updated_at', now()->year)
+            ->count();
+
         $stats = [
             'total' => (int) $counts->total,
             'pending_payment' => (int) $counts->pending_payment,
             'processing' => (int) $counts->processing,
             'ready_for_release' => (int) $counts->ready_for_release,
             'claimed' => (int) $counts->claimed,
+            'claimed_this_month' => $claimedThisMonth,
         ];
 
         $statusFilter = $request->query('status');
 
+        $baseQuery = StudentRequest::query();
+        if ($daily) {
+            $baseQuery->whereDate('created_at', today());
+        }
+
         if ($statusFilter === 'claimed') {
-            $requests = StudentRequest::where('status', 'Claimed')
+            $requests = (clone $baseQuery)->where('status', 'Claimed')
                 ->latest()
                 ->paginate($perPage);
         } elseif ($statusFilter === 'processable') {
-            $requests = StudentRequest::where(function ($q) {
+            $requests = (clone $baseQuery)->where(function ($q) {
                 $q->where('payment_status', 'paid')
                   ->orWhere('status', 'Processing');
             })->whereNotIn('status', ['Claimed', 'Cancelled'])
               ->latest()
               ->paginate($perPage);
         } else {
-            $requests = StudentRequest::latest()->paginate($perPage);
+            $requests = (clone $baseQuery)->latest()->paginate($perPage);
         }
 
         $documentCodes = collect($requests->items())->pluck('document_ids')->flatten()->unique()->values()->toArray();
@@ -91,7 +108,7 @@ class RegistrarRequestController extends Controller
     public function show(int $id): JsonResponse
     {
         $user = auth()->user();
-        if (!in_array($user->role, ['admin', 'cashier', 'system_admin']) && !$user->hasRole('registrar')) {
+        if (!in_array($user->role, ['registrar', 'cashier', 'system_admin'])) {
             return response()->json(['message' => 'Unauthorized access.'], 403);
         }
 
@@ -190,7 +207,7 @@ class RegistrarRequestController extends Controller
         $studentRequest->save();
 
         if ($newStatus !== $currentStatus) {
-            Notification::notifyRole('admin', 'status_update', 'Request Status Updated', "Request {$studentRequest->tracking_number} moved to {$newStatus}", (string) $studentRequest->id, "/admin/requests/{$studentRequest->id}", auth()->id());
+            Notification::notifyRole('registrar', 'status_update', 'Request Status Updated', "Request {$studentRequest->tracking_number} moved to {$newStatus}", (string) $studentRequest->id, "/admin/requests/{$studentRequest->id}", auth()->id());
         }
 
         AuditLog::create([
@@ -276,12 +293,7 @@ class RegistrarRequestController extends Controller
                 $filename = $safeTracking . '-' . time() . '.pdf';
                 $path = $request->file('pdf')->storeAs('documents', $filename, 'local');
 
-                try {
-                    Mail::to($studentRequest->email)->send(new DigitalDocumentMail($studentRequest, $documentName, $path));
-                } catch (\Exception $e) {
-                    Storage::disk('local')->delete($path);
-                    throw $e;
-                }
+                Mail::to($studentRequest->email)->queue(new DigitalDocumentMail($studentRequest, $documentName, $path));
 
                 $studentRequest->update([
                     'digital_document_path' => $path,

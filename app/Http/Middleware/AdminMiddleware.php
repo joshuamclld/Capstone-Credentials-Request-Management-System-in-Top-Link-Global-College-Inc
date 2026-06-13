@@ -33,7 +33,7 @@ class AdminMiddleware
             abort(403);
         }
 
-        if ($user->role !== 'admin' || !$user->hasRole('registrar')) {
+        if ($user->role !== 'registrar') {
             if ($request->expectsJson()) {
                 return response()->json([
                     'status' => 'error',

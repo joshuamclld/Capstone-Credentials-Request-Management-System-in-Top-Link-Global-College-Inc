@@ -33,10 +33,8 @@ class CashierMiddleware
             abort(403);
         }
 
-        // Admin (registrar) has intentional oversight access to cashier routes.
-        // Cashier requires both the role column and matching Spatie role.
-        $hasOversightAccess = $user->role === 'admin';
-        $hasCashierAccess = $user->role === 'cashier' && $user->hasRole('cashier');
+        $hasOversightAccess = $user->role === 'registrar';
+        $hasCashierAccess = $user->role === 'cashier';
 
         if (!$hasOversightAccess && !$hasCashierAccess) {
             if ($request->expectsJson()) {

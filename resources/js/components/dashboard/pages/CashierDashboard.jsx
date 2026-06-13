@@ -15,7 +15,7 @@ const statDefs = [
     { label: 'Pending Payments', key: 'pending_payments', icon: Clock, iconBg: 'bg-red-50', iconColor: 'text-red-700' },
     { label: 'Online Payments', key: 'pending_verification', icon: CreditCard, iconBg: 'bg-orange-50', iconColor: 'text-orange-700' },
     { label: 'Paid Today', key: 'paid_today', icon: DollarSign, iconBg: 'bg-emerald-50', iconColor: 'text-emerald-700' },
-    { label: 'Total Paid Requests', key: 'total_paid', icon: CheckCircle, iconBg: 'bg-blue-50', iconColor: 'text-blue-700' },
+    { label: 'Paid This Month', key: 'total_paid', icon: CheckCircle, iconBg: 'bg-blue-50', iconColor: 'text-blue-700' },
 ];
 
 const tableHeaders = ['Tracking No.', 'Student Name', 'Payment Method', 'Total Fee', 'Payment Status', 'Request Status', 'Action'];
@@ -37,9 +37,9 @@ export default function CashierDashboard({ user, onLogout, onNavigate }) {
             .catch(err => console.error('Failed to fetch online payment status:', err));
     };
 
-    const fetchData = () => {
-        setLoading(true);
-        fetch(`/admin/payments-data?per_page=9999`, { credentials: 'same-origin' })
+    const fetchData = (isInitial = false) => {
+        if (isInitial) setLoading(true);
+        fetch(`/admin/payments-data?per_page=9999&daily=1`, { credentials: 'same-origin' })
             .then((res) => {
                 if (!res.ok) throw new Error('Failed to fetch');
                 return res.json();
@@ -49,13 +49,18 @@ export default function CashierDashboard({ user, onLogout, onNavigate }) {
                 setLoading(false);
             })
             .catch((err) => {
-                setError(err.message);
+                if (isInitial) setError(err.message);
                 setLoading(false);
             });
     };
 
     useEffect(() => {
-        fetchData();
+        fetchData(true);
+        const interval = setInterval(() => fetchData(), 10000);
+        return () => clearInterval(interval);
+    }, []);
+
+    useEffect(() => {
         fetchOnlinePaymentStatus();
     }, []);
 
@@ -175,7 +180,7 @@ export default function CashierDashboard({ user, onLogout, onNavigate }) {
                             <div className="rounded-xl border border-slate-200 bg-emerald-50 p-5">
                                 <div className="flex items-center gap-3 mb-3">
                                     <div className="w-9 h-9 rounded-lg bg-emerald-100 flex items-center justify-center">
-                                        <DollarSign className="w-4 h-4 text-emerald-700" />
+                                        <span className="w-4 h-4 text-emerald-700 font-bold text-sm flex items-center justify-center">₱</span>
                                     </div>
                                     <div>
                                         <p className="text-xs font-medium text-slate-500">Cash</p>
@@ -207,8 +212,8 @@ export default function CashierDashboard({ user, onLogout, onNavigate }) {
                     <section className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-6 py-5 border-b border-slate-200">
                             <div>
-                                <h2 className="text-base font-bold text-slate-900">Recent Payment Requests</h2>
-                                <p className="text-xs text-slate-500 mt-0.5">Latest credential payment requests from students.</p>
+                                <h2 className="text-base font-bold text-slate-900">Today's Payment Requests</h2>
+                                <p className="text-xs text-slate-500 mt-0.5">Payment requests submitted today.</p>
                             </div>
                             <DashboardSearch
                                 value={query}

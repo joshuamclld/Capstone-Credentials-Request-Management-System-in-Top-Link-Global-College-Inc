@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, LayoutDashboard, Clock, CheckCircle, Search, Archive } from 'lucide-react';
+import { Archive } from 'lucide-react';
 import DashboardLayout from '../DashboardLayout';
 import DashboardSearch from '../DashboardSearch';
 import DashboardTable from '../DashboardTable';

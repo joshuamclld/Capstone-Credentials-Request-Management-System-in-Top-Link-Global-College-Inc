@@ -243,7 +243,7 @@ class StudentAuthController extends Controller
             'expires_at' => now()->addMinutes(10),
         ]);
 
-        Mail::to($student->email)->send(new StudentResetOtpMail($student, $otp));
+        Mail::to($student->email)->queue(new StudentResetOtpMail($student, $otp));
 
         return response()->json([
             'success' => true,
@@ -272,6 +272,10 @@ class StudentAuthController extends Controller
                 'message' => 'Invalid or expired OTP.',
             ], 422);
         }
+
+        StudentOtp::where('student_id', $validated['student_id'])
+            ->whereNotNull('verified_at')
+            ->delete();
 
         $otpRecord->verified_at = now();
         $otpRecord->save();
@@ -348,6 +352,6 @@ class StudentAuthController extends Controller
             'expires_at' => now()->addMinutes(10),
         ]);
 
-        Mail::to($student->email)->send(new StudentOtpMail($student, $otp));
+        Mail::to($student->email)->queue(new StudentOtpMail($student, $otp));
     }
 }

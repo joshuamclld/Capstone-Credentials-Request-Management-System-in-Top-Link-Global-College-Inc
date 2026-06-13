@@ -93,7 +93,7 @@ export default function AdminLogin({ onLoginSuccess }) {
                                     type="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    disabled={status !== 'idle'}
+                                    disabled={status === 'loading' || status === 'success'}
                                 />
                             </div>
                         </div>
@@ -115,14 +115,13 @@ export default function AdminLogin({ onLoginSuccess }) {
                                     type={showPassword ? 'text' : 'password'}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    disabled={status !== 'idle'}
+                                    disabled={status === 'loading' || status === 'success'}
                                 />
                                 <button
                                     className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
-                                    disabled={status !== 'idle'}
-                                    title={showPassword ? 'Hide password' : 'Show password'}
+                                    disabled={status === 'loading' || status === 'success'}
                                 >
                                     {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
                                 </button>
@@ -137,7 +136,7 @@ export default function AdminLogin({ onLoginSuccess }) {
                                     type="checkbox"
                                     checked={rememberMe}
                                     onChange={(e) => setRememberMe(e.target.checked)}
-                                    disabled={status !== 'idle'}
+                                    disabled={status === 'loading' || status === 'success'}
                                 />
                                 <span className="text-body-sm font-body-sm text-on-surface-variant group-hover:text-on-surface transition-colors">
                                     Remember me
@@ -180,7 +179,7 @@ export default function AdminLogin({ onLoginSuccess }) {
                                         : 'bg-primary text-on-primary'
                                 }`}
                             type="submit"
-                            disabled={status !== 'idle'}
+                            disabled={status === 'loading' || status === 'success'}
                         >
                             {status === 'idle' && (
                                 <>

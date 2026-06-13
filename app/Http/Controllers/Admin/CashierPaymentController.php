@@ -19,12 +19,24 @@ class CashierPaymentController extends Controller
     public function getPaymentsData(Request $request): JsonResponse
     {
         $perPage = min(max((int) $request->query('per_page', 10), 1), 100);
+        $daily = $request->boolean('daily');
 
-        $baseCounts = StudentRequest::selectRaw("
-            SUM(CASE WHEN payment_status = 'unpaid' THEN 1 ELSE 0 END) as pending_payments,
-            SUM(CASE WHEN payment_status = 'pending_verification' THEN 1 ELSE 0 END) as pending_verification,
-            SUM(CASE WHEN payment_status = 'paid' THEN 1 ELSE 0 END) as total_paid
+        $requestsQuery = StudentRequest::query();
+        $dailyStatsQuery = StudentRequest::query();
+        if ($daily) {
+            $dailyStatsQuery->whereDate('created_at', today());
+            $requestsQuery->whereDate('created_at', today());
+        }
+
+        $dailyCounts = (clone $dailyStatsQuery)->selectRaw("
+            SUM(CASE WHEN payment_status = 'unpaid' AND status != 'Cancelled' THEN 1 ELSE 0 END) as pending_payments,
+            SUM(CASE WHEN payment_status = 'pending_verification' THEN 1 ELSE 0 END) as pending_verification
         ")->first();
+
+        $totalPaid = StudentRequest::where('payment_status', 'paid')
+            ->whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
+            ->count();
 
         $todayStats = StudentRequest::where('payment_status', 'paid')
             ->whereDate(\DB::raw('COALESCE(verified_at, created_at)'), today())
@@ -37,10 +49,10 @@ class CashierPaymentController extends Controller
             ")->first();
 
         $stats = [
-            'pending_payments' => (int) $baseCounts->pending_payments,
-            'pending_verification' => (int) $baseCounts->pending_verification,
+            'pending_payments' => (int) $dailyCounts->pending_payments,
+            'pending_verification' => (int) $dailyCounts->pending_verification,
             'paid_today' => (int) $todayStats->paid_today,
-            'total_paid' => (int) $baseCounts->total_paid,
+            'total_paid' => $totalPaid,
             'daily_online_count' => (int) $todayStats->daily_online_count,
             'daily_online_total' => (float) ($todayStats->daily_online_total ?? 0),
             'daily_cash_count' => (int) $todayStats->daily_cash_count,
@@ -50,15 +62,15 @@ class CashierPaymentController extends Controller
         $paymentFilter = $request->query('payment_status');
 
         if ($paymentFilter === 'pending') {
-            $requests = StudentRequest::whereIn('payment_status', ['unpaid', 'pending_verification'])
+            $requests = (clone $requestsQuery)->whereIn('payment_status', ['unpaid', 'pending_verification'])
                 ->latest()
                 ->paginate($perPage);
         } elseif ($paymentFilter === 'paid') {
-            $requests = StudentRequest::where('payment_status', 'paid')
+            $requests = (clone $requestsQuery)->where('payment_status', 'paid')
                 ->latest()
                 ->paginate($perPage);
         } else {
-            $requests = StudentRequest::latest()->paginate($perPage);
+            $requests = (clone $requestsQuery)->latest()->paginate($perPage);
         }
 
         $documentCodes = collect($requests->items())->pluck('document_ids')->flatten()->unique()->values()->toArray();
@@ -127,7 +139,7 @@ class CashierPaymentController extends Controller
             $locked->verified_at = now();
             $locked->save();
 
-            Notification::notifyRole('admin', 'payment_verified', 'Payment Verified', "Payment verified for {$locked->tracking_number}", (string) $locked->id, "/admin/requests/{$locked->id}", auth()->id());
+            Notification::notifyRole('registrar', 'payment_verified', 'Payment Verified', "Payment verified for {$locked->tracking_number}", (string) $locked->id, "/admin/requests/{$locked->id}", auth()->id());
 
             AuditLog::create([
                 'action' => 'verify_payment',
@@ -221,7 +233,7 @@ class CashierPaymentController extends Controller
                 $studentRequest->save();
                 $wasUpdated = true;
 
-                Notification::notifyRole('admin', 'payment_verified', 'Payment Verified', "Payment auto-verified for {$studentRequest->tracking_number}", (string) $studentRequest->id, "/admin/requests/{$studentRequest->id}", auth()->id());
+                Notification::notifyRole('registrar', 'payment_verified', 'Payment Verified', "Payment auto-verified for {$studentRequest->tracking_number}", (string) $studentRequest->id, "/admin/requests/{$studentRequest->id}", auth()->id());
 
                 AuditLog::create([
                     'action' => 'verify_payment',

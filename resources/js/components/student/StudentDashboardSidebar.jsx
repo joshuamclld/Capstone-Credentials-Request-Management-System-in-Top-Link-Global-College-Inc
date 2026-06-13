@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, FileText, FolderOpen, LogOut } from 'lucide-react';
+import { LayoutDashboard, FileText, FolderOpen } from 'lucide-react';
 
 const sidebarItems = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/student/dashboard' },

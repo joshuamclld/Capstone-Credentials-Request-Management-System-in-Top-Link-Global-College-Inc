@@ -15,19 +15,18 @@ class AdminUserSeeder extends Seeder
     public function run(): void
     {
         $adminPw = Str::random(16);
-        $admin = User::updateOrCreate(
+        User::updateOrCreate(
             ['email' => 'admin@tlgc.edu.ph'],
             [
-                'name' => 'Admin User',
+                'name' => 'Registrar User',
                 'password' => Hash::make($adminPw),
-                'role' => 'admin',
+                'role' => 'registrar',
                 'email_verified_at' => now(),
             ]
         );
-        $admin->assignRole('registrar');
 
         $cashierPw = Str::random(16);
-        $cashier = User::updateOrCreate(
+        User::updateOrCreate(
             ['email' => 'cashier@tlgc.edu.ph'],
             [
                 'name' => 'Cashier User',
@@ -36,10 +35,9 @@ class AdminUserSeeder extends Seeder
                 'email_verified_at' => now(),
             ]
         );
-        $cashier->assignRole('cashier');
 
         $sysAdminPw = Str::random(16);
-        $sysAdmin = User::updateOrCreate(
+        User::updateOrCreate(
             ['email' => 'sysadmin@tlgc.edu.ph'],
             [
                 'name' => 'System Administrator',
@@ -48,9 +46,8 @@ class AdminUserSeeder extends Seeder
                 'email_verified_at' => now(),
             ]
         );
-        $sysAdmin->assignRole('system_admin');
 
-        $this->command->info('Admin user created (admin@tlgc.edu.ph).');
+        $this->command->info('Registrar user created (admin@tlgc.edu.ph).');
         $this->command->info("Password: {$adminPw}");
         $this->command->info('Cashier user created (cashier@tlgc.edu.ph).');
         $this->command->info("Password: {$cashierPw}");

@@ -43,8 +43,8 @@ export default function NotificationList({ user, onLogout, onNavigate }) {
         fetch(`/admin/api/notifications/all?page=${p}`, { credentials: 'same-origin' })
             .then(res => { if (!res.ok) throw new Error('Failed to fetch notifications'); return res.json(); })
             .then(data => {
-                setNotifications(data.data || []);
-                setPagination({ current_page: data.current_page || 1, last_page: data.last_page || 1 });
+                setNotifications(data.notifications || []);
+                setPagination({ current_page: data.pagination?.current_page || 1, last_page: data.pagination?.last_page || 1 });
                 setLoading(false);
             })
             .catch(err => { setError(err.message); setLoading(false); });

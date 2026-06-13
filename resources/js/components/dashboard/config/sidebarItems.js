@@ -16,7 +16,7 @@ export const cashierSidebarItems = [
 
 export const systemAdminSidebarItems = [
     { label: 'Dashboard', icon: LayoutDashboard, path: '/system-admin-dashboard' },
-    { label: 'User Management', icon: Users, path: '/system-admin/users' },
+    { label: 'User Management', icon: Users, path: '/system-admin/users', superAdminOnly: true },
     { label: 'Credential Types', icon: FileText, path: '/system-admin/credentials' },
     { label: 'Reports & Analytics', icon: ChartColumn, path: '/system-admin/reports' },
     { label: 'Audit Logs', icon: RefreshCw, path: '/system-admin/audit-logs' },

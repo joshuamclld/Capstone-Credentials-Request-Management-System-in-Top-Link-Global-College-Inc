@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('contact_number');
             $table->string('email');
             $table->string('course');
-            $table->string('requested_document');
+            $table->string('requested_document')->nullable();
             $table->json('semesters')->nullable();
             $table->text('purpose');
             $table->decimal('total_fee', 10, 2);

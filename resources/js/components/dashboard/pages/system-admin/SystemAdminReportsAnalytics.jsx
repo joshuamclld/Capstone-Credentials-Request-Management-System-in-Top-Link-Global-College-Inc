@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, FileText, Users, ChartColumn, DollarSign, RefreshCw, TrendingUp, Clock, CheckCircle, Download } from 'lucide-react';
+import { FileText, Users, ChartColumn, DollarSign, RefreshCw, TrendingUp, Clock, CheckCircle, Download } from 'lucide-react';
 import Chart from 'react-apexcharts';
 import DashboardLayout from '../../DashboardLayout';
 import DashboardStatCard from '../../DashboardStatCard';
@@ -9,12 +9,9 @@ import { systemAdminSidebarItems } from '../../config/sidebarItems';
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 const statDefs = [
-    { label: 'Total Requests', key: 'total_requests', icon: FileText, iconBg: 'bg-emerald-50', iconColor: 'text-emerald-700' },
-    { label: 'Total Paid', key: 'total_paid', icon: CheckCircle, iconBg: 'bg-blue-50', iconColor: 'text-blue-700' },
-    { label: 'Total Revenue', key: 'total_revenue', icon: DollarSign, iconBg: 'bg-green-50', iconColor: 'text-green-700' },
-    { label: 'Average Fee', key: 'average_fee', icon: TrendingUp, iconBg: 'bg-purple-50', iconColor: 'text-purple-700' },
-    { label: 'This Month', key: 'this_month', icon: Clock, iconBg: 'bg-orange-50', iconColor: 'text-orange-700' },
-    { label: 'Month Revenue', key: 'this_month_revenue', icon: DollarSign, iconBg: 'bg-yellow-50', iconColor: 'text-yellow-700' },
+    { label: 'Paid This Month', key: 'total_paid', icon: CheckCircle, iconBg: 'bg-blue-50', iconColor: 'text-blue-700' },
+    { label: 'Revenue This Month', key: 'total_revenue', icon: DollarSign, iconBg: 'bg-green-50', iconColor: 'text-green-700' },
+    { label: 'Avg Fee This Month', key: 'average_fee', icon: TrendingUp, iconBg: 'bg-purple-50', iconColor: 'text-purple-700' },
 ];
 
 const STATUS_COLORS = { Pending: '#cea700', Processing: '#326574', 'Ready for Release': '#154212', Claimed: '#2d5a27' };
@@ -141,7 +138,8 @@ export default function SystemAdminReportsAnalytics({ user, onLogout, onNavigate
             onLogout={onLogout}
             onNavigate={onNavigate}
         >
-            <section className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
+            <section className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
+                <DashboardStatCard title="Total Requests This Month" value={String(data.this_month ?? 0)} icon={FileText} iconBg="bg-emerald-50" iconColor="text-emerald-700" />
                 {statDefs.map((s) => (
                     <DashboardStatCard key={s.label} title={s.label} value={String(stats[s.key] ?? 0)} icon={s.icon} iconBg={s.iconBg} iconColor={s.iconColor} />
                 ))}

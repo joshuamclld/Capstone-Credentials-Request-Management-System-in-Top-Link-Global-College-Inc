@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, BadgeCheck, Clock, PackageCheck, CheckCheck, AlertCircle, XCircle, ArrowLeft, Mail } from 'lucide-react';
+import { FileText, BadgeCheck, Clock, PackageCheck, CheckCheck, AlertCircle, XCircle, ArrowLeft } from 'lucide-react';
 import StudentDashboardLayout from './StudentDashboardLayout';
 import RegistrarRemarksCard from './RegistrarRemarksCard';
 import { getPaymentStatusConfig, getBadge, buildTimeline } from '../../utils/statusConfig';

@@ -188,7 +188,7 @@ class StudentRequestController extends Controller
                 'delivery_type' => $deliveryType,
             ]);
 
-            Notification::notifyRole('admin', 'new_request', 'New Credential Request', "{$validated['fullName']} submitted a request", (string) $studentRequest->id, "/admin/requests/{$studentRequest->id}");
+            Notification::notifyRole('registrar', 'new_request', 'New Credential Request', "{$validated['fullName']} submitted a request", (string) $studentRequest->id, "/admin/requests/{$studentRequest->id}");
             Notification::notifyRole('cashier', 'new_request', 'New Credential Request', "{$validated['fullName']} submitted a new request waiting for payment.", (string) $studentRequest->id, "/cashier/payments/{$studentRequest->id}");
 
             return [
@@ -322,7 +322,7 @@ class StudentRequestController extends Controller
         $request->save();
 
         $trackingNumberDisplay = $request->tracking_number;
-        Notification::notifyRole('admin', 'request_cancelled', 'Request Cancelled', "{$trackingNumberDisplay} was cancelled by the student.", (string) $request->id, "/admin/requests/{$request->id}");
+        Notification::notifyRole('registrar', 'request_cancelled', 'Request Cancelled', "{$trackingNumberDisplay} was cancelled by the student.", (string) $request->id, "/admin/requests/{$request->id}");
         Notification::notifyRole('cashier', 'request_cancelled', 'Request Cancelled', "{$trackingNumberDisplay} was cancelled.", (string) $request->id, "/cashier/payments/{$request->id}");
 
         return response()->json([
@@ -361,11 +361,11 @@ class StudentRequestController extends Controller
         $request->status = 'Claimed';
         $request->save();
 
-        Notification::notifyRole('admin', 'request_claimed', 'Request Claimed', "Request {$request->tracking_number} was marked as claimed by the student.", (string) $request->id, "/admin/requests/{$request->id}");
+        Notification::notifyRole('registrar', 'request_claimed', 'Request Claimed', "Request {$request->tracking_number} was marked as claimed by the student.", (string) $request->id, "/admin/requests/{$request->id}");
 
         AuditLog::create([
             'action' => 'claim_request',
-            'performed_by' => $student->first_name . ' ' . $student->last_name,
+            'performed_by' => 'Student: ' . $student->first_name . ' ' . $student->last_name,
             'performed_by_id' => $student->id,
             'target_type' => 'StudentRequest',
             'target_id' => $request->id,
@@ -382,73 +382,82 @@ class StudentRequestController extends Controller
     {
         $student = auth('student')->user();
 
-        $request = StudentRequest::where('tracking_number', $trackingNumber)->first();
-        if (!$request) {
-            return response()->json(['success' => false, 'message' => 'Request not found.'], 404);
-        }
-        if ($request->student_id !== $student->id) {
-            return response()->json(['success' => false, 'message' => 'Forbidden.'], 403);
-        }
-        if ($request->payment_method !== 'online') {
-            return response()->json(['success' => false, 'message' => 'This request is not an online payment request.'], 422);
-        }
-        if ($request->payment_status === 'paid') {
-            return response()->json(['success' => false, 'message' => 'Payment has already been completed.'], 422);
-        }
+        return DB::transaction(function () use ($trackingNumber, $student) {
+            $request = StudentRequest::where('tracking_number', $trackingNumber)
+                ->lockForUpdate()
+                ->first();
+            if (!$request) {
+                return response()->json(['success' => false, 'message' => 'Request not found.'], 404);
+            }
+            if ($request->student_id !== $student->id) {
+                return response()->json(['success' => false, 'message' => 'Forbidden.'], 403);
+            }
+            if ($request->payment_method !== 'online') {
+                return response()->json(['success' => false, 'message' => 'This request is not an online payment request.'], 422);
+            }
+            if ($request->payment_status === 'paid') {
+                return response()->json(['success' => false, 'message' => 'Payment has already been completed.'], 422);
+            }
 
-        // If existing checkout still valid, reuse it
-        if ($request->paymongo_checkout_id) {
-            try {
-                $paymongo = app(PayMongoService::class);
-                $session = $paymongo->retrieveCheckoutSession($request->paymongo_checkout_id);
-                $checkoutUrl = $session['attributes']['checkout_url'];
-                $status = $this->getPayMongoPaymentStatus($session);
-
-                if ($status === 'paid') {
-                    $request->payment_status = 'paid';
-                    $request->save();
-                    return response()->json(['success' => true, 'already_paid' => true, 'message' => 'Payment already completed.']);
-                }
-
-                // Session still valid — reuse it
-                return response()->json([
-                    'success' => true,
-                    'checkout_url' => $checkoutUrl,
-                ]);
-            } catch (\RuntimeException $e) {
-                // Session expired or invalid — fall through to create new one
+            if (in_array($request->payment_status, ['failed', 'expired'])) {
+                $request->payment_status = 'pending_payment';
                 $request->paymongo_checkout_id = null;
             }
-        }
 
-        // Create new checkout session
-        try {
-            $paymongo = app(PayMongoService::class);
-            $session = $paymongo->createCheckoutSession([
-                'name' => $request->full_name,
-                'email' => $request->email,
-                'amount' => (float) $request->total_fee,
-                'description' => "Credential Request - {$trackingNumber}",
-                'tracking_number' => $trackingNumber,
-                'success_url' => URL::temporarySignedRoute('payment.success', now()->addHours(1), ['tracking_number' => $trackingNumber]) . '&session_id={CHECKOUT_SESSION_ID}',
-                'cancel_url' => url("/payment/failed?tracking_number={$trackingNumber}"),
-            ]);
+            // If existing checkout still valid, reuse it
+            if ($request->paymongo_checkout_id) {
+                try {
+                    $paymongo = app(PayMongoService::class);
+                    $session = $paymongo->retrieveCheckoutSession($request->paymongo_checkout_id);
+                    $checkoutUrl = $session['attributes']['checkout_url'];
+                    $status = $this->getPayMongoPaymentStatus($session);
 
-            $request->paymongo_checkout_id = $session['id'];
-            $request->payment_status = 'pending_verification';
-            $request->save();
+                    if ($status === 'paid') {
+                        $request->payment_status = 'paid';
+                        $request->save();
+                        return response()->json(['success' => true, 'already_paid' => true, 'message' => 'Payment already completed.']);
+                    }
 
-            return response()->json([
-                'success' => true,
-                'checkout_url' => $session['attributes']['checkout_url'],
-            ]);
-        } catch (\RuntimeException $e) {
-            Log::error('PayMongo continue-payment failed: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Unable to initiate payment. Please try again later.',
-            ], 502);
-        }
+                    // Session still valid — reuse it
+                    return response()->json([
+                        'success' => true,
+                        'checkout_url' => $checkoutUrl,
+                    ]);
+                } catch (\RuntimeException $e) {
+                    // Session expired or invalid — fall through to create new one
+                    $request->paymongo_checkout_id = null;
+                }
+            }
+
+            // Create new checkout session
+            try {
+                $paymongo = app(PayMongoService::class);
+                $session = $paymongo->createCheckoutSession([
+                    'name' => $request->full_name,
+                    'email' => $request->email,
+                    'amount' => (float) $request->total_fee,
+                    'description' => "Credential Request - {$trackingNumber}",
+                    'tracking_number' => $trackingNumber,
+                    'success_url' => URL::temporarySignedRoute('payment.success', now()->addHours(1), ['tracking_number' => $trackingNumber]) . '&session_id={CHECKOUT_SESSION_ID}',
+                    'cancel_url' => url("/payment/failed?tracking_number={$trackingNumber}"),
+                ]);
+
+                $request->paymongo_checkout_id = $session['id'];
+                $request->payment_status = 'pending_verification';
+                $request->save();
+
+                return response()->json([
+                    'success' => true,
+                    'checkout_url' => $session['attributes']['checkout_url'],
+                ]);
+            } catch (\RuntimeException $e) {
+                Log::error('PayMongo continue-payment failed: ' . $e->getMessage());
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unable to initiate payment. Please try again later.',
+                ], 502);
+            }
+        });
     }
 
     public function verifyPayment(Request $request, string $trackingNumber)
@@ -551,7 +560,12 @@ class StudentRequestController extends Controller
     {
         $trackingNumber = $request->query('tracking_number');
         if ($trackingNumber) {
-            return redirect('/student/requests/' . $trackingNumber);
+            StudentRequest::where('tracking_number', $trackingNumber)
+                ->whereIn('payment_status', ['pending_payment', 'pending_verification'])
+                ->update(['payment_status' => 'unpaid', 'paymongo_checkout_id' => null]);
+        }
+        if ($trackingNumber) {
+            return redirect('/student/requests/' . $trackingNumber . '?payment_cancelled=1');
         }
         return redirect('/student/dashboard');
     }
@@ -594,9 +608,19 @@ class StudentRequestController extends Controller
                 $trackingNumber = $checkoutData['metadata']['tracking_number'] ?? null;
 
                 if ($trackingNumber) {
-                    StudentRequest::where('tracking_number', $trackingNumber)
-                        ->whereIn('payment_status', ['pending_payment', 'pending_verification'])
-                        ->update(['payment_status' => 'paid', 'verified_at' => now()]);
+                    DB::transaction(function () use ($trackingNumber) {
+                        $studentRequest = StudentRequest::where('tracking_number', $trackingNumber)
+                            ->lockForUpdate()
+                            ->first();
+
+                        if (!$studentRequest || $studentRequest->payment_status === 'paid') {
+                            return;
+                        }
+
+                        $studentRequest->payment_status = 'paid';
+                        $studentRequest->verified_at = now();
+                        $studentRequest->save();
+                    });
                 }
             }
         } elseif (in_array($eventType, ['checkout_session.payment.failed', 'checkout_session.expired'])) {
@@ -604,9 +628,19 @@ class StudentRequestController extends Controller
             $trackingNumber = $checkoutData['metadata']['tracking_number'] ?? null;
             if ($trackingNumber) {
                 $newStatus = $eventType === 'checkout_session.expired' ? 'expired' : 'failed';
-                StudentRequest::where('tracking_number', $trackingNumber)
-                    ->where('payment_status', 'pending_verification')
-                    ->update(['payment_status' => $newStatus]);
+                DB::transaction(function () use ($trackingNumber, $newStatus) {
+                    $studentRequest = StudentRequest::where('tracking_number', $trackingNumber)
+                        ->where('payment_status', 'pending_verification')
+                        ->lockForUpdate()
+                        ->first();
+
+                    if (!$studentRequest) {
+                        return;
+                    }
+
+                    $studentRequest->payment_status = $newStatus;
+                    $studentRequest->save();
+                });
                 Log::info("PayMongo checkout {$newStatus} for request", ['tracking' => $trackingNumber]);
             }
         } else {

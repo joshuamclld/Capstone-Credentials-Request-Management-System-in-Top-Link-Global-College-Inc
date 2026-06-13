@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Clock, CheckCircle, LayoutDashboard, Search, Archive, RefreshCw } from 'lucide-react';
+import { FileText, Clock, CheckCircle, Archive, RefreshCw } from 'lucide-react';
 import DashboardLayout from '../DashboardLayout';
 import DashboardStatCard from '../DashboardStatCard';
 import DashboardSearch from '../DashboardSearch';
@@ -16,6 +16,7 @@ const statDefs = [
     { label: 'Processing', key: 'processing', icon: RefreshCw, iconBg: 'bg-blue-50', iconColor: 'text-blue-700' },
     { label: 'Ready for Release', key: 'ready_for_release', icon: CheckCircle, iconBg: 'bg-purple-50', iconColor: 'text-purple-700' },
     { label: 'Claimed', key: 'claimed', icon: Archive, iconBg: 'bg-slate-100', iconColor: 'text-slate-600' },
+    { label: 'Claimed This Month', key: 'claimed_this_month', icon: CheckCircle, iconBg: 'bg-emerald-50', iconColor: 'text-emerald-700' },
 ];
 
 const tableHeaders = ['Reference No.', 'Student Name', 'Requested Documents', 'Payment Status', 'Request Status', 'Date Requested', 'Action'];
@@ -28,9 +29,9 @@ export default function RegistrarDashboard({ user, onLogout, onNavigate }) {
     const [error, setError] = useState(null);
     const [page, setPage] = useState(1);
 
-    const fetchData = () => {
-        setLoading(true);
-        fetch(`/admin/requests-data?per_page=9999`, { credentials: 'same-origin' })
+    const fetchData = (isInitial = false) => {
+        if (isInitial) setLoading(true);
+        fetch(`/admin/requests-data?per_page=9999&daily=1`, { credentials: 'same-origin' })
             .then((res) => {
                 if (!res.ok) throw new Error('Failed to fetch');
                 return res.json();
@@ -40,13 +41,15 @@ export default function RegistrarDashboard({ user, onLogout, onNavigate }) {
                 setLoading(false);
             })
             .catch((err) => {
-                setError(err.message);
+                if (isInitial) setError(err.message);
                 setLoading(false);
             });
     };
 
     useEffect(() => {
-        fetchData();
+        fetchData(true);
+        const interval = setInterval(() => fetchData(), 10000);
+        return () => clearInterval(interval);
     }, []);
 
     const filtered = data.requests.filter((req) =>
@@ -101,7 +104,7 @@ export default function RegistrarDashboard({ user, onLogout, onNavigate }) {
                 <div className="flex items-center justify-center py-20 text-red-500 text-sm">Error: {error}</div>
             ) : (
                 <>
-                    <section className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-4 mb-8">
+                    <section className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
                         {statDefs.map((stat) => (
                             <DashboardStatCard
                                 key={stat.label}
@@ -117,8 +120,8 @@ export default function RegistrarDashboard({ user, onLogout, onNavigate }) {
                     <section className="bg-white rounded-xl border border-slate-200 overflow-hidden">
                         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-6 py-5 border-b border-slate-200">
                             <div>
-                                <h2 className="text-base font-bold text-slate-900">Recent Requests</h2>
-                                <p className="text-xs text-slate-500 mt-0.5">Latest credential requests submitted by students.</p>
+                                <h2 className="text-base font-bold text-slate-900">Today's Requests</h2>
+                                <p className="text-xs text-slate-500 mt-0.5">Credential requests submitted today.</p>
                             </div>
                             <DashboardSearch
                                 value={query}
