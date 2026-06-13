@@ -64,7 +64,7 @@
                 <td>{{ $req->full_name }}</td>
                 <td>{{ $req->student_number }}</td>
                 <td>{{ $req->course }}</td>
-                <td>{{ collect($req->document_ids ?? [])->map(fn($c) => $allDocs->get($c)?->name ?? $c)->implode(', ') }}</td>
+                <td>{{ $req->documents->pluck('name')->implode(', ') }}</td>
                 <td>{{ ucfirst(str_replace('_', ' ', $req->payment_status)) }}</td>
                 <td>{{ $req->status }}</td>
                 <td class="text-right">₱{{ number_format((float) $req->total_fee, 2) }}</td>

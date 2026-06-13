@@ -32,7 +32,7 @@ class ReportsExport implements FromCollection, WithHeadings, WithMapping, WithCo
 
     public function collection(): Collection
     {
-        $query = StudentRequest::query();
+        $query = StudentRequest::with('documents');
 
         if ($this->month && $this->month !== 'all') {
             $query->whereMonth('created_at', $this->month);
@@ -74,9 +74,7 @@ class ReportsExport implements FromCollection, WithHeadings, WithMapping, WithCo
 
     public function map($request): array
     {
-        $documentNames = collect($request->document_ids ?? [])
-            ->map(fn ($code) => $this->allDocs->get($code)?->name ?? $code)
-            ->implode(', ');
+        $documentNames = $request->documents->pluck('name')->implode(', ');
 
         return [
             $request->id,

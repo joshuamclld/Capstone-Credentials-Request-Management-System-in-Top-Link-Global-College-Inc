@@ -54,17 +54,13 @@ class StudentRequestController extends Controller
             return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
         }
 
-        $requests = StudentRequest::where('student_id', $student->id)
+        $requests = StudentRequest::with('documents')
+            ->where('student_id', $student->id)
             ->orderBy('created_at', 'desc')
             ->get();
 
-        $allDocCodes = $requests->pluck('document_ids')->flatten()->unique()->filter()->toArray();
-        $documents = Document::whereIn('code', $allDocCodes)->get()->keyBy('code');
-
-        $requests = $requests->map(function ($request) use ($documents) {
-            $documentNames = collect($request->document_ids ?? [])
-                ->map(fn ($code) => $documents->get($code)?->name ?? $code)
-                ->toArray();
+        $requests = $requests->map(function ($request) {
+            $documentNames = $request->documents->pluck('name')->toArray();
             return [
                 'id' => $request->id,
                 'tracking_number' => $request->tracking_number,
@@ -100,7 +96,7 @@ class StudentRequestController extends Controller
             return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
         }
 
-        $studentRequest = StudentRequest::where('tracking_number', $trackingNumber)->first();
+        $studentRequest = StudentRequest::with('documents')->where('tracking_number', $trackingNumber)->first();
 
         if (!$studentRequest) {
             return response()->json(['success' => false, 'message' => 'Request not found.'], 404);
@@ -110,7 +106,7 @@ class StudentRequestController extends Controller
             return response()->json(['success' => false, 'message' => 'Forbidden.'], 403);
         }
 
-        $documents = Document::whereIn('code', $studentRequest->document_ids ?? [])->get();
+        $documents = $studentRequest->documents;
         $documentNames = $documents->pluck('name')->toArray();
         $processingDays = $documents->max('processing_days');
 
@@ -175,7 +171,6 @@ class StudentRequestController extends Controller
                 'contact_number' => $validated['contactNo'],
                 'email' => $validated['email'],
                 'course' => $validated['course'],
-                'document_ids' => $validated['selectedDocs'],
                 'semesters' => $validated['selectedSemesters'] ?? [],
                 'pages' => $validated['pages'] ?? null,
                 'payment_method' => $paymentMethod,
@@ -187,6 +182,9 @@ class StudentRequestController extends Controller
                 'section' => $validated['section'],
                 'delivery_type' => $deliveryType,
             ]);
+
+            $docIds = Document::whereIn('code', $validated['selectedDocs'])->pluck('id');
+            $studentRequest->documents()->attach($docIds);
 
             Notification::notifyRole('registrar', 'new_request', 'New Credential Request', "{$validated['fullName']} submitted a request", (string) $studentRequest->id, "/admin/requests/{$studentRequest->id}");
             Notification::notifyRole('cashier', 'new_request', 'New Credential Request', "{$validated['fullName']} submitted a new request waiting for payment.", (string) $studentRequest->id, "/cashier/payments/{$studentRequest->id}");
@@ -209,7 +207,7 @@ class StudentRequestController extends Controller
             return view('welcome');
         }
 
-        $studentRequest = StudentRequest::where('tracking_number', $trackingNumber)->first();
+        $studentRequest = StudentRequest::with('documents')->where('tracking_number', $trackingNumber)->first();
 
         if (!$studentRequest) {
             return response()->json([
@@ -221,7 +219,7 @@ class StudentRequestController extends Controller
         $studentId = auth('student')->id();
         $isOwner = $studentId !== null && $studentRequest->student_id === $studentId;
 
-        $documents = Document::whereIn('code', $studentRequest->document_ids)->get();
+        $documents = $studentRequest->documents;
         $documentNames = $documents->pluck('name')->toArray();
         $processingDays = $documents->max('processing_days');
 

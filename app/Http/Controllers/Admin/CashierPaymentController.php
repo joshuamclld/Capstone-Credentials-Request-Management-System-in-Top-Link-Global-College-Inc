@@ -73,11 +73,10 @@ class CashierPaymentController extends Controller
             $requests = (clone $requestsQuery)->latest()->paginate($perPage);
         }
 
-        $documentCodes = collect($requests->items())->pluck('document_ids')->flatten()->unique()->values()->toArray();
-        $documents = Document::whereIn('code', $documentCodes)->get()->keyBy('code');
+        $requests->load('documents');
 
-        $formatted = collect($requests->items())->map(function ($req) use ($documents) {
-            $names = collect($req->document_ids ?? [])->map(fn ($code) => $documents->get($code)?->name ?? $code)->toArray();
+        $formatted = collect($requests->items())->map(function ($req) {
+            $names = $req->documents->pluck('name')->toArray();
 
             return [
                 'id' => $req->id,
@@ -156,9 +155,8 @@ class CashierPaymentController extends Controller
         }
 
         $studentRequest->refresh();
-
-        $documents = Document::whereIn('code', $studentRequest->document_ids ?? [])->get()->keyBy('code');
-        $documentNames = collect($studentRequest->document_ids ?? [])->map(fn ($code) => $documents->get($code)?->name ?? $code)->toArray();
+        $studentRequest->load('documents');
+        $documentNames = $studentRequest->documents->pluck('name')->toArray();
 
         return response()->json([
             'success' => true,

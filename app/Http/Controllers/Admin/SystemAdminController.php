@@ -322,18 +322,14 @@ class SystemAdminController extends Controller
             ->whereRaw("DATE_FORMAT(created_at, '%Y-%m') = ?", [$month])
             ->sum('total_fee');
 
-        $documents = Document::all()->keyBy('code');
-
-        $monthlyRequestsByType = StudentRequest::selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month, document_ids")
+        $monthlyRequestsByType = StudentRequest::with('documents')
             ->lazy()
-            ->groupBy('month')
-            ->map(function ($requests, $month) use ($documents) {
+            ->groupBy(fn ($req) => $req->created_at->format('Y-m'))
+            ->map(function ($requests, $month) {
                 $typeCounts = [];
                 foreach ($requests as $req) {
-                    $ids = $req->document_ids ?? [];
-                    foreach ($ids as $code) {
-                        $name = $documents->get($code)?->name ?? $code;
-                        $typeCounts[$name] = ($typeCounts[$name] ?? 0) + 1;
+                    foreach ($req->documents as $doc) {
+                        $typeCounts[$doc->name] = ($typeCounts[$doc->name] ?? 0) + 1;
                     }
                 }
                 arsort($typeCounts);
@@ -392,13 +388,9 @@ class SystemAdminController extends Controller
         if (($s = $request->input('status')) && $s !== 'all') $query->where('status', $s);
         if (($p = $request->input('payment_status')) && $p !== 'all') $query->where('payment_status', $p);
 
-        $allDocs = Document::all()->keyBy('code');
-
-        $query->latest()->chunk(100, function ($requests) use ($handle, $allDocs) {
+        $query->with('documents')->latest()->chunk(100, function ($requests) use ($handle) {
             foreach ($requests as $req) {
-                $names = collect($req->document_ids ?? [])
-                    ->map(fn ($c) => $allDocs->get($c)?->name ?? $c)
-                    ->implode(', ');
+                $names = $req->documents->pluck('name')->implode(', ');
                 fputcsv($handle, [
                     $req->id,
                     $req->tracking_number,
@@ -435,15 +427,13 @@ class SystemAdminController extends Controller
         if (($s = $request->input('status')) && $s !== 'all') $query->where('status', $s);
         if (($p = $request->input('payment_status')) && $p !== 'all') $query->where('payment_status', $p);
 
-        $requests = $query->latest()->get();
-        $allDocs = Document::all()->keyBy('code');
+        $requests = $query->with('documents')->latest()->get();
 
         $totalRevenue = $requests->where('payment_status', 'paid')->sum('total_fee');
         $totalPaid = $requests->where('payment_status', 'paid')->count();
 
         $pdf = Pdf::loadView('reports.pdf', [
             'requests' => $requests,
-            'allDocs' => $allDocs,
             'totalRequests' => $requests->count(),
             'totalPaid' => $totalPaid,
             'totalRevenue' => $totalRevenue,

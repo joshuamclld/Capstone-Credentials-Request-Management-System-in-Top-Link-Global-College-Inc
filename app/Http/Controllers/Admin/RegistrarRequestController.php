@@ -70,11 +70,10 @@ class RegistrarRequestController extends Controller
             $requests = (clone $baseQuery)->latest()->paginate($perPage);
         }
 
-        $documentCodes = collect($requests->items())->pluck('document_ids')->flatten()->unique()->values()->toArray();
-        $documents = Document::whereIn('code', $documentCodes)->get()->keyBy('code');
+        $requests->load('documents');
 
-        $formatted = collect($requests->items())->map(function ($req) use ($documents) {
-            $names = collect($req->document_ids ?? [])->map(fn ($code) => $documents->get($code)?->name ?? $code)->toArray();
+        $formatted = collect($requests->items())->map(function ($req) {
+            $names = $req->documents->pluck('name')->toArray();
 
             return [
                 'id' => $req->id,
@@ -112,14 +111,13 @@ class RegistrarRequestController extends Controller
             return response()->json(['message' => 'Unauthorized access.'], 403);
         }
 
-        $request = StudentRequest::find($id);
+        $request = StudentRequest::with('documents')->find($id);
 
         if (!$request) {
             return response()->json(['message' => 'Request not found.'], 404);
         }
 
-        $documents = Document::whereIn('code', $request->document_ids ?? [])->get()->keyBy('code');
-        $documentNames = collect($request->document_ids ?? [])->map(fn ($code) => $documents->get($code)?->name ?? $code)->toArray();
+        $documentNames = $request->documents->pluck('name')->toArray();
 
         return response()->json([
             'success' => true,
@@ -155,7 +153,7 @@ class RegistrarRequestController extends Controller
 
     public function update(Request $request, int $id): JsonResponse
     {
-        $studentRequest = StudentRequest::find($id);
+        $studentRequest = StudentRequest::with('documents')->find($id);
 
         if (!$studentRequest) {
             return response()->json(['message' => 'Request not found.'], 404);
@@ -221,8 +219,7 @@ class RegistrarRequestController extends Controller
                 : "Updated remarks for request {$studentRequest->tracking_number}",
         ]);
 
-        $documents = Document::whereIn('code', $studentRequest->document_ids ?? [])->get()->keyBy('code');
-        $documentNames = collect($studentRequest->document_ids ?? [])->map(fn ($code) => $documents->get($code)?->name ?? $code)->toArray();
+        $documentNames = $studentRequest->documents->pluck('name')->toArray();
 
         return response()->json([
             'success' => true,
@@ -283,8 +280,8 @@ class RegistrarRequestController extends Controller
         ]);
 
         $user = auth()->user();
-        $documents = Document::whereIn('code', $studentRequest->document_ids ?? [])->get()->keyBy('code');
-        $documentNames = collect($studentRequest->document_ids ?? [])->map(fn ($code) => $documents->get($code)?->name ?? $code)->toArray();
+        $studentRequest->load('documents');
+        $documentNames = $studentRequest->documents->pluck('name')->toArray();
         $documentName = implode(', ', $documentNames);
 
         try {
