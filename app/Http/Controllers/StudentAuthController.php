@@ -156,7 +156,14 @@ class StudentAuthController extends Controller
 
         $student = Student::where($fieldType, $credentials['login'])->first();
 
-        if (!$student || !Hash::check($credentials['password'], $student->password)) {
+        if (!$student) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Account not registered.',
+            ], 404);
+        }
+
+        if (!Hash::check($credentials['password'], $student->password)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid credentials.',
