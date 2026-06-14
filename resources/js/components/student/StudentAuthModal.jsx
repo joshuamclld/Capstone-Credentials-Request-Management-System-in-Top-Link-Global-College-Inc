@@ -175,7 +175,7 @@ function RegisterForm({ onRegistered, onSwitchToLogin }) {
   );
 }
 
-function OtpForm({ studentId, onVerified }) {
+function OtpForm({ studentId, onVerified, onSwitchToLogin }) {
   const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -586,7 +586,7 @@ export default function StudentAuthModal({ isOpen, defaultTab, onClose, onLoginS
               <div>
                 <h2 className="font-headline-sm text-headline-sm font-bold text-on-surface mb-0.5">Verify Email</h2>
                 <p className="text-body-md text-on-surface-variant mb-3 sm:mb-4">Enter the verification code sent to your email.</p>
-                <OtpForm studentId={otpStudentId} onVerified={handleOtpVerified} />
+                <OtpForm studentId={otpStudentId} onVerified={handleOtpVerified} onSwitchToLogin={() => setTab('login')} />
               </div>
             )}
 

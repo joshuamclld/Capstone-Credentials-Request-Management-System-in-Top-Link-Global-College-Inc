@@ -44,15 +44,19 @@ class StudentAuthController extends Controller
             'password' => 'required|string|min:8|confirmed',
         ]);
 
-        $student = Student::create([
-            'student_number' => $validated['student_number'],
-            'first_name' => $validated['first_name'],
-            'last_name' => $validated['last_name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-        ]);
+        $student = DB::transaction(function () use ($validated) {
+            $student = Student::create([
+                'student_number' => $validated['student_number'],
+                'first_name' => $validated['first_name'],
+                'last_name' => $validated['last_name'],
+                'email' => $validated['email'],
+                'password' => Hash::make($validated['password']),
+            ]);
 
-        $this->sendOtp($student);
+            $this->sendOtp($student);
+
+            return $student;
+        });
 
         return response()->json([
             'success' => true,
