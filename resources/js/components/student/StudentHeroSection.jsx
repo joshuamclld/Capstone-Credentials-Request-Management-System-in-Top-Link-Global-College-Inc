@@ -2,9 +2,9 @@ import React from 'react';
 import { CheckCircle } from 'lucide-react';
 
 const benefits = [
-  'Secure Student Access',
-  'Email OTP Verification',
-  'Safe Request Management',
+  'Request COE, CGM, COR, Grades & TOR online',
+  'Pay online via PayMongo or cash on pickup',
+  'Real-time tracking from submission to release',
 ];
 
 export default function StudentHeroSection({ onNavigate, onOpenAuth, student }) {
@@ -19,11 +19,11 @@ export default function StudentHeroSection({ onNavigate, onOpenAuth, student }) 
           </div>
 
           <h1 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-5xl text-on-background mb-4 sm:mb-6 leading-[1.1]">
-            Request Your School Credentials Online
+            Request Credentials Online
           </h1>
 
           <p className="font-body-md sm:font-body-lg text-body-md sm:text-body-lg text-on-surface-variant mb-6 sm:mb-10 max-w-xl">
-            Request your academic credentials online securely and track your requests anytime. Register your student account to request, monitor, and manage credentials safely.
+            Submit requests for Certificate of Enrollment, Good Moral, Registration, Grades, or Transcript of Records. Pay online or on pickup, and track your request from submission to release.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center lg:justify-start">
