@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Eye, Edit, ToggleLeft, Plus, X, Check, Shield, ShieldOff } from 'lucide-react';
+import { Users, Eye, EyeOff, Edit, ToggleLeft, Plus, X, Check, Shield, ShieldOff } from 'lucide-react';
 import DashboardLayout from '../../DashboardLayout';
 import DashboardSearch from '../../DashboardSearch';
 import DashboardTable from '../../DashboardTable';
@@ -42,7 +42,8 @@ export default function SystemAdminUserManagement({ user, onLogout, onNavigate, 
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
-    const [formData, setFormData] = useState({ name: '', email: '', password: '', role: 'cashier', contact_number: '' });
+    const [formData, setFormData] = useState({ name: '', email: '', password: '', password_confirmation: '', role: 'cashier', contact_number: '' });
+    const [showPassword, setShowPassword] = useState(false);
     const [formError, setFormError] = useState('');
     const [formLoading, setFormLoading] = useState(false);
 
@@ -78,15 +79,17 @@ export default function SystemAdminUserManagement({ user, onLogout, onNavigate, 
     const handlePageChange = (np) => { if (np >= 1 && pagination && np <= pagination.last_page) setPage(np); };
 
     const openAddModal = () => {
-        setFormData({ name: '', email: '', password: '', role: 'cashier', contact_number: '' });
+        setFormData({ name: '', email: '', password: '', password_confirmation: '', role: 'cashier', contact_number: '' });
         setFormError('');
+        setShowPassword(false);
         setShowAddModal(true);
     };
 
     const openEditModal = (u) => {
         setEditingUser(u);
-        setFormData({ name: u.name, email: u.email, password: '', role: u.role, contact_number: u.contact_number || '' });
+        setFormData({ name: u.name, email: u.email, password: '', password_confirmation: '', role: u.role, contact_number: u.contact_number || '' });
         setFormError('');
+        setShowPassword(false);
         setShowEditModal(true);
     };
 
@@ -95,11 +98,17 @@ export default function SystemAdminUserManagement({ user, onLogout, onNavigate, 
         setFormLoading(true);
         setFormError('');
 
+        if (formData.password && formData.password !== formData.password_confirmation) {
+            setFormError('Passwords do not match.');
+            setFormLoading(false);
+            return;
+        }
+
         const url = isEdit ? `/admin/system/users/${editingUser.id}` : '/admin/system/users';
         const method = isEdit ? 'PUT' : 'POST';
         const body = isEdit
             ? { name: formData.name, role: formData.role, contact_number: formData.contact_number, ...(formData.password ? { password: formData.password } : {}) }
-            : formData;
+            : { name: formData.name, email: formData.email, password: formData.password, role: formData.role, contact_number: formData.contact_number };
 
         fetch(url, {
             method,
@@ -221,11 +230,25 @@ export default function SystemAdminUserManagement({ user, onLogout, onNavigate, 
                     </div>
                     <div>
                         <label className="block text-xs font-medium text-slate-600 mb-1">Email</label>
-                        <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-500" placeholder="Email address" />
+                        <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} autoComplete="off" className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-500" placeholder="Email address" />
                     </div>
                     <div>
                         <label className="block text-xs font-medium text-slate-600 mb-1">Password {isEdit && <span className="text-slate-400">(leave blank to keep current)</span>}</label>
-                        <input type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-500" placeholder={isEdit ? 'New password...' : 'Password'} />
+                        <div className="relative">
+                            <input type={showPassword ? 'text' : 'password'} value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} autoComplete="new-password" className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 pr-10 focus:outline-none focus:ring-1 focus:ring-emerald-500" placeholder={isEdit ? 'New password...' : 'Password'} />
+                            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer">
+                                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <label className="block text-xs font-medium text-slate-600 mb-1">Confirm Password</label>
+                        <div className="relative">
+                            <input type={showPassword ? 'text' : 'password'} value={formData.password_confirmation} onChange={(e) => setFormData({ ...formData, password_confirmation: e.target.value })} autoComplete="new-password" className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 pr-10 focus:outline-none focus:ring-1 focus:ring-emerald-500" placeholder="Repeat password" />
+                            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer">
+                                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
+                        </div>
                     </div>
                     <div>
                         <label className="block text-xs font-medium text-slate-600 mb-1">Role</label>

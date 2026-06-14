@@ -9,6 +9,7 @@ export default function DashboardSearch({ value, onChange, placeholder }) {
                 value={value}
                 onChange={onChange}
                 placeholder={placeholder}
+                autoComplete="off"
                 className="w-full sm:w-64 pl-9 pr-4 py-2 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
             />
         </div>

@@ -38,8 +38,11 @@ export default function AdminLogin({ onLoginSuccess }) {
                 if (!response.ok) {
                     return response.json().then(err => {
                         throw new Error(err.message || 'Login failed');
-                    }).catch(() => {
-                        throw new Error('Server error. Please try again.');
+                    }).catch(e => {
+                        if (e instanceof SyntaxError) {
+                            throw new Error('Server error. Please try again.');
+                        }
+                        throw e;
                     });
                 }
                 return response.json();

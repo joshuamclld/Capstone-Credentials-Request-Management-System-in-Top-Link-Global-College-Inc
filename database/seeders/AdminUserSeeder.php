@@ -44,6 +44,7 @@ class AdminUserSeeder extends Seeder
                 'password' => Hash::make($sysAdminPw),
                 'role' => 'system_admin',
                 'email_verified_at' => now(),
+                'is_super_admin' => true,
             ]
         );
 

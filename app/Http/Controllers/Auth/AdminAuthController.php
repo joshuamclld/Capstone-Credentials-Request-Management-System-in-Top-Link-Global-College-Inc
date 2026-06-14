@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -24,6 +25,15 @@ class AdminAuthController extends Controller
 
         $credentials = $request->only('email', 'password');
         $remember = $request->boolean('remember_me');
+
+        $user = User::where('email', $credentials['email'])->first();
+
+        if (!$user) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Account not registered.',
+            ], 404);
+        }
 
         if (Auth::attempt($credentials, $remember)) {
             $user = Auth::user();
@@ -56,7 +66,7 @@ class AdminAuthController extends Controller
 
         return response()->json([
             'status' => 'error',
-            'message' => 'Invalid credentials or insufficient permissions.',
+            'message' => 'Invalid credentials.',
         ], 401);
     }
 
