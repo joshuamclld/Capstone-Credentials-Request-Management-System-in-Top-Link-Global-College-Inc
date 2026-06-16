@@ -131,6 +131,7 @@ class StudentRequestController extends Controller
                 'is_digitally_sent' => $studentRequest->is_digitally_sent,
                 'digitally_sent_at' => $studentRequest->digitally_sent_at,
                 'delivery_type' => $studentRequest->delivery_type,
+                'payment_proof' => $studentRequest->payment_proof ? url('/payment-proof/' . $studentRequest->tracking_number) : null,
             ],
         ]);
     }
@@ -159,7 +160,7 @@ class StudentRequestController extends Controller
             $trackingNumber = $this->generateTrackingNumber();
 
             $paymentMethod = $validated['paymentMethod'];
-            $paymentStatus = $paymentMethod === 'online' ? 'pending_payment' : 'unpaid';
+            $paymentStatus = 'unpaid';
 
             $deliveryType = $validated['deliveryType'] === 'pickup' ? 'physical' : 'digital';
 
@@ -251,6 +252,7 @@ class StudentRequestController extends Controller
                     'year_level' => $studentRequest->year_level,
                     'section' => $studentRequest->section,
                     'delivery_type' => $studentRequest->delivery_type,
+                    'payment_proof' => $studentRequest->payment_proof ? url('/payment-proof/' . $studentRequest->tracking_number) : null,
                 ],
             ]);
         }
@@ -274,6 +276,7 @@ class StudentRequestController extends Controller
                 'year_level' => $studentRequest->year_level,
                 'section' => $studentRequest->section,
                 'delivery_type' => $studentRequest->delivery_type,
+                'payment_proof' => $studentRequest->payment_proof ? url('/payment-proof/' . $studentRequest->tracking_number) : null,
             ],
         ]);
     }
@@ -505,7 +508,7 @@ class StudentRequestController extends Controller
 
     public function paymentSuccess(Request $request)
     {
-        if (!$request->hasValidSignature()) {
+        if (!URL::hasValidSignature($request, true, ['session_id'])) {
             abort(401);
         }
 
@@ -646,6 +649,73 @@ class StudentRequestController extends Controller
         }
 
         return response()->json(['success' => true]);
+    }
+
+    public function uploadPaymentProof(Request $request, string $trackingNumber)
+    {
+        $student = auth('student')->user();
+        if (!$student) {
+            return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
+        }
+
+        $studentRequest = StudentRequest::where('tracking_number', $trackingNumber)
+            ->where('student_id', $student->id)
+            ->first();
+
+        if (!$studentRequest) {
+            return response()->json(['success' => false, 'message' => 'Request not found.'], 404);
+        }
+
+        if ($studentRequest->payment_status === 'paid') {
+            return response()->json(['success' => false, 'message' => 'Payment already verified.'], 422);
+        }
+
+        $request->validate([
+            'proof' => 'required|file|image|max:5120',
+        ]);
+
+        $path = $request->file('proof')->store('payment-proofs');
+
+        $studentRequest->payment_proof = $path;
+        $studentRequest->payment_status = 'pending_verification';
+        $studentRequest->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Payment proof uploaded successfully.',
+            'proof_url' => url('/payment-proof/' . $trackingNumber),
+        ]);
+    }
+
+    public function getPaymentProof(string $trackingNumber)
+    {
+        $studentRequest = StudentRequest::where('tracking_number', $trackingNumber)->first();
+
+        if (!$studentRequest || !$studentRequest->payment_proof) {
+            abort(404);
+        }
+
+        $student = auth('student')->user();
+        $admin = auth()->user();
+
+        $isOwner = $student && $studentRequest->student_id === $student->id;
+        $isAdmin = $admin && in_array($admin->role, ['registrar', 'cashier', 'system_admin']);
+
+        if (!$isOwner && !$isAdmin) {
+            abort(403);
+        }
+
+        $path = storage_path('app/' . $studentRequest->payment_proof);
+
+        if (!file_exists($path)) {
+            $path = storage_path('app/public/' . $studentRequest->payment_proof);
+        }
+
+        if (!file_exists($path)) {
+            abort(404);
+        }
+
+        return response()->file($path);
     }
 
     private function calculateFee($documents, array $semesters, ?int $pages): float

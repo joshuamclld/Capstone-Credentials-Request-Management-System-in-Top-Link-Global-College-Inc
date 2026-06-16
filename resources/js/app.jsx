@@ -24,6 +24,7 @@ import CashierDashboard from './components/dashboard/pages/CashierDashboard';
 import PaymentQueue from './components/dashboard/pages/PaymentQueue';
 import PaymentDetails from './components/dashboard/pages/PaymentDetails';
 import PaidTransactions from './components/dashboard/pages/PaidTransactions';
+import CashierSettings from './components/dashboard/pages/CashierSettings';
 import SystemAdminDashboard from './components/dashboard/pages/system-admin/SystemAdminDashboard';
 import SystemAdminUserManagement from './components/dashboard/pages/system-admin/SystemAdminUserManagement';
 import SystemAdminUserDetails from './components/dashboard/pages/system-admin/SystemAdminUserDetails';
@@ -308,6 +309,10 @@ function App() {
 
   if (currentPath === '/cashier/transactions') {
     return <PaidTransactions user={user} onLogout={handleLogout} onNavigate={navigate} />;
+  }
+
+  if (currentPath === '/cashier/settings') {
+    return <CashierSettings user={user} onLogout={handleLogout} onNavigate={navigate} />;
   }
 
   if (currentPath === '/request') {

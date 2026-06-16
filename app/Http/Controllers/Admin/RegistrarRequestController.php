@@ -147,6 +147,7 @@ class RegistrarRequestController extends Controller
             'digitally_sent_at' => $request->digitally_sent_at,
             'digitally_sent_by' => $request->digitally_sent_by,
             'delivery_type' => $request->delivery_type,
+            'payment_proof' => $request->payment_proof ? url('/payment-proof/' . $request->tracking_number) : null,
             'digitally_sent_by_name' => $request->digitally_sent_by ? \App\Models\User::find($request->digitally_sent_by)?->name : null,
         ]);
     }

@@ -27,16 +27,6 @@ export default function CashierDashboard({ user, onLogout, onNavigate }) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [page, setPage] = useState(1);
-    const [onlinePaymentEnabled, setOnlinePaymentEnabled] = useState(true);
-    const [toggling, setToggling] = useState(false);
-
-    const fetchOnlinePaymentStatus = () => {
-        fetch('/admin/cashier/online-payment-status', { credentials: 'same-origin' })
-            .then(r => r.json())
-            .then(d => setOnlinePaymentEnabled(d.enabled))
-            .catch(err => console.error('Failed to fetch online payment status:', err));
-    };
-
     const fetchData = (isInitial = false) => {
         if (isInitial) setLoading(true);
         fetch(`/admin/payments-data?per_page=9999&daily=1`, { credentials: 'same-origin' })
@@ -58,10 +48,6 @@ export default function CashierDashboard({ user, onLogout, onNavigate }) {
         fetchData(true);
         const interval = setInterval(() => fetchData(), 10000);
         return () => clearInterval(interval);
-    }, []);
-
-    useEffect(() => {
-        fetchOnlinePaymentStatus();
     }, []);
 
     const sortedRequests = [...data.requests].sort((a, b) => {
@@ -86,27 +72,6 @@ export default function CashierDashboard({ user, onLogout, onNavigate }) {
     };
 
     useEffect(() => { setPage(1); }, [query]);
-
-    const handleToggleOnlinePayment = () => {
-        if (toggling) return;
-        setToggling(true);
-        const newValue = !onlinePaymentEnabled;
-        fetch('/admin/cashier/online-payment-status', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
-            },
-            body: JSON.stringify({ enabled: newValue }),
-            credentials: 'same-origin',
-        })
-            .then(r => r.json())
-            .then(d => {
-                if (d.success) setOnlinePaymentEnabled(d.enabled);
-            })
-            .catch(err => console.error('Failed to toggle online payment:', err))
-            .finally(() => setToggling(false));
-    };
 
     const renderRow = (req) => (
         <tr key={req.id} className="hover:bg-slate-50 transition-colors">
@@ -165,18 +130,6 @@ export default function CashierDashboard({ user, onLogout, onNavigate }) {
                             </div>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-6">
-                            <div className="rounded-xl border border-slate-200 bg-orange-50 p-5">
-                                <div className="flex items-center gap-3 mb-3">
-                                    <div className="w-9 h-9 rounded-lg bg-orange-100 flex items-center justify-center">
-                                        <CreditCard className="w-4 h-4 text-orange-700" />
-                                    </div>
-                                    <div>
-                                        <p className="text-xs font-medium text-slate-500">Online</p>
-                                        <p className="text-sm font-bold text-slate-900">{data.stats?.daily_online_count ?? 0} payment{(data.stats?.daily_online_count ?? 0) !== 1 ? 's' : ''}</p>
-                                    </div>
-                                </div>
-                                <p className="text-xl font-bold text-orange-800">₱{(Number(data.stats?.daily_online_total) || 0).toFixed(2)}</p>
-                            </div>
                             <div className="rounded-xl border border-slate-200 bg-emerald-50 p-5">
                                 <div className="flex items-center gap-3 mb-3">
                                     <div className="w-9 h-9 rounded-lg bg-emerald-100 flex items-center justify-center">
@@ -189,23 +142,6 @@ export default function CashierDashboard({ user, onLogout, onNavigate }) {
                                 </div>
                                 <p className="text-xl font-bold text-emerald-800">₱{(Number(data.stats?.daily_cash_total) || 0).toFixed(2)}</p>
                             </div>
-                        </div>
-                    </section>
-
-                    {/* Online Payment Toggle */}
-                    <section className="bg-white rounded-xl border border-slate-200 shadow-sm mb-8">
-                        <div className="flex items-center justify-between px-6 py-4">
-                            <div>
-                                <h3 className="text-sm font-bold text-slate-900">Online Payment</h3>
-                                <p className="text-xs text-slate-500 mt-0.5">Enable or disable student online payment availability.</p>
-                            </div>
-                            <button
-                                onClick={handleToggleOnlinePayment}
-                                disabled={toggling}
-                                className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 cursor-pointer ${onlinePaymentEnabled ? 'bg-emerald-700' : 'bg-slate-300'}`}
-                            >
-                                <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${onlinePaymentEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
-                            </button>
                         </div>
                     </section>
 

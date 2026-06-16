@@ -6,12 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\Document;
 use App\Models\Notification;
+use App\Models\PaymentSetting;
 use App\Models\StudentRequest;
 
 use App\Services\PayMongoService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class CashierPaymentController extends Controller
@@ -177,6 +177,7 @@ class CashierPaymentController extends Controller
                 'total_fee' => (float) $studentRequest->total_fee,
                 'verified_by' => $studentRequest->verified_by,
                 'verified_at' => $studentRequest->verified_at,
+                'payment_proof' => $studentRequest->payment_proof ? url('/payment-proof/' . $studentRequest->tracking_number) : null,
                 'created_at' => $studentRequest->created_at->format('Y-m-d'),
             ],
         ]);
@@ -263,7 +264,8 @@ class CashierPaymentController extends Controller
 
     public function getOnlinePaymentStatus(): JsonResponse
     {
-        $enabled = Cache::get('enable_online_payment', true);
+        $setting = PaymentSetting::where('key', 'enable_online_payment')->first();
+        $enabled = $setting ? filter_var($setting->value, FILTER_VALIDATE_BOOL) : true;
 
         return response()->json([
             'success' => true,
@@ -275,12 +277,70 @@ class CashierPaymentController extends Controller
     {
         $request->validate(['enabled' => 'required|boolean']);
 
-        Cache::forever('enable_online_payment', $request->input('enabled'));
+        PaymentSetting::updateOrCreate(
+            ['key' => 'enable_online_payment'],
+            ['value' => $request->input('enabled') ? 'true' : 'false']
+        );
 
         return response()->json([
             'success' => true,
             'message' => 'Online payment setting updated.',
             'enabled' => $request->input('enabled'),
         ]);
+    }
+
+    public function uploadQr(Request $request): JsonResponse
+    {
+        $request->validate([
+            'qr_image' => 'required|file|image|max:2048',
+        ]);
+
+        $path = $request->file('qr_image')->store('payment-qr');
+
+        PaymentSetting::updateOrCreate(
+            ['key' => 'payment_qr'],
+            ['value' => $path]
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Payment QR code uploaded.',
+            'qr_url' => url('/payment-qr-image?' . time()),
+        ]);
+    }
+
+    public function getQr(): JsonResponse
+    {
+        $setting = PaymentSetting::where('key', 'payment_qr')->first();
+
+        if (!$setting || !$setting->value) {
+            return response()->json(['success' => false, 'qr_url' => null]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'qr_url' => url('/payment-qr-image?' . time()),
+        ]);
+    }
+
+    public function getQrImage()
+    {
+        $setting = PaymentSetting::where('key', 'payment_qr')->first();
+
+        if (!$setting || !$setting->value) {
+            abort(404);
+        }
+
+        $path = storage_path('app/' . $setting->value);
+
+        if (!file_exists($path)) {
+            $path = storage_path('app/public/' . $setting->value);
+        }
+
+        if (!file_exists($path)) {
+            abort(404);
+        }
+
+        return response()->file($path);
     }
 }

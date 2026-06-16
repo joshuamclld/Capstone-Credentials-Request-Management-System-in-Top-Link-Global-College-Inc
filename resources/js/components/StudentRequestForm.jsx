@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import FormSelect from './ui/FormSelect';
 import StudentDashboardLayout from './student/StudentDashboardLayout';
+import ProtectedImage from './ui/ProtectedImage';
 
 const GRADE_YEARS = ['1st Year', '2nd Year', '3rd Year'];
 const GRADE_SEMESTERS = ['1st Semester', '2nd Semester'];
@@ -33,6 +34,7 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
   const [selectedSemesters, setSelectedSemesters] = useState([]);
   const [pages, setPages] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState('');
+  const [paymentQrUrl, setPaymentQrUrl] = useState(null);
   const [deliveryType, setDeliveryType] = useState('');
   const [purpose, setPurpose] = useState('');
 
@@ -44,8 +46,6 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
 
   const [documents, setDocuments] = useState([]);
   const [docsLoading, setDocsLoading] = useState(true);
-  const [onlinePaymentEnabled, setOnlinePaymentEnabled] = useState(true);
-
   const isAuthenticated = Boolean(student);
 
   useEffect(() => {
@@ -64,7 +64,6 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
       .then(res => res.json())
       .then(data => {
         setDocuments(Array.isArray(data) ? data : data.documents);
-        setOnlinePaymentEnabled(data.online_payment_enabled ?? true);
         setDocsLoading(false);
       })
       .catch(() => setDocsLoading(false));
@@ -75,9 +74,31 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
   const [generatedRef, setGeneratedRef] = useState('');
   const [stepError, setStepError] = useState('');
   const [submitError, setSubmitError] = useState('');
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [paymentLoading, setPaymentLoading] = useState(false);
-  const [paymentError, setPaymentError] = useState('');
+  const [onlinePaymentEnabled, setOnlinePaymentEnabled] = useState(true);
+
+  useEffect(() => {
+    fetch('/online-payment-status')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setOnlinePaymentEnabled(data.enabled);
+          if (!data.enabled && paymentMethod === 'online') setPaymentMethod('');
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (paymentMethod === 'online') {
+      fetch('/admin/payment-qr')
+        .then(res => res.json())
+        .then(data => { if (data.success) setPaymentQrUrl(data.qr_url); })
+        .catch(() => {});
+    } else {
+      setPaymentQrUrl(null);
+    }
+  }, [paymentMethod]);
+
 
   const getCsrfToken = () =>
     document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
@@ -253,9 +274,6 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
       }
       setGeneratedRef(data.tracking_number);
       setIsSubmitting(false);
-      if (paymentMethod === 'online') {
-        setShowPaymentModal(true);
-      }
       setSubmitSuccess(true);
     } catch (err) {
       setSubmitError('Network error. Please check your connection and try again.');
@@ -263,48 +281,11 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
     }
   };
 
-  const handleProceedPayment = async () => {
-    if (paymentLoading) return;
-    setPaymentLoading(true);
-    setPaymentError('');
-    try {
-      const response = await fetch(`/requests/${encodeURIComponent(generatedRef)}/continue-payment`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'X-CSRF-TOKEN': getCsrfToken(),
-        },
-      });
-      const data = await response.json();
-      if (!response.ok || !data.success) {
-        setPaymentError(data.message || 'Failed to initiate payment.');
-        setPaymentLoading(false);
-        return;
-      }
-      if (data.already_paid) {
-        setShowPaymentModal(false);
-        setPaymentLoading(false);
-        return;
-      }
-      if (data.checkout_url) {
-        window.location.href = data.checkout_url;
-        return;
-      }
-      setPaymentError('No checkout URL returned.');
-      setPaymentLoading(false);
-    } catch {
-      setPaymentError('Network error. Please try again.');
-      setPaymentLoading(false);
-    }
-  };
-
   return (
     <StudentDashboardLayout title="Request Documents" subtitle="Submit a new credential request." student={student} onLogout={onLogout} onNavigate={onNavigate} currentPath={currentPath}>
       <div className="max-w-container-max mx-auto">
         {submitSuccess ? (
-          /* Submission Success State */
-          <div className="max-w-xl mx-auto text-center py-10 sm:py-16 px-4 sm:px-6 bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-xl">
+          <div className="max-w-xl mx-auto text-center bg-surface-container-lowest border border-outline-variant rounded-2xl p-8 sm:p-10 shadow-xl mt-8">
             <div className="w-14 h-14 sm:w-20 sm:h-20 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-8">
               <span className="material-symbols-outlined text-3xl sm:text-5xl">check_circle</span>
             </div>
@@ -316,23 +297,15 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
               <p className="text-label-sm text-on-surface-variant uppercase tracking-widest mb-1">Reference Number</p>
               <p className="text-lg sm:text-2xl font-bold text-primary tracking-wider">{generatedRef}</p>
             </div>
-            {paymentMethod === 'online' && (
-              <div className="mb-6 p-4 rounded-lg bg-amber-50 border border-amber-200">
-                <p className="text-body-sm text-amber-800 flex items-center gap-2 justify-center">
-                  <span className="material-symbols-outlined text-amber-600 text-[20px]">info</span>
-                  Please proceed to payment to complete your request.
-                </p>
+            {paymentMethod === 'online' && paymentQrUrl && (
+              <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                <p className="text-xs font-bold text-amber-800 mb-3">Scan to Pay via GCash / Maya</p>
+                <div className="flex justify-center">
+                  <ProtectedImage src={paymentQrUrl} alt="Payment QR" className="w-40 h-40 object-contain" />
+                </div>
               </div>
             )}
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              {paymentMethod === 'online' && (
-                <button
-                  onClick={() => setShowPaymentModal(true)}
-                  className="bg-primary text-on-primary px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-bold hover:opacity-95 transition-all cursor-pointer"
-                >
-                  Proceed to Online Payment
-                </button>
-              )}
               <button
                 onClick={(e) => { e.preventDefault(); onNavigate('/student/requests/' + generatedRef); }}
                 className="bg-primary/10 text-primary px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-bold hover:bg-primary/15 transition-all cursor-pointer"
@@ -348,7 +321,6 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
             </div>
           </div>
         ) : (
-          /* Multi-step Form State */
           <div className="w-full max-w-4xl mx-auto">
             {/* Multi-step Progress Bar */}
             <div className="mb-6 sm:mb-10 w-full max-w-2xl mx-auto">
@@ -681,11 +653,11 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
                             }`}
                         >
                           <div className="flex items-center gap-3">
-                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${deliveryType === 'pickup' ? 'border-primary' : 'border-outline'
+                            <div className={`w-5 h-5 shrink-0 aspect-square rounded-full border-2 flex items-center justify-center ${deliveryType === 'pickup' ? 'border-primary' : 'border-outline'
                               }`}>
-                              {deliveryType === 'pickup' && <div className="w-2.5 h-2.5 rounded-full bg-primary"></div>}
+                              {deliveryType === 'pickup' && <div className="w-2.5 h-2.5 shrink-0 aspect-square rounded-full bg-primary"></div>}
                             </div>
-                            <div>
+                            <div className="min-w-0">
                               <p className="font-label-md font-bold text-on-surface">Pick up at Registrar Office</p>
                               <p className="text-body-sm text-on-surface-variant">Visit TLGC campus to claim your requested document.</p>
                             </div>
@@ -697,11 +669,11 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
                             }`}
                         >
                           <div className="flex items-center gap-3">
-                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${deliveryType === 'digital' ? 'border-primary' : 'border-outline'
+                            <div className={`w-5 h-5 shrink-0 aspect-square rounded-full border-2 flex items-center justify-center ${deliveryType === 'digital' ? 'border-primary' : 'border-outline'
                               }`}>
-                              {deliveryType === 'digital' && <div className="w-2.5 h-2.5 rounded-full bg-primary"></div>}
+                              {deliveryType === 'digital' && <div className="w-2.5 h-2.5 shrink-0 aspect-square rounded-full bg-primary"></div>}
                             </div>
-                            <div>
+                            <div className="min-w-0">
                               <p className="font-label-md font-bold text-on-surface">Digital Copy (Email)</p>
                               <p className="text-body-sm text-on-surface-variant">Receive a PDF copy of your document via email.</p>
                             </div>
@@ -720,35 +692,36 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
                             }`}
                         >
                           <div className="flex items-center gap-3">
-                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${paymentMethod === 'cash' ? 'border-primary' : 'border-outline'
+                            <div className={`w-5 h-5 shrink-0 aspect-square rounded-full border-2 flex items-center justify-center ${paymentMethod === 'cash' ? 'border-primary' : 'border-outline'
                               }`}>
-                              {paymentMethod === 'cash' && <div className="w-2.5 h-2.5 rounded-full bg-primary"></div>}
+                              {paymentMethod === 'cash' && <div className="w-2.5 h-2.5 shrink-0 aspect-square rounded-full bg-primary"></div>}
                             </div>
-                              <div>
+                              <div className="min-w-0">
                                 <p className="font-label-md font-bold text-on-surface">Cash Payment</p>
                                 <p className="text-body-sm text-on-surface-variant">{deliveryType === 'digital' ? 'Pay at the Registrar Office on or before processing.' : 'Pay at the Registrar Office during claiming.'}</p>
                               </div>
                           </div>
                         </div>
+
                         {onlinePaymentEnabled && (
-                          <div
-                            onClick={() => setPaymentMethod('online')}
-                            className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${paymentMethod === 'online' ? 'border-primary bg-surface-container-low' : 'border-outline-variant bg-surface-container-lowest'
-                              }`}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${paymentMethod === 'online' ? 'border-primary' : 'border-outline'
-                                }`}>
-                                {paymentMethod === 'online' && <div className="w-2.5 h-2.5 rounded-full bg-primary"></div>}
-                              </div>
-                              <div>
-                                <p className="font-label-md font-bold text-on-surface">Online Payment</p>
-                                <p className="text-body-sm text-on-surface-variant">Pay online and wait for payment verification.</p>
-                                <p className="text-label-sm text-on-surface-variant mt-1">You will be redirected to secure payment after submission.</p>
-                              </div>
+                        <div
+                          onClick={() => setPaymentMethod('online')}
+                          className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${paymentMethod === 'online' ? 'border-primary bg-surface-container-low' : 'border-outline-variant bg-surface-container-lowest'
+                            }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-5 h-5 shrink-0 aspect-square rounded-full border-2 flex items-center justify-center ${paymentMethod === 'online' ? 'border-primary' : 'border-outline'
+                              }`}>
+                              {paymentMethod === 'online' && <div className="w-2.5 h-2.5 shrink-0 aspect-square rounded-full bg-primary"></div>}
                             </div>
+                              <div className="min-w-0">
+                                <p className="font-label-md font-bold text-on-surface">Online Payment</p>
+                                <p className="text-body-sm text-on-surface-variant">Pay via GCash / Maya and upload a screenshot of your payment.</p>
+                              </div>
                           </div>
+                        </div>
                         )}
+
                       </div>
                     </div>
 
@@ -802,11 +775,11 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
                         </div>
                         <div className="flex justify-between border-b border-outline-variant pb-2">
                           <span className="text-on-surface-variant font-medium">Payment Method:</span>
-                          <span className="font-bold text-on-surface">{paymentMethod === 'cash' ? 'Cash Payment' : paymentMethod === 'online' ? 'Online Payment' : ''}</span>
+                          <span className="font-bold text-on-surface">{paymentMethod === 'online' ? 'Online Payment' : 'Cash Payment'}</span>
                         </div>
                         <div className="flex justify-between pb-2">
                           <span className="text-on-surface-variant font-medium">Payment Status:</span>
-                          <span className="font-bold text-on-surface">{paymentMethod === 'cash' ? 'Unpaid' : paymentMethod === 'online' ? 'Pending Verification' : ''}</span>
+                          <span className="font-bold text-on-surface">Unpaid</span>
                         </div>
                       </div>
 
@@ -875,16 +848,16 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
                   <button
                     type="button"
                     onClick={handleBackStep}
-                    className="flex-1 flex items-center justify-center gap-2 px-5 sm:px-8 py-3 sm:py-4 rounded-xl bg-surface-container-high text-primary font-bold hover:bg-surface-container-highest transition-all duration-300 active:scale-95 group cursor-pointer"
+                    className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-8 h-12 sm:h-14 rounded-xl bg-surface-container-high text-primary font-bold text-sm sm:text-base hover:bg-surface-container-highest transition-all duration-300 active:scale-95 group cursor-pointer"
                   >
-                    <span className="material-symbols-outlined transition-transform duration-300 group-hover:-translate-x-1">arrow_back</span>
-                    Back
+                    <span className="material-symbols-outlined text-lg transition-transform duration-300 group-hover:-translate-x-1">arrow_back</span>
+                    <span className="whitespace-nowrap">Back</span>
                   </button>
                 ) : (
                   <button
                     type="button"
                     onClick={(e) => { e.preventDefault(); onNavigate('/'); }}
-                    className="flex-1 flex items-center justify-center gap-2 px-5 sm:px-8 py-3 sm:py-4 rounded-xl bg-surface-container-high text-primary font-bold hover:bg-surface-container-highest transition-all duration-300 active:scale-95 group cursor-pointer"
+                    className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-8 h-12 sm:h-14 rounded-xl bg-surface-container-high text-primary font-bold text-sm sm:text-base hover:bg-surface-container-highest transition-all duration-300 active:scale-95 group cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -893,26 +866,26 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
                 {step < 4 ? (
                   <button
                     type="submit"
-                    className="flex-1 flex items-center justify-center gap-2 px-5 sm:px-8 py-3 sm:py-4 rounded-xl bg-primary text-on-primary font-bold hover:opacity-90 shadow-lg transition-all duration-300 active:scale-95 group cursor-pointer"
+                    className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-8 h-12 sm:h-14 rounded-xl bg-primary text-on-primary font-bold text-sm sm:text-base hover:opacity-90 shadow-lg transition-all duration-300 active:scale-95 group cursor-pointer"
                   >
-                    Next Step
-                    <span className="material-symbols-outlined transition-transform duration-300 group-hover:translate-x-1">arrow_forward</span>
+                    <span className="whitespace-nowrap">Next Step</span>
+                    <span className="material-symbols-outlined text-lg transition-transform duration-300 group-hover:translate-x-1">arrow_forward</span>
                   </button>
                 ) : (
                   <button
                     type="submit"
                     disabled={isSubmitting || !allConfirmed}
-                    className="flex-1 flex items-center justify-center gap-2 px-5 sm:px-8 py-3 sm:py-4 rounded-xl bg-primary text-on-primary font-bold hover:opacity-90 shadow-lg transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                    className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-8 h-12 sm:h-14 rounded-xl bg-primary text-on-primary font-bold text-sm sm:text-base hover:opacity-90 shadow-lg transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                   >
                     {isSubmitting ? (
                       <>
-                        <span className="material-symbols-outlined animate-spin">sync</span>
+                        <span className="material-symbols-outlined text-lg animate-spin">sync</span>
                         Submitting...
                       </>
                     ) : (
                       <>
-                      {paymentMethod === 'online' ? 'Submit & Pay' : 'Submit Request'}
-                        <span className="material-symbols-outlined">send</span>
+                        <span className="whitespace-nowrap">Submit Request</span>
+                        <span className="material-symbols-outlined text-lg">send</span>
                       </>
                     )}
                   </button>
@@ -923,40 +896,7 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
         )}
       </div>
 
-      {/* Payment Confirmation Modal */}
-      {showPaymentModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4" onClick={() => !paymentLoading && setShowPaymentModal(false)}>
-          <div className="bg-surface rounded-2xl shadow-xl border border-outline-variant w-full max-w-md p-4 sm:p-6 animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-headline-sm font-bold text-on-surface mb-2">Proceed to Online Payment?</h3>
-            <p className="text-body-sm sm:text-body-md text-on-surface-variant mb-4 sm:mb-6">
-              You will be redirected to PayMongo to complete payment securely.
-            </p>
 
-            {paymentError && (
-              <div className="mb-4 p-3 rounded-lg bg-error/10 border border-error/30">
-                <p className="text-body-sm text-error">{paymentError}</p>
-              </div>
-            )}
-
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => setShowPaymentModal(false)}
-                disabled={paymentLoading}
-                className="px-5 py-2.5 rounded-lg font-label-md font-bold text-on-surface-variant bg-surface-container-high hover:bg-surface-container-higher transition-colors cursor-pointer disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleProceedPayment}
-                disabled={paymentLoading}
-                className="px-5 py-2.5 rounded-lg font-label-md font-bold text-on-primary bg-primary hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-50"
-              >
-                {paymentLoading ? 'Processing...' : 'Continue Payment'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </StudentDashboardLayout>
   );
 }

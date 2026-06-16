@@ -69,6 +69,11 @@ Route::prefix('admin')->group(function () {
     Route::post('/cashier/online-payment-status', [CashierPaymentController::class, 'toggleOnlinePayment'])
         ->middleware('cashier');
 
+    Route::post('/payment-qr', [CashierPaymentController::class, 'uploadQr'])
+        ->middleware('cashier');
+
+    Route::get('/payment-qr', [CashierPaymentController::class, 'getQr']);
+
     // System Administrator Routes
     Route::middleware('system_admin')->group(function () {
         Route::get('/system-dashboard-data', [SystemAdminController::class, 'dashboard']);
@@ -136,6 +141,9 @@ Route::post('/requests/{tracking_number}/continue-payment', [StudentRequestContr
 Route::get('/requests/{tracking_number}/verify-payment', [StudentRequestController::class, 'verifyPayment'])
     ->middleware(['auth:student', 'throttle:30,1']);
 Route::get('/documents', [DocumentController::class, 'index']);
+Route::get('/online-payment-status', [CashierPaymentController::class, 'getOnlinePaymentStatus']);
+Route::get('/payment-qr-image', [CashierPaymentController::class, 'getQrImage'])->middleware('throttle:60,1');
+Route::get('/payment-proof/{tracking_number}', [StudentRequestController::class, 'getPaymentProof'])->middleware('throttle:60,1');
 
 // Student Authentication Routes
 Route::prefix('student')->group(function () {
@@ -160,6 +168,7 @@ Route::prefix('student')->group(function () {
     Route::middleware('auth:student')->group(function () {
         Route::get('/api/requests', [StudentRequestController::class, 'myRequests']);
         Route::get('/api/requests/{tracking_number}', [StudentRequestController::class, 'myRequestDetail']);
+        Route::post('/api/requests/{tracking_number}/upload-proof', [StudentRequestController::class, 'uploadPaymentProof']);
 
         // Student Profile (GET moved to /api/ to avoid SPA refresh conflict)
         Route::get('/api/profile', [StudentProfileController::class, 'show']);

@@ -44,3 +44,5 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 .claude
+/public/docs/
+/docs

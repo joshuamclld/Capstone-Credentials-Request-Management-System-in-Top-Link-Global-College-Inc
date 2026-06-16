@@ -12,6 +12,7 @@ export const cashierSidebarItems = [
     { label: 'Dashboard', icon: LayoutDashboard, path: '/cashier-dashboard' },
     { label: 'Payment Queue', icon: Clock, path: '/cashier/payments' },
     { label: 'Paid Transactions', icon: CheckCircle, path: '/cashier/transactions' },
+    { label: 'Payment Settings', icon: RefreshCw, path: '/cashier/settings' },
 ];
 
 export const systemAdminSidebarItems = [

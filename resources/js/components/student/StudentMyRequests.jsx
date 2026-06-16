@@ -9,8 +9,6 @@ export default function StudentMyRequests({ student, onLogout, onNavigate, curre
   const [cancelling, setCancelling] = useState(null);
   const [cancelModal, setCancelModal] = useState(null);
   const [cancelError, setCancelError] = useState('');
-  const [continueLoading, setContinueLoading] = useState(null);
-  const [continueError, setContinueError] = useState('');
   const [claiming, setClaiming] = useState(null);
 
   const getCsrf = () => document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
@@ -27,7 +25,7 @@ export default function StudentMyRequests({ student, onLogout, onNavigate, curre
       .catch(() => setLoading(false));
   }, []);
 
-  // Re-fetch when tab gains focus (e.g. returning from PayMongo) and auto-sync payments
+  // Re-fetch when tab gains focus
   useEffect(() => {
     const onFocus = () => {
       fetch('/student/api/requests', {
@@ -35,28 +33,9 @@ export default function StudentMyRequests({ student, onLogout, onNavigate, curre
       })
         .then(res => res.json())
         .then(data => {
-          if (data.success) {
-            setRequests(data.requests);
-            // Auto-sync unpaid online requests with checkout IDs
-            data.requests.forEach(req => {
-              if (req.payment_method === 'online' && req.payment_status !== 'paid' && req.paymongo_checkout_id) {
-                fetch(`/requests/${encodeURIComponent(req.tracking_number)}/verify-payment`, {
-                  headers: { 'Accept': 'application/json' },
-                })
-                  .then(res => res.json())
-                  .then(syncData => {
-                    if (syncData.success && syncData.payment_status === 'paid') {
-                      setRequests(prev => prev.map(r =>
-                        r.tracking_number === req.tracking_number ? { ...r, payment_status: 'paid' } : r
-                      ));
-                    }
-                  })
-                  .catch(err => console.error('Payment sync failed:', err));
-              }
-            });
-          }
+          if (data.success) setRequests(data.requests);
         })
-        .catch(err => console.error('Failed to fetch requests:', err));
+        .catch(() => {});
     };
     window.addEventListener('focus', onFocus);
     return () => window.removeEventListener('focus', onFocus);
@@ -96,44 +75,6 @@ export default function StudentMyRequests({ student, onLogout, onNavigate, curre
     setCancelling(null);
   };
 
-  const handleContinuePayment = async (req) => {
-    if (continueLoading) return;
-    setContinueLoading(req.tracking_number);
-    setContinueError('');
-    try {
-      const res = await fetch(`/requests/${encodeURIComponent(req.tracking_number)}/continue-payment`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'X-CSRF-TOKEN': getCsrf(),
-        },
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        setContinueError(data.message || 'Failed to initiate payment.');
-        setContinueLoading(null);
-        return;
-      }
-      if (data.already_paid) {
-        setRequests(prev => prev.map(r =>
-          r.tracking_number === req.tracking_number ? { ...r, payment_status: 'paid' } : r
-        ));
-        setContinueLoading(null);
-        return;
-      }
-      if (data.checkout_url) {
-        window.location.href = data.checkout_url;
-        return;
-      }
-      setContinueError('No checkout URL returned.');
-      setContinueLoading(null);
-    } catch {
-      setContinueError('Network error. Please try again.');
-      setContinueLoading(null);
-    }
-  };
-
   const handleClaim = async (req) => {
     if (claiming) return;
     setClaiming(req.tracking_number);
@@ -164,21 +105,10 @@ export default function StudentMyRequests({ student, onLogout, onNavigate, curre
     return true;
   };
 
-  const showContinuePayment = (req) => {
-    return req.payment_method === 'online'
-      && req.payment_status !== 'paid'
-      && req.status !== 'Cancelled';
-  };
-
   return (
     <>
       <StudentDashboardLayout title="My Requests" subtitle="View and manage all your credential requests." student={student} onLogout={onLogout} onNavigate={onNavigate} currentPath={currentPath}>
         <div className="max-w-container-max mx-auto">
-          {continueError && (
-            <div className="mb-4 p-3 rounded-lg bg-error/10 border border-error/30">
-              <p className="text-body-sm text-error">{continueError}</p>
-            </div>
-          )}
           {loading ? (
             <div className="space-y-3">
               {[1, 2, 3, 4].map(i => <div key={i} className="h-24 bg-surface-container-high rounded-xl animate-pulse" />)}
@@ -247,15 +177,6 @@ export default function StudentMyRequests({ student, onLogout, onNavigate, curre
                         className="px-3 sm:px-4 py-2 sm:py-2 rounded-lg text-red-700 bg-red-50 border border-red-200 font-bold text-label-sm hover:bg-red-100 transition-all cursor-pointer disabled:opacity-50 whitespace-nowrap"
                       >
                         {cancelling === req.tracking_number ? 'Cancelling...' : 'Cancel Request'}
-                      </button>
-                    )}
-                    {showContinuePayment(req) && (
-                      <button
-                        onClick={() => handleContinuePayment(req)}
-                        disabled={continueLoading === req.tracking_number}
-                        className="px-3 sm:px-4 py-2 sm:py-2 rounded-lg text-amber-700 bg-amber-50 border border-amber-200 font-bold text-label-sm hover:bg-amber-100 transition-all cursor-pointer disabled:opacity-50 whitespace-nowrap"
-                      >
-                        {continueLoading === req.tracking_number ? 'Processing...' : 'Continue Payment'}
                       </button>
                     )}
                     {req.status === 'Ready for Release' && (

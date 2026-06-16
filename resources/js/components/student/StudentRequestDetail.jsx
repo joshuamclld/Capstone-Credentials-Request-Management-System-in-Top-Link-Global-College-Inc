@@ -3,6 +3,7 @@ import { FileText, BadgeCheck, Clock, PackageCheck, CheckCheck, AlertCircle, XCi
 import StudentDashboardLayout from './StudentDashboardLayout';
 import RegistrarRemarksCard from './RegistrarRemarksCard';
 import { getPaymentStatusConfig, getBadge, buildTimeline } from '../../utils/statusConfig';
+import ProtectedImage from '../ui/ProtectedImage';
 
 const TIMELINE_ICONS = [FileText, BadgeCheck, Clock, PackageCheck, CheckCheck, XCircle];
 
@@ -13,8 +14,11 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
   const [cancelling, setCancelling] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelModalError, setCancelModalError] = useState('');
-  const [continueLoading, setContinueLoading] = useState(false);
   const [claiming, setClaiming] = useState(false);
+  const [proofUploading, setProofUploading] = useState(false);
+  const [proofError, setProofError] = useState('');
+  const [proofModalUrl, setProofModalUrl] = useState(null);
+  const [paymentQrUrl, setPaymentQrUrl] = useState(null);
 
   const getCsrfToken = () =>
     document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
@@ -35,40 +39,50 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
       .catch(() => null);
   }, [trackingNumber]);
 
-  const syncPayment = React.useCallback((req) => {
-    if (!req || req.payment_status === 'paid' || !req.paymongo_checkout_id) return;
-    fetch(`/requests/${encodeURIComponent(trackingNumber)}/verify-payment`, {
-      headers: { 'Accept': 'application/json' },
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success && data.payment_status === 'paid') {
-          setRequest(prev => prev ? { ...prev, payment_status: 'paid' } : prev);
-        }
-      })
-      .catch(err => console.error('Payment sync failed:', err));
-  }, [trackingNumber]);
-
   useEffect(() => {
     if (!trackingNumber) return;
     setLoading(true);
     setError('');
     fetchRequest().then(req => {
       setLoading(false);
-      if (req) syncPayment(req);
-      else setError('Request not found.');
+      if (!req) setError('Request not found.');
     });
   }, [trackingNumber]);
 
-  // Re-fetch when tab gains focus (e.g. returning from PayMongo)
   useEffect(() => {
-    const onFocus = () => {
-      if (!trackingNumber) return;
-      fetchRequest().then(req => { if (req) syncPayment(req); });
-    };
-    window.addEventListener('focus', onFocus);
-    return () => window.removeEventListener('focus', onFocus);
-  }, [trackingNumber]);
+    if (!request || request.payment_method !== 'online') return;
+    fetch('/admin/payment-qr')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.qr_url) setPaymentQrUrl(data.qr_url);
+      })
+      .catch(() => {});
+  }, [request]);
+
+  const handleUploadProof = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setProofUploading(true);
+    setProofError('');
+    const formData = new FormData();
+    formData.append('proof', file);
+    try {
+      const res = await fetch(`/student/api/requests/${encodeURIComponent(trackingNumber)}/upload-proof`, {
+        method: 'POST',
+        headers: { 'X-CSRF-TOKEN': getCsrfToken() },
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setProofError(data.message || 'Upload failed.');
+      } else {
+        setRequest(prev => prev ? { ...prev, payment_proof: data.proof_url } : prev);
+      }
+    } catch {
+      setProofError('Network error.');
+    }
+    setProofUploading(false);
+  };
 
   const handleCancelClick = () => {
     setCancelModalError('');
@@ -110,43 +124,6 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
     if (cancelling) return;
     setShowCancelModal(false);
     setCancelModalError('');
-  };
-
-  const handleContinuePayment = async () => {
-    if (!request || continueLoading) return;
-    setContinueLoading(true);
-    try {
-      const res = await fetch(`/requests/${encodeURIComponent(request.tracking_number)}/continue-payment`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'X-CSRF-TOKEN': getCsrfToken(),
-        },
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        setContinueLoading(false);
-        return;
-      }
-      if (data.already_paid) {
-        // Re-fetch request to sync with server state
-        const refetch = await fetch(`/requests/${encodeURIComponent(request.tracking_number)}`, {
-          headers: { 'Accept': 'application/json' },
-        });
-        const refetchData = await refetch.json();
-        if (refetchData.success) setRequest(refetchData.request);
-        setContinueLoading(false);
-        return;
-      }
-      if (data.checkout_url) {
-        window.location.href = data.checkout_url;
-        return;
-      }
-    } catch {
-      // ignore
-    }
-    setContinueLoading(false);
   };
 
   const handleClaim = async () => {
@@ -291,14 +268,14 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
                   <span className="text-2xl font-bold text-primary">₱ {(Number(request.total_fee) || 0).toFixed(2)}</span>
                 </div>
 
-                <div className="mt-6 pt-4 border-t border-outline-variant flex gap-2 justify-end flex-nowrap">
+                <div className="mt-6 pt-4 border-t border-outline-variant flex flex-col sm:flex-row gap-2 sm:justify-end">
                   {request.status === 'Ready for Release' && (
                     <button
                       onClick={handleClaim}
                       disabled={claiming}
-                      className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 disabled:opacity-50 transition-colors cursor-pointer whitespace-nowrap"
+                      className="flex items-center justify-center sm:justify-start gap-2 px-4 py-3 sm:py-2 text-sm font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 disabled:opacity-50 transition-colors cursor-pointer whitespace-nowrap"
                     >
-                      <CheckCheck className="w-4 h-4" />
+                      <CheckCheck className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
                       {claiming ? 'Marking...' : 'Mark as Claimed'}
                     </button>
                   )}
@@ -306,29 +283,50 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
                     <button
                       onClick={handleCancelClick}
                       disabled={cancelling}
-                      className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 disabled:opacity-50 transition-colors cursor-pointer whitespace-nowrap"
+                      className="flex items-center justify-center sm:justify-start gap-2 px-4 py-3 sm:py-2 text-sm font-bold text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 disabled:opacity-50 transition-colors cursor-pointer whitespace-nowrap"
                     >
-                      <XCircle className="w-4 h-4" />
+                      <XCircle className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
                       {cancelling ? 'Cancelling...' : 'Cancel Request'}
                     </button>
                   )}
-                  {request.payment_method === 'online' && request.payment_status !== 'paid' && request.status !== 'Cancelled' && (
-                    <button
-                      onClick={() => handleContinuePayment(request)}
-                      disabled={continueLoading}
-                      className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 disabled:opacity-50 transition-colors cursor-pointer whitespace-nowrap"
-                    >
-                      {continueLoading ? 'Processing...' : 'Continue Payment'}
-                    </button>
-                  )}
                 </div>
+
+                {request.payment_method === 'online' && request.payment_status !== 'paid' && request.status !== 'Cancelled' && (
+                  <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                    <p className="text-xs font-bold text-amber-800 mb-2">Upload Payment Proof</p>
+                    {paymentQrUrl && (
+                      <div className="flex justify-center mb-3 p-3 bg-white border border-amber-200 rounded-lg">
+                        <ProtectedImage src={paymentQrUrl} alt="Scan to pay" className="w-40 h-40 object-contain" />
+                      </div>
+                    )}
+                    <p className="text-xs text-amber-700 mb-3">Scan the QR code using GCash or Maya, then upload your payment screenshot below.</p>
+                    {request.payment_proof ? (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-emerald-700 font-medium">&#10003; Proof uploaded</span>
+                        <button onClick={() => setProofModalUrl(request.payment_proof)} className="text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 px-3 py-1.5 rounded-lg transition-colors cursor-pointer">View</button>
+                      </div>
+                    ) : (
+                      <div>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleUploadProof}
+                          disabled={proofUploading}
+                          className="w-full text-xs text-slate-600 file:mr-3 file:py-3 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-amber-100 file:text-amber-800 hover:file:bg-amber-200 cursor-pointer"
+                        />
+                        {proofUploading && <p className="text-xs text-amber-700 mt-1">Uploading...</p>}
+                        {proofError && <p className="text-xs text-red-600 mt-1">{proofError}</p>}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <RegistrarRemarksCard remarks={request.remarks} />
             </div>
 
-            <div className="lg:col-span-5">
-              <div className="bg-surface-container-high border border-outline-variant rounded-2xl p-4 sm:p-6 h-full">
+            <div className="lg:col-span-5 self-start">
+              <div className="bg-surface-container-high border border-outline-variant rounded-2xl p-4 sm:p-6">
                 <div className="mb-4 sm:mb-6">
                   <h3 className="font-headline-sm text-headline-sm text-on-surface mb-1">Request Journey</h3>
                   <p className="text-label-md text-on-surface-variant">
@@ -415,6 +413,15 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
                 {cancelling ? 'Cancelling...' : 'Confirm Cancellation'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {proofModalUrl && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setProofModalUrl(null)}>
+          <div className="relative max-w-2xl w-full bg-white rounded-2xl overflow-hidden shadow-xl" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setProofModalUrl(null)} className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center bg-black/40 hover:bg-black/60 text-white rounded-full text-lg font-bold z-10 cursor-pointer">&times;</button>
+            <ProtectedImage src={proofModalUrl} alt="Payment Proof" className="w-full h-auto max-h-[80vh] object-contain" />
           </div>
         </div>
       )}
