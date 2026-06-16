@@ -208,7 +208,7 @@ function OtpForm({ studentId, onVerified, onSwitchToLogin }) {
       });
       const data = await res.json();
       if (!res.ok) { setError(data.message || 'Verification failed.'); setLoading(false); return; }
-      onVerified(data.student);
+      onVerified();
     } catch { setError('Network error. Please check your connection.'); }
     setLoading(false);
   };
@@ -513,9 +513,9 @@ export default function StudentAuthModal({ isOpen, defaultTab, onClose, onLoginS
     setTab('otp');
   };
 
-  const handleOtpVerified = (student) => {
-    onLoginSuccess(student);
-    onClose();
+  const handleOtpVerified = () => {
+    setTab('register_success');
+    setTimeout(() => setTab('login'), 3000);
   };
 
   const handleForgotPassword = () => { setTab('forgot'); };
@@ -587,6 +587,20 @@ export default function StudentAuthModal({ isOpen, defaultTab, onClose, onLoginS
                 <h2 className="font-headline-sm text-headline-sm font-bold text-on-surface mb-0.5">Verify Email</h2>
                 <p className="text-body-md text-on-surface-variant mb-3 sm:mb-4">Enter the verification code sent to your email.</p>
                 <OtpForm studentId={otpStudentId} onVerified={handleOtpVerified} onSwitchToLogin={() => setTab('login')} />
+              </div>
+            )}
+
+            {tab === 'register_success' && (
+              <div className="text-center py-6">
+                <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="material-symbols-outlined text-3xl text-emerald-600">check_circle</span>
+                </div>
+                <h2 className="font-headline-sm text-headline-sm font-bold text-on-surface mb-2">Registration Successful!</h2>
+                <p className="text-body-md text-on-surface-variant mb-1">Your account has been created and email verified.</p>
+                <p className="text-body-sm text-on-surface-variant">Redirecting to login...</p>
+                <div className="mt-4 flex justify-center">
+                  <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                </div>
               </div>
             )}
 

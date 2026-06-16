@@ -136,7 +136,6 @@ class RegistrarRequestController extends Controller
             'pages' => $request->pages,
             'payment_method' => $request->payment_method,
             'payment_status' => $request->payment_status,
-            'paymongo_checkout_id' => $request->paymongo_checkout_id,
             'status' => $request->status,
             'total_fee' => (float) $request->total_fee,
             'remarks' => $request->remarks ?? '',

@@ -63,7 +63,7 @@ export default function StudentLanding({ student, onLogout, onNavigate, currentP
               </div>
               <div className="absolute top-6 sm:top-10 right-6 sm:right-10 text-surface-container-high font-bold text-3xl sm:text-5xl opacity-30 group-hover:opacity-100 transition-opacity">02</div>
               <h3 className="font-headline-sm text-lg sm:text-xl text-on-background mb-2 sm:mb-4">2. Pay Fee</h3>
-              <p className="text-body-sm sm:text-body-md text-on-surface-variant leading-relaxed">Pay online via PayMongo or select cash payment for on-campus pickup. Your request is queued after verification.</p>
+               <p className="text-body-sm sm:text-body-md text-on-surface-variant leading-relaxed">Pay via GCash / Maya online or select cash payment for on-campus pickup. Your request is queued after verification.</p>
             </div>
             <div className="group relative p-6 sm:p-10 bg-surface-container-lowest border border-outline-variant rounded-2xl hover:border-primary/50 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300">
               <div className="mb-5 sm:mb-8 w-10 h-10 sm:w-14 sm:h-14 rounded-xl bg-secondary-container flex items-center justify-center text-on-secondary-container group-hover:scale-110 group-hover:bg-primary group-hover:text-on-primary transition-all duration-500">
@@ -100,7 +100,7 @@ export default function StudentLanding({ student, onLogout, onNavigate, currentP
               </div>
               <div>
                 <h4 className="font-headline-sm text-lg sm:text-xl md:text-2xl mb-1 sm:mb-2">Pay Online or On-Site</h4>
-                <p className="text-body-sm sm:text-body-md text-on-surface-variant">Pay securely through PayMongo online, or pay in cash when you pick up your documents at the cashier.</p>
+                <p className="text-body-sm sm:text-body-md text-on-surface-variant">Scan the school's GCash / Maya QR code to pay online, or pay in cash when you pick up your documents at the cashier.</p>
               </div>
             </div>
             <div className="bg-secondary-container p-5 sm:p-10 rounded-3xl flex flex-col justify-center text-center hover:scale-[1.02] transition-transform">

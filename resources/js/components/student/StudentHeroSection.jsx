@@ -3,7 +3,7 @@ import { CheckCircle } from 'lucide-react';
 
 const benefits = [
   'Request COE, CGM, COR, Grades & TOR online',
-  'Pay online via PayMongo or cash on pickup',
+  'Pay via GCash / Maya QR or cash on pickup',
   'Real-time tracking from submission to release',
 ];
 

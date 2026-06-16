@@ -59,10 +59,6 @@ Route::prefix('admin')->group(function () {
         ->middleware(['cashier', 'throttle:20,1'])
         ->whereNumber('id');
 
-    Route::get('/payments/{id}/check-paymongo', [CashierPaymentController::class, 'checkPayMongo'])
-        ->middleware('cashier')
-        ->whereNumber('id');
-
     Route::get('/cashier/online-payment-status', [CashierPaymentController::class, 'getOnlinePaymentStatus'])
         ->middleware('cashier');
 
@@ -136,10 +132,6 @@ Route::patch('/requests/{tracking_number}/cancel', [StudentRequestController::cl
     ->middleware(['auth:student', 'throttle:5,1']);
 Route::patch('/requests/{tracking_number}/claim', [StudentRequestController::class, 'claim'])
     ->middleware(['auth:student', 'throttle:5,1']);
-Route::post('/requests/{tracking_number}/continue-payment', [StudentRequestController::class, 'continuePayment'])
-    ->middleware(['auth:student', 'throttle:10,1']);
-Route::get('/requests/{tracking_number}/verify-payment', [StudentRequestController::class, 'verifyPayment'])
-    ->middleware(['auth:student', 'throttle:30,1']);
 Route::get('/documents', [DocumentController::class, 'index']);
 Route::get('/online-payment-status', [CashierPaymentController::class, 'getOnlinePaymentStatus']);
 Route::get('/payment-qr-image', [CashierPaymentController::class, 'getQrImage'])->middleware('throttle:60,1');
@@ -178,11 +170,6 @@ Route::prefix('student')->group(function () {
             ->middleware('throttle:20,1');
     });
 });
-
-// PayMongo Payment Routes
-Route::get('/payment/success', [StudentRequestController::class, 'paymentSuccess'])->name('payment.success');
-Route::get('/payment/failed', [StudentRequestController::class, 'paymentFailed']);
-Route::post('/webhooks/paymongo', [StudentRequestController::class, 'webhook']);
 
 Route::get('/student/{any?}', function () { return view('welcome'); })->where('any', '.*');
 

@@ -102,18 +102,9 @@ class StudentAuthController extends Controller
             ], 422);
         }
 
-        auth('student')->login($student);
-
         return response()->json([
             'success' => true,
-            'message' => 'Email verified successfully.',
-            'student' => [
-                'id' => $student->id,
-                'student_number' => $student->student_number,
-                'first_name' => $student->first_name,
-                'last_name' => $student->last_name,
-                'email' => $student->email,
-            ],
+            'message' => 'Email verified successfully. You can now log in.',
         ]);
     }
 
