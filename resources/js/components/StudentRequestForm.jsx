@@ -85,7 +85,7 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
           if (!data.enabled && paymentMethod === 'online') setPaymentMethod('');
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   useEffect(() => {
@@ -93,7 +93,7 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
       fetch('/admin/payment-qr')
         .then(res => res.json())
         .then(data => { if (data.success) setPaymentQrUrl(data.qr_url); })
-        .catch(() => {});
+        .catch(() => { });
     } else {
       setPaymentQrUrl(null);
     }
@@ -354,7 +354,7 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
                     }`}>
                     <span className="material-symbols-outlined">store</span>
                   </div>
-                  <span className={`font-label-md text-label-md mt-2 ${step >= 3 ? 'text-primary font-bold' : 'text-on-surface-variant'}`}>Delivery &amp; Pay</span>
+                  <span className={`font-label-md text-label-md mt-2 ${step >= 3 ? 'text-primary font-bold' : 'text-on-surface-variant'}`}>Release Method</span>
                 </div>
 
                 <div className="z-10 flex flex-col items-center">
@@ -635,17 +635,17 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
                   </div>
                 )}
 
-                {/* STEP 3: Delivery & Payment Options */}
+                {/* STEP 3: Release Type & Payment Options */}
                 {step === 3 && (
                   <div className="animate-fade-in-up">
                     <header className="mb-4 sm:mb-8">
-                      <h2 className="font-headline-md text-lg sm:text-headline-md text-primary mb-1 sm:mb-2">Delivery &amp; Payment Options</h2>
+                      <h2 className="font-headline-md text-lg sm:text-headline-md text-primary mb-1 sm:mb-2">Release Method &amp; Payment</h2>
                       <p className="font-body-sm sm:font-body-md text-body-sm sm:text-body-md text-on-surface-variant">Choose how you want to receive your document and your payment method.</p>
                     </header>
 
-                    {/* Delivery Method */}
+                    {/* Release Type */}
                     <div className="max-w-lg mx-auto mb-8">
-                      <h3 className="font-headline-sm text-headline-sm text-on-surface mb-4">Delivery Method</h3>
+                      <h3 className="font-headline-sm text-headline-sm text-on-surface mb-4">Release Type</h3>
                       <div className="space-y-3">
                         <div
                           onClick={() => setDeliveryType('pickup')}
@@ -696,30 +696,30 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
                               }`}>
                               {paymentMethod === 'cash' && <div className="w-2.5 h-2.5 shrink-0 aspect-square rounded-full bg-primary"></div>}
                             </div>
-                              <div className="min-w-0">
-                                <p className="font-label-md font-bold text-on-surface">Cash Payment</p>
-                                <p className="text-body-sm text-on-surface-variant">{deliveryType === 'digital' ? 'Pay at the Registrar Office on or before processing.' : 'Pay at the Registrar Office during claiming.'}</p>
-                              </div>
+                            <div className="min-w-0">
+                              <p className="font-label-md font-bold text-on-surface">Cash Payment</p>
+                              <p className="text-body-sm text-on-surface-variant">{deliveryType === 'digital' ? 'Pay at the Registrar Office on or before processing.' : 'Pay at the Registrar Office during claiming.'}</p>
+                            </div>
                           </div>
                         </div>
 
                         {onlinePaymentEnabled && (
-                        <div
-                          onClick={() => setPaymentMethod('online')}
-                          className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${paymentMethod === 'online' ? 'border-primary bg-surface-container-low' : 'border-outline-variant bg-surface-container-lowest'
-                            }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className={`w-5 h-5 shrink-0 aspect-square rounded-full border-2 flex items-center justify-center ${paymentMethod === 'online' ? 'border-primary' : 'border-outline'
-                              }`}>
-                              {paymentMethod === 'online' && <div className="w-2.5 h-2.5 shrink-0 aspect-square rounded-full bg-primary"></div>}
-                            </div>
+                          <div
+                            onClick={() => setPaymentMethod('online')}
+                            className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${paymentMethod === 'online' ? 'border-primary bg-surface-container-low' : 'border-outline-variant bg-surface-container-lowest'
+                              }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className={`w-5 h-5 shrink-0 aspect-square rounded-full border-2 flex items-center justify-center ${paymentMethod === 'online' ? 'border-primary' : 'border-outline'
+                                }`}>
+                                {paymentMethod === 'online' && <div className="w-2.5 h-2.5 shrink-0 aspect-square rounded-full bg-primary"></div>}
+                              </div>
                               <div className="min-w-0">
                                 <p className="font-label-md font-bold text-on-surface">Online Payment</p>
                                 <p className="text-body-sm text-on-surface-variant">Pay via GCash / Maya and upload a screenshot of your payment.</p>
                               </div>
+                            </div>
                           </div>
-                        </div>
                         )}
 
                       </div>
@@ -770,7 +770,7 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
                           </div>
                         )}
                         <div className="flex justify-between border-b border-outline-variant pb-2">
-                          <span className="text-on-surface-variant font-medium">Delivery Method:</span>
+                          <span className="text-on-surface-variant font-medium">Release Method:</span>
                           <span className="font-bold text-on-surface">{deliveryType === 'pickup' ? 'Pick up at Registrar Office' : 'Digital Copy (Email)'}</span>
                         </div>
                         <div className="flex justify-between border-b border-outline-variant pb-2">

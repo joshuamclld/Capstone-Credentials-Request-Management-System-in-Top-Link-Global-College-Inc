@@ -250,7 +250,7 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
                     })()}
                   </div>
                   <div className="flex justify-between border-b border-outline-variant pb-2">
-                    <span className="text-on-surface-variant font-medium">Delivery:</span>
+                    <span className="text-on-surface-variant font-medium">Release:</span>
                     <span className="font-bold text-on-surface">
                       {request.delivery_type === 'digital' ? 'Digital (Email)' : request.delivery_type === 'physical' ? 'Physical (Pick up)' : 'Physical'}
                     </span>

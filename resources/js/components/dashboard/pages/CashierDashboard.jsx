@@ -142,6 +142,18 @@ export default function CashierDashboard({ user, onLogout, onNavigate }) {
                                 </div>
                                 <p className="text-xl font-bold text-emerald-800">₱{(Number(data.stats?.daily_cash_total) || 0).toFixed(2)}</p>
                             </div>
+                            <div className="rounded-xl border border-slate-200 bg-blue-50 p-5">
+                                <div className="flex items-center gap-3 mb-3">
+                                    <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center">
+                                        <span className="w-4 h-4 text-blue-700 font-bold text-sm flex items-center justify-center">GC</span>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs font-medium text-slate-500">Online (GCash / Maya)</p>
+                                        <p className="text-sm font-bold text-slate-900">{data.stats?.daily_online_count ?? 0} payment{(data.stats?.daily_online_count ?? 0) !== 1 ? 's' : ''}</p>
+                                    </div>
+                                </div>
+                                <p className="text-xl font-bold text-blue-800">₱{(Number(data.stats?.daily_online_total) || 0).toFixed(2)}</p>
+                            </div>
                         </div>
                     </section>
 

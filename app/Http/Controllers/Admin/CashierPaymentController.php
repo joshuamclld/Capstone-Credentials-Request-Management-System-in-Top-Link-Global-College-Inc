@@ -11,6 +11,7 @@ use App\Models\StudentRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class CashierPaymentController extends Controller
 {
@@ -250,12 +251,12 @@ class CashierPaymentController extends Controller
             abort(404);
         }
 
-        $path = storage_path('app/' . $setting->value);
-
-        if (!file_exists($path)) {
-            $path = storage_path('app/public/' . $setting->value);
+        $disk = Storage::disk('local');
+        if ($disk->exists($setting->value)) {
+            return response()->file($disk->path($setting->value));
         }
 
+        $path = storage_path('app/public/' . $setting->value);
         if (!file_exists($path)) {
             abort(404);
         }

@@ -9,6 +9,7 @@ use App\Models\StudentRequest;
 use App\Models\Document;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class StudentRequestController extends Controller
 {
@@ -400,11 +401,12 @@ class StudentRequestController extends Controller
             abort(403);
         }
 
-        $path = storage_path('app/' . $studentRequest->payment_proof);
-
-        if (!file_exists($path)) {
-            $path = storage_path('app/public/' . $studentRequest->payment_proof);
+        $disk = Storage::disk('local');
+        if ($disk->exists($studentRequest->payment_proof)) {
+            return response()->file($disk->path($studentRequest->payment_proof));
         }
+
+        $path = storage_path('app/public/' . $studentRequest->payment_proof);
 
         if (!file_exists($path)) {
             abort(404);

@@ -7,9 +7,7 @@ export default function DashboardSidebar({ items, currentUser, sidebarOpen, onCl
     const currentPath = window.location.pathname;
 
     const isActive = (item) => {
-        if (item.path === currentPath) return true;
-        if (item.path && currentPath.startsWith(item.path + '/')) return true;
-        return false;
+        return item.path === currentPath;
     };
 
     const visibleItems = items.filter(

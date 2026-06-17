@@ -366,7 +366,7 @@ export default function RequestDetails({ user, onLogout, onNavigate }) {
                                         </span>
                                     </div>
                                     <div className="flex items-center justify-between">
-                                        <span className="text-xs font-medium text-slate-500">Delivery</span>
+                                        <span className="text-xs font-medium text-slate-500">Release</span>
                                         <span className="text-sm font-medium text-slate-900">
                                             {request.delivery_type === 'digital' ? 'Digital (Email)' : request.delivery_type === 'physical' ? 'Physical (Pick up)' : 'Physical'}
                                         </span>

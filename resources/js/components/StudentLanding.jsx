@@ -55,7 +55,7 @@ export default function StudentLanding({ student, onLogout, onNavigate, currentP
               </div>
               <div className="absolute top-6 sm:top-10 right-6 sm:right-10 text-surface-container-high font-bold text-3xl sm:text-5xl opacity-30 group-hover:opacity-100 transition-opacity">01</div>
               <h3 className="font-headline-sm text-lg sm:text-xl text-on-background mb-2 sm:mb-4">1. Submit Request</h3>
-              <p className="text-body-sm sm:text-body-md text-on-surface-variant leading-relaxed">Select your documents (COE, CGM, COR, Grades, or TOR), choose payment method and delivery type, then submit.</p>
+              <p className="text-body-sm sm:text-body-md text-on-surface-variant leading-relaxed">Select your documents (COE, CGM, COR, Grades, or TOR), choose payment method and release type, then submit.</p>
             </div>
             <div className="group relative p-6 sm:p-10 bg-surface-container-lowest border border-outline-variant rounded-2xl hover:border-primary/50 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300">
               <div className="mb-5 sm:mb-8 w-10 h-10 sm:w-14 sm:h-14 rounded-xl bg-secondary-container flex items-center justify-center text-on-secondary-container group-hover:scale-110 group-hover:bg-primary group-hover:text-on-primary transition-all duration-500">
@@ -80,7 +80,7 @@ export default function StudentLanding({ student, onLogout, onNavigate, currentP
           <div className="grid grid-cols-1 md:grid-cols-4 md:grid-rows-2 gap-4 sm:gap-6 h-auto md:h-[500px]">
             <div className="md:col-span-2 md:row-span-2 bg-primary-container p-6 sm:p-8 md:p-12 rounded-3xl text-on-primary flex flex-col justify-between overflow-hidden relative group hover:shadow-2xl transition-all">
               <div className="relative z-10">
-                <h4 className="font-headline-md text-xl sm:text-2xl md:text-3xl mb-3 sm:mb-6">Two Delivery Options</h4>
+                <h4 className="font-headline-md text-xl sm:text-2xl md:text-3xl mb-3 sm:mb-6">Two Release Options</h4>
                 <p className="font-body-md sm:font-body-lg opacity-90 max-w-xs">Pick up your printed documents at the registrar's office, or receive a digital copy via email.</p>
               </div>
               <div className="relative z-10 mt-4 sm:mt-8">
@@ -109,7 +109,7 @@ export default function StudentLanding({ student, onLogout, onNavigate, currentP
             </div>
             <div className="bg-tertiary-fixed p-5 sm:p-10 rounded-3xl flex flex-col justify-center text-center hover:scale-[1.02] transition-transform">
               <span className="text-3xl sm:text-5xl font-bold text-on-tertiary-fixed-variant mb-1 sm:mb-2">Pickup</span>
-              <p className="text-label-md font-bold text-on-tertiary-fixed-variant uppercase tracking-widest">or Digital Delivery</p>
+              <p className="text-label-md font-bold text-on-tertiary-fixed-variant uppercase tracking-widest">or Digital Release</p>
             </div>
           </div>
         </section>
