@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, X, User, BookOpen, CreditCard, ShieldCheck, FileText } from 'lucide-react';
 import DashboardLayout from '../DashboardLayout';
 import DashboardSearch from '../DashboardSearch';
 import DashboardTable from '../DashboardTable';
 import DashboardMobileCard from '../DashboardMobileCard';
 import EmptyState from '../EmptyState';
 import DashboardPagination from '../DashboardPagination';
+import StatusBadge from '../StatusBadge';
 import { cashierSidebarItems } from '../config/sidebarItems';
 
 const tableHeaders = ['Tracking No.', 'Student Name', 'Amount Paid', 'Payment Method', 'Date Paid', 'Action'];
@@ -17,6 +18,9 @@ export default function PaidTransactions({ user, onLogout, onNavigate }) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [page, setPage] = useState(1);
+    const [selectedId, setSelectedId] = useState(null);
+    const [details, setDetails] = useState(null);
+    const [detailsLoading, setDetailsLoading] = useState(false);
 
     const fetchData = () => {
         setLoading(true);
@@ -38,6 +42,29 @@ export default function PaidTransactions({ user, onLogout, onNavigate }) {
     useEffect(() => {
         fetchData();
     }, []);
+
+    const openDetails = (id) => {
+        setSelectedId(id);
+        setDetails(null);
+        setDetailsLoading(true);
+        fetch(`/admin/api/requests/${id}`, { credentials: 'same-origin' })
+            .then((res) => {
+                if (!res.ok) throw new Error('Failed to fetch');
+                return res.json();
+            })
+            .then((data) => {
+                setDetails(data);
+                setDetailsLoading(false);
+            })
+            .catch(() => {
+                setDetailsLoading(false);
+            });
+    };
+
+    const closeDetails = () => {
+        setSelectedId(null);
+        setDetails(null);
+    };
 
     const paid = allRequests.filter((req) => req.payment_status === 'paid');
 
@@ -67,7 +94,7 @@ export default function PaidTransactions({ user, onLogout, onNavigate }) {
             <td className="px-6 py-4 text-slate-500 text-xs">{req.created_at}</td>
             <td className="px-6 py-4">
                 <button
-                    onClick={() => onNavigate(`/cashier/payments/${req.id}`)}
+                    onClick={() => openDetails(req.id)}
                     className="px-3 py-1.5 text-xs font-medium text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg transition-colors cursor-pointer"
                 >
                     View
@@ -93,15 +120,16 @@ export default function PaidTransactions({ user, onLogout, onNavigate }) {
     }
 
     return (
-        <DashboardLayout
-            title="Paid Transactions"
-            subtitle="Completed payment transactions."
-            sidebarItems={cashierSidebarItems}
-            currentUser={user}
-            roleLabel="Cashier / Accounting"
-            onLogout={onLogout}
-            onNavigate={onNavigate}
-        >
+        <>
+            <DashboardLayout
+                title="Paid Transactions"
+                subtitle="Completed payment transactions."
+                sidebarItems={cashierSidebarItems}
+                currentUser={user}
+                roleLabel="Cashier / Accounting"
+                onLogout={onLogout}
+                onNavigate={onNavigate}
+            >
             <section className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-6 py-5 border-b border-slate-200">
                     <DashboardSearch
@@ -140,7 +168,7 @@ export default function PaidTransactions({ user, onLogout, onNavigate }) {
                                         { label: 'Date', value: item.created_at },
                                     ]}
                                     actionLabel="View"
-                                    onAction={() => onNavigate(`/cashier/payments/${item.id}`)}
+                                    onAction={() => openDetails(item.id)}
                                 />
                             ))}
                         </div>
@@ -169,5 +197,94 @@ export default function PaidTransactions({ user, onLogout, onNavigate }) {
                 </div>
             </section>
         </DashboardLayout>
+
+        {selectedId && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={closeDetails}>
+                <div className="relative max-w-2xl w-full max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-xl" onClick={e => e.stopPropagation()}>
+                    <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-white border-b border-slate-200 rounded-t-2xl">
+                        <h2 className="text-lg font-bold text-slate-900">Transaction Details</h2>
+                        <button onClick={closeDetails} className="w-8 h-8 flex items-center justify-center hover:bg-slate-100 rounded-lg transition-colors cursor-pointer">
+                            <X className="w-5 h-5 text-slate-500" />
+                        </button>
+                    </div>
+
+                    {detailsLoading ? (
+                        <div className="flex items-center justify-center py-16 text-slate-500 text-sm">Loading details...</div>
+                    ) : details ? (
+                        <div className="px-6 py-5 space-y-5">
+                            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+                                <div className="flex items-start gap-3">
+                                    <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                                    <div>
+                                        <p className="text-sm font-bold text-emerald-800">Payment Verified</p>
+                                        {details.verified_by && (
+                                            <div className="mt-1.5 space-y-0.5">
+                                                <p className="text-xs text-emerald-600">Verified By: {details.verified_by}</p>
+                                                {details.verified_at && (
+                                                    <p className="text-xs text-emerald-600">Verified At: {new Date(details.verified_at).toLocaleString()}</p>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <User className="w-4 h-4 text-emerald-700" />
+                                        <h3 className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Student Information</h3>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-sm font-bold text-slate-900">{details.student_name}</p>
+                                        <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
+                                            <div><span className="text-slate-400">ID:</span> <span className="font-mono text-slate-800">{details.student_number}</span></div>
+                                            <div><span className="text-slate-400">Course:</span> <span className="text-slate-800">{details.course}</span></div>
+                                            <div><span className="text-slate-400">Year:</span> <span className="text-slate-800">{details.year_level || '-'}</span></div>
+                                            <div><span className="text-slate-400">Section:</span> <span className="text-slate-800">{details.section || '-'}</span></div>
+                                            <div className="col-span-2"><span className="text-slate-400">Email:</span> <span className="text-slate-800">{details.email}</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <CreditCard className="w-4 h-4 text-emerald-700" />
+                                        <h3 className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Payment Summary</h3>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-2xl font-bold text-emerald-700">₱{Number(details.total_fee ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                                        <div className="space-y-1.5 text-xs">
+                                            <div className="flex justify-between"><span className="text-slate-400">Method:</span><span className="text-slate-800 capitalize">{details.payment_method || 'N/A'}</span></div>
+                                            <div className="flex justify-between"><span className="text-slate-400">Date Paid:</span><span className="text-slate-800">{details.created_at}</span></div>
+                                            <div className="flex justify-between"><span className="text-slate-400">Status:</span><StatusBadge status="paid" type="payment" /></div>
+                                            <div className="flex justify-between"><span className="text-slate-400">Request:</span><StatusBadge status={details.status} /></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <BookOpen className="w-4 h-4 text-emerald-700" />
+                                    <h3 className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Requested Documents</h3>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    {(details.document_names || []).map((name, i) => (
+                                        <span key={i} className="inline-flex items-center gap-1 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-700">
+                                            <FileText className="w-3.5 h-3.5 text-emerald-600" />
+                                            {name}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="flex items-center justify-center py-16 text-red-500 text-sm">Failed to load details.</div>
+                    )}
+                </div>
+            </div>
+        )}
+        </>
     );
 }

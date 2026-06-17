@@ -122,76 +122,116 @@ export default function StudentMyRequests({ student, onLogout, onNavigate, curre
               </button>
             </div>
           ) : (
-            <div className="space-y-3">
-              {requests.map(req => (
-                <div key={req.tracking_number} className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-4 sm:p-5 shadow-sm">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
-                    <div className="min-w-0">
-                      <p className="font-bold text-body-md text-on-surface truncate">{req.documents.join(', ')}</p>
-                      <p className="text-label-sm text-on-surface-variant">{req.tracking_number}</p>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className={`text-label-sm font-bold px-2.5 py-1 rounded-full border ${getRequestStatusConfig(req.status).className}`}>
-                        {req.status}
-                      </span>
-                      <span className={`text-label-sm font-bold px-2.5 py-1 rounded-full border ${getPaymentStatusConfig(req.payment_status).className}`}>
-                        {getPaymentStatusConfig(req.payment_status).label}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3 text-body-sm">
-                    <div>
-                      <span className="text-on-surface-variant">Date:</span>
-                      <span className="font-medium text-on-surface ml-1">{req.created_at}</span>
-                    </div>
-                    <div>
-                      <span className="text-on-surface-variant">Fee:</span>
-                      <span className="font-medium text-primary ml-1">₱{Number(req.total_fee).toFixed(2)}</span>
-                    </div>
-                    {req.semesters && req.semesters.length > 0 && (
-                      <div className="col-span-2">
-                        <span className="text-on-surface-variant">Semesters:</span>
-                        <span className="font-medium text-on-surface ml-1">{req.semesters.join(', ')}</span>
-                      </div>
-                    )}
-                    {req.pages && (
-                      <div>
-                        <span className="text-on-surface-variant">Pages:</span>
-                        <span className="font-medium text-on-surface ml-1">{req.pages}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex gap-2 pt-2 border-t border-outline-variant flex-nowrap">
-                    <button
-                      onClick={() => onNavigate(`/student/requests/${req.tracking_number}`)}
-                      className="px-3 sm:px-4 py-2 sm:py-2 rounded-lg bg-primary text-on-primary font-bold text-label-sm hover:opacity-90 transition-all cursor-pointer whitespace-nowrap"
-                    >
-                      View Details
-                    </button>
-                    {canCancel(req) && (
-                      <button
-                        onClick={() => handleCancelClick(req)}
-                        disabled={cancelling === req.tracking_number}
-                        className="px-3 sm:px-4 py-2 sm:py-2 rounded-lg text-red-700 bg-red-50 border border-red-200 font-bold text-label-sm hover:bg-red-100 transition-all cursor-pointer disabled:opacity-50 whitespace-nowrap"
-                      >
-                        {cancelling === req.tracking_number ? 'Cancelling...' : 'Cancel Request'}
-                      </button>
-                    )}
-                    {req.status === 'Ready for Release' && (
-                      <button
-                        onClick={() => handleClaim(req)}
-                        disabled={claiming === req.tracking_number}
-                        className="px-3 sm:px-4 py-2 sm:py-2 rounded-lg text-emerald-700 bg-emerald-50 border border-emerald-200 font-bold text-label-sm hover:bg-emerald-100 transition-all cursor-pointer disabled:opacity-50 whitespace-nowrap"
-                      >
-                        {claiming === req.tracking_number ? 'Marking...' : 'Mark as Claimed'}
-                      </button>
-                    )}
-                  </div>
+            <>
+              <div className="hidden md:block bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-200">
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Tracking No.</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Documents</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Payment</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Date</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Fee</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {requests.map(req => (
+                        <tr key={req.tracking_number} className="hover:bg-slate-50 transition-colors">
+                          <td className="px-4 py-3 font-mono text-xs font-medium text-emerald-700">{req.tracking_number}</td>
+                          <td className="px-4 py-3 text-slate-700 max-w-[200px] truncate" title={(req.documents || []).join(', ')}>{(req.documents || []).join(', ')}</td>
+                          <td className="px-4 py-3"><span className={`text-xs font-bold px-2.5 py-1 rounded border ${getRequestStatusConfig(req.status).className}`}>{req.status}</span></td>
+                          <td className="px-4 py-3"><span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${getPaymentStatusConfig(req.payment_status).className}`}>{getPaymentStatusConfig(req.payment_status).label}</span></td>
+                          <td className="px-4 py-3 text-xs text-slate-500">{req.created_at}</td>
+                          <td className="px-4 py-3 text-sm font-medium text-slate-900">₱{Number(req.total_fee).toFixed(2)}</td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                onClick={() => onNavigate(`/student/requests/${req.tracking_number}`)}
+                                className="px-2.5 py-1.5 text-xs font-medium text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg transition-colors cursor-pointer whitespace-nowrap"
+                              >
+                                View
+                              </button>
+                              {canCancel(req) && (
+                                <button
+                                  onClick={() => handleCancelClick(req)}
+                                  disabled={cancelling === req.tracking_number}
+                                  className="px-2.5 py-1.5 text-xs font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors cursor-pointer disabled:opacity-50 whitespace-nowrap"
+                                >
+                                  {cancelling === req.tracking_number ? '...' : 'Cancel'}
+                                </button>
+                              )}
+                              {req.status === 'Ready for Release' && (
+                                <button
+                                  onClick={() => handleClaim(req)}
+                                  disabled={claiming === req.tracking_number}
+                                  className="px-2.5 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors cursor-pointer disabled:opacity-50 whitespace-nowrap"
+                                >
+                                  {claiming === req.tracking_number ? '...' : 'Claim'}
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-              ))}
-            </div>
+              </div>
+
+              <div className="md:hidden space-y-3">
+                {requests.map(req => (
+                  <div key={req.tracking_number} className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+                    <div className="flex items-start justify-between gap-2 mb-1.5">
+                      <div className="text-xs font-bold text-emerald-700 font-mono leading-tight">{req.tracking_number}</div>
+                      <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${getRequestStatusConfig(req.status).className}`}>{req.status}</span>
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${getPaymentStatusConfig(req.payment_status).className}`}>{getPaymentStatusConfig(req.payment_status).label}</span>
+                      </div>
+                    </div>
+                    <div className="text-sm font-semibold text-slate-900 mb-2.5">{(req.documents || []).join(', ')}</div>
+                    <div className="space-y-1.5 mb-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[11px] text-slate-500">Date</span>
+                        <span className="text-xs text-slate-800 text-right">{req.created_at}</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[11px] text-slate-500">Fee</span>
+                        <span className="text-xs font-medium text-emerald-700 text-right">₱{Number(req.total_fee).toFixed(2)}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 pt-2.5 border-t border-slate-100">
+                      <button
+                        onClick={() => onNavigate(`/student/requests/${req.tracking_number}`)}
+                        className="flex-1 py-2.5 text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg transition-colors cursor-pointer"
+                      >
+                        View Details
+                      </button>
+                      {canCancel(req) && (
+                        <button
+                          onClick={() => handleCancelClick(req)}
+                          disabled={cancelling === req.tracking_number}
+                          className="flex-1 py-2.5 text-xs font-bold text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors cursor-pointer disabled:opacity-50"
+                        >
+                          {cancelling === req.tracking_number ? '...' : 'Cancel'}
+                        </button>
+                      )}
+                      {req.status === 'Ready for Release' && (
+                        <button
+                          onClick={() => handleClaim(req)}
+                          disabled={claiming === req.tracking_number}
+                          className="flex-1 py-2.5 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors cursor-pointer disabled:opacity-50"
+                        >
+                          {claiming === req.tracking_number ? '...' : 'Claim'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
       </StudentDashboardLayout>

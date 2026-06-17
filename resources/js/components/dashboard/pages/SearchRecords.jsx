@@ -11,12 +11,9 @@ import { registrarSidebarItems } from '../config/sidebarItems';
 
 const tableHeaders = ['Reference No.', 'Student Name', 'Documents', 'Payment Status', 'Request Status', 'Date Requested'];
 
-const searchOptions = ['Student Name', 'Student ID', 'Reference Number'];
-
 export default function SearchRecords({ user, onLogout, onNavigate }) {
     const ITEMS_PER_PAGE = 10;
     const [query, setQuery] = useState('');
-    const [searchBy, setSearchBy] = useState('Student Name');
     const [allRecords, setAllRecords] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -46,16 +43,11 @@ export default function SearchRecords({ user, onLogout, onNavigate }) {
     const filtered = allRecords.filter((rec) => {
         const q = query.toLowerCase();
         if (!q) return true;
-        switch (searchBy) {
-            case 'Student Name':
-                return rec.student_name.toLowerCase().includes(q);
-            case 'Student ID':
-                return rec.student_number?.toLowerCase().includes(q);
-            case 'Reference Number':
-                return rec.tracking_number.toLowerCase().includes(q);
-            default:
-                return true;
-        }
+        return (
+            rec.student_name.toLowerCase().includes(q) ||
+            rec.student_number?.toLowerCase().includes(q) ||
+            rec.tracking_number.toLowerCase().includes(q)
+        );
     });
 
     const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
@@ -68,7 +60,7 @@ export default function SearchRecords({ user, onLogout, onNavigate }) {
         if (newPage >= 1 && newPage <= totalPages) setPage(newPage);
     };
 
-    useEffect(() => { setPage(1); }, [query, searchBy]);
+    useEffect(() => { setPage(1); }, [query]);
 
     const renderRow = (rec) => (
         <tr key={rec.id} className="hover:bg-slate-50 transition-colors">
@@ -109,32 +101,10 @@ export default function SearchRecords({ user, onLogout, onNavigate }) {
         >
             <section className="bg-white rounded-xl border border-slate-200 overflow-hidden">
                 <div className="px-6 py-5 border-b border-slate-200">
-                    <div className="flex flex-wrap items-center gap-3 mb-4">
-                        <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Search by:</span>
-                        {searchOptions.map((option) => (
-                            <label
-                                key={option}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium cursor-pointer transition-colors ${searchBy === option
-                                        ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
-                                        : 'border-slate-300 bg-white text-slate-600 hover:bg-slate-50'
-                                    }`}
-                            >
-                                <input
-                                    type="radio"
-                                    name="searchBy"
-                                    value={option}
-                                    checked={searchBy === option}
-                                    onChange={(e) => setSearchBy(e.target.value)}
-                                    className="sr-only"
-                                />
-                                {option}
-                            </label>
-                        ))}
-                    </div>
                     <DashboardSearch
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
-                        placeholder={`Search by ${searchBy.toLowerCase()}...`}
+                        placeholder="Search by name, student ID, or reference number..."
                     />
                 </div>
 

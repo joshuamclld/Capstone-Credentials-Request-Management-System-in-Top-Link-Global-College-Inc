@@ -49,7 +49,7 @@ export default function DashboardMobileCard({
             <button
               key={i}
               onClick={action.onClick}
-              className="p-2 text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors"
+              className={`p-2 rounded-lg transition-colors ${action.className || 'text-slate-400 hover:text-emerald-700 hover:bg-emerald-50'}`}
               title={action.label}
             >
               {action.icon}

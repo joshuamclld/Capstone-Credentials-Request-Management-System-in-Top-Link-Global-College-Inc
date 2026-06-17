@@ -1,5 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell, CheckCheck } from 'lucide-react';
+import { Bell, CheckCheck, FilePlus, XCircle, CheckCircle, CreditCard, RefreshCw } from 'lucide-react';
+
+const notificationIcons = {
+  new_request: { icon: FilePlus, bg: 'bg-blue-100', color: 'text-blue-600' },
+  request_cancelled: { icon: XCircle, bg: 'bg-red-100', color: 'text-red-600' },
+  request_claimed: { icon: CheckCircle, bg: 'bg-emerald-100', color: 'text-emerald-600' },
+  payment_verified: { icon: CreditCard, bg: 'bg-emerald-100', color: 'text-emerald-600' },
+  status_update: { icon: RefreshCw, bg: 'bg-amber-100', color: 'text-amber-600' },
+};
+
+const defaultIcon = { icon: Bell, bg: 'bg-slate-100', color: 'text-slate-600' };
 
 function timeAgo(dateString) {
     const now = new Date();
@@ -169,7 +179,10 @@ export default function NotificationBell({ onNavigate }) {
                                             : 'bg-blue-50/60 hover:bg-blue-50'
                                     }`}
                                 >
-                                    <div className="flex items-start gap-2">
+                                    <div className="flex items-start gap-3">
+                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${(notificationIcons[n.type] || defaultIcon).bg}`}>
+                                            {React.createElement((notificationIcons[n.type] || defaultIcon).icon, { className: `w-4 h-4 ${(notificationIcons[n.type] || defaultIcon).color}` })}
+                                        </div>
                                         <div className="flex-1 min-w-0">
                                             <p className={`text-xs font-semibold ${n.is_read ? 'text-slate-700' : 'text-slate-900'}`}>
                                                 {n.title}

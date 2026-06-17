@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Eye, EyeOff, Edit, ToggleLeft, Plus, X, Check, Shield, ShieldOff } from 'lucide-react';
+import { Users, Eye, EyeOff, Edit, ToggleLeft, Plus, X, Check, Shield, ShieldOff, AlertCircle } from 'lucide-react';
 import DashboardLayout from '../../DashboardLayout';
 import DashboardSearch from '../../DashboardSearch';
 import DashboardTable from '../../DashboardTable';
@@ -48,6 +48,33 @@ export default function SystemAdminUserManagement({ user, onLogout, onNavigate, 
     const [formLoading, setFormLoading] = useState(false);
 
     const [toggleMessage, setToggleMessage] = useState(null);
+
+    const [confirmTarget, setConfirmTarget] = useState(null);
+    const [confirmLoading, setConfirmLoading] = useState(false);
+    const [confirmError, setConfirmError] = useState('');
+
+    const [viewTarget, setViewTarget] = useState(null);
+    const [viewData, setViewData] = useState(null);
+    const [viewLoading, setViewLoading] = useState(false);
+    const [viewError, setViewError] = useState('');
+
+    const openViewModal = (u) => {
+        setViewTarget(u);
+        setViewLoading(true);
+        setViewData(null);
+        setViewError('');
+        fetch(`/admin/system/users/${u.id}`, { credentials: 'same-origin' })
+            .then(async (r) => {
+                const d = await r.json();
+                if (r.ok) {
+                    setViewData({ ...d.data, request_count: d.request_count });
+                } else {
+                    setViewError(d.message || 'Failed to load user details.');
+                }
+            })
+            .catch(() => setViewError('Network error.'))
+            .finally(() => setViewLoading(false));
+    };
 
     useEffect(() => {
         const timer = setTimeout(() => setDebouncedQuery(query), 300);
@@ -158,27 +185,34 @@ export default function SystemAdminUserManagement({ user, onLogout, onNavigate, 
     };
 
     const handleToggleActive = (u) => {
-        fetch(`/admin/system/users/${u.id}`, {
+        setConfirmTarget(u);
+    };
+
+    const confirmToggleActive = () => {
+        if (!confirmTarget || confirmLoading) return;
+        setConfirmLoading(true);
+        setConfirmError('');
+        fetch(`/admin/system/users/${confirmTarget.id}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
             },
-            body: JSON.stringify({ is_active: !u.is_active }),
+            body: JSON.stringify({ is_active: !confirmTarget.is_active }),
             credentials: 'same-origin',
         })
             .then(async (r) => {
                 const d = await r.json();
                 if (r.ok) {
                     setToggleMessage({ type: 'success', text: 'User status updated successfully.' });
+                    setConfirmTarget(null);
                     fetchUsers(page);
                 } else {
-                    setToggleMessage({ type: 'error', text: d.message || 'Failed to update status.' });
+                    setConfirmError(d.message || 'Failed to update status.');
                 }
             })
-            .catch(() => {
-                setToggleMessage({ type: 'error', text: 'Network error. Please try again.' });
-            });
+            .catch(() => setConfirmError('Network error.'))
+            .finally(() => setConfirmLoading(false));
     };
 
     const renderRow = (u) => (
@@ -186,26 +220,26 @@ export default function SystemAdminUserManagement({ user, onLogout, onNavigate, 
             <td className="px-6 py-4 font-medium text-slate-900">{u.name}</td>
             <td className="px-6 py-4 text-slate-700">{u.email}</td>
             <td className="px-6 py-4">
-                <span className={`inline-block text-xs font-bold px-2.5 py-1 rounded-full border ${roleColors[u.role] || 'bg-slate-100 text-slate-700 border-slate-200'}`}>
+                <span className={`inline-block text-xs font-bold px-2.5 py-1 rounded-lg border ${roleColors[u.role] || 'bg-slate-100 text-slate-700 border-slate-200'}`}>
                     {u.role.replace('_', ' ')}
                 </span>
             </td>
-            <td className="px-6 py-4"><StatusBadge status={u.is_active ? 'active' : 'inactive'} /></td>
+            <td className="px-6 py-4"><StatusBadge status={u.is_active ? 'active' : 'inactive'} type="boolean" /></td>
             <td className="px-6 py-4 text-slate-500 text-xs">{new Date(u.created_at).toLocaleDateString()}</td>
             <td className="px-6 py-4">
                 <div className="flex items-center gap-1.5">
-                    <button onClick={() => onNavigate(`/system-admin/users/${u.id}`)} className="p-1.5 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors cursor-pointer" title="View User">
+                    <button onClick={() => openViewModal(u)} className="p-1.5 text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors cursor-pointer" title="View User">
                         <Eye className="w-4 h-4" />
                     </button>
-                    <button onClick={() => openEditModal(u)} className="p-1.5 text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors cursor-pointer" title="Edit User">
+                    <button onClick={() => openEditModal(u)} className="p-1.5 text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors cursor-pointer" title="Edit User">
                         <Edit className="w-4 h-4" />
                     </button>
                     {u.role === 'system_admin' && u.id !== user.id && (
-                        <button onClick={() => handleToggleSuperAdmin(u)} className={`p-1.5 rounded-lg transition-colors cursor-pointer ${u.is_super_admin ? 'text-purple-700 bg-purple-50 hover:bg-purple-100' : 'text-slate-400 bg-slate-50 hover:bg-slate-100'}`} title={u.is_super_admin ? 'Revoke super admin' : 'Grant super admin'}>
+                        <button onClick={() => handleToggleSuperAdmin(u)} className={`p-1.5 rounded-lg transition-colors cursor-pointer ${u.is_super_admin ? 'text-white bg-purple-600 hover:bg-purple-700' : 'text-white bg-slate-500 hover:bg-slate-600'}`} title={u.is_super_admin ? 'Revoke super admin' : 'Grant super admin'}>
                             {u.is_super_admin ? <Shield className="w-4 h-4" /> : <ShieldOff className="w-4 h-4" />}
                         </button>
                     )}
-                    <button onClick={() => handleToggleActive(u)} className={`p-1.5 rounded-lg transition-colors cursor-pointer ${u.is_active ? 'text-red-700 bg-red-50 hover:bg-red-100' : 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100'}`} title={u.is_active ? 'Deactivate' : 'Activate'}>
+                    <button onClick={() => handleToggleActive(u)} className={`p-1.5 rounded-lg transition-colors cursor-pointer ${u.is_active ? 'text-white bg-red-600 hover:bg-red-700' : 'text-white bg-emerald-600 hover:bg-emerald-700'}`} title={u.is_active ? 'Deactivate' : 'Activate'}>
                         {u.is_active ? <ToggleLeft className="w-4 h-4" /> : <Check className="w-4 h-4" />}
                     </button>
                 </div>
@@ -335,18 +369,19 @@ export default function SystemAdminUserManagement({ user, onLogout, onNavigate, 
                                             title={item.name}
                                             subtitle={item.email}
                                             metadata={[
-                                                { label: 'Role', value: <span className={`inline-block text-xs font-bold px-2 py-0.5 rounded-full border ${roleColors[item.role] || 'bg-slate-100 text-slate-700 border-slate-200'}`}>{item.role.replace('_', ' ')}</span> },
-                                                { label: 'Status', value: <StatusBadge status={item.is_active ? 'active' : 'inactive'} /> },
+                                                { label: 'Role', value: <span className={`inline-block text-xs font-bold px-2 py-0.5 rounded-lg border ${roleColors[item.role] || 'bg-slate-100 text-slate-700 border-slate-200'}`}>{item.role.replace('_', ' ')}</span> },
+                                                { label: 'Status', value: <StatusBadge status={item.is_active ? 'active' : 'inactive'} type="boolean" /> },
                                                 { label: 'Created', value: new Date(item.created_at).toLocaleDateString() },
                                             ]}
                                             actions={[
-                                                { icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>, label: 'View User', onClick: () => onNavigate(`/system-admin/users/${item.id}`) },
-                                                { icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>, label: 'Edit User', onClick: () => openEditModal(item) },
+                                                { icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>, label: 'View User', onClick: () => openViewModal(item), className: 'text-white bg-emerald-600 hover:bg-emerald-700' },
+                                                { icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>, label: 'Edit User', onClick: () => openEditModal(item), className: 'text-white bg-blue-600 hover:bg-blue-700' },
                                                 { icon: item.is_active
                                                     ? <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 12h2v2h-2z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3a9 9 0 100 18 9 9 0 000-18z" /></svg>
                                                     : <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
                                                   label: item.is_active ? 'Deactivate' : 'Activate',
-                                                  onClick: () => handleToggleActive(item) },
+                                                  onClick: () => handleToggleActive(item),
+                                                  className: item.is_active ? 'text-white bg-red-600 hover:bg-red-700' : 'text-white bg-emerald-600 hover:bg-emerald-700' },
                                             ]}
                                         />
                                     ))}
@@ -372,6 +407,87 @@ export default function SystemAdminUserManagement({ user, onLogout, onNavigate, 
 
             {showAddModal && renderModal(false)}
             {showEditModal && renderModal(true)}
+
+            {confirmTarget && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4" onClick={(e) => { if (e.target === e.currentTarget) setConfirmTarget(null); }}>
+                    <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-md p-4 sm:p-6" onClick={(e) => e.stopPropagation()}>
+                        <h3 className="text-base font-bold text-slate-900 mb-2">{confirmTarget.is_active ? 'Deactivate' : 'Activate'} User</h3>
+                        <p className="text-sm text-slate-600 mb-4 sm:mb-6">
+                            Are you sure you want to {confirmTarget.is_active ? 'deactivate' : 'activate'} <strong className="text-slate-900">&ldquo;{confirmTarget.name}&rdquo;</strong>?
+                        </p>
+                        {confirmError && (
+                            <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200">
+                                <p className="text-xs text-red-600 flex items-center gap-2">
+                                    <AlertCircle className="w-4 h-4 shrink-0" />
+                                    {confirmError}
+                                </p>
+                            </div>
+                        )}
+                        <div className="flex gap-3 justify-end">
+                            <button onClick={() => setConfirmTarget(null)} disabled={confirmLoading} className="px-5 py-2.5 rounded-lg text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer disabled:opacity-50">Cancel</button>
+                            <button onClick={confirmToggleActive} disabled={confirmLoading} className="px-5 py-2.5 rounded-lg text-xs font-bold text-white bg-red-600 hover:bg-red-700 transition-colors cursor-pointer disabled:opacity-50">
+                                {confirmLoading ? 'Updating...' : `Yes, ${confirmTarget.is_active ? 'Deactivate' : 'Activate'}`}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {viewTarget && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4" onClick={(e) => { if (e.target === e.currentTarget) { setViewTarget(null); setViewData(null); } }}>
+                    <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg p-4 sm:p-6" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-base font-bold text-slate-900">User Details</h3>
+                            <button onClick={() => { setViewTarget(null); setViewData(null); }} className="p-1 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 cursor-pointer"><X className="w-4 h-4" /></button>
+                        </div>
+                        {viewLoading ? (
+                            <div className="text-center py-10 text-sm text-slate-400">Loading user details...</div>
+                        ) : viewError ? (
+                            <div className="p-3 rounded-lg bg-red-50 border border-red-200">
+                                <p className="text-xs text-red-600 flex items-center gap-2"><AlertCircle className="w-4 h-4 shrink-0" />{viewError}</p>
+                            </div>
+                        ) : viewData ? (
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-4 pb-4 border-b border-slate-200">
+                                    <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-base">
+                                        {(viewData.name || '').charAt(0).toUpperCase()}
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-bold text-slate-900">{viewData.name}</p>
+                                        <p className="text-xs text-slate-500 capitalize">{viewData.role.replace('_', ' ')}</p>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <p className="text-xs text-slate-500">Email</p>
+                                        <p className="text-sm font-medium text-slate-900">{viewData.email}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-slate-500">Contact Number</p>
+                                        <p className="text-sm font-medium text-slate-900">{viewData.contact_number || 'Not provided'}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-slate-500">Status</p>
+                                        <div className="mt-0.5"><StatusBadge status={viewData.is_active ? 'active' : 'inactive'} type="boolean" /></div>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-slate-500">Super Admin</p>
+                                        <p className="text-sm font-medium text-slate-900">{viewData.is_super_admin ? 'Yes' : 'No'}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-slate-500">Date Created</p>
+                                        <p className="text-sm font-medium text-slate-900">{new Date(viewData.created_at).toLocaleDateString()}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-slate-500">Last Updated</p>
+                                        <p className="text-sm font-medium text-slate-900">{new Date(viewData.updated_at).toLocaleDateString()}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : null}
+                    </div>
+                </div>
+            )}
         </DashboardLayout>
     );
 }

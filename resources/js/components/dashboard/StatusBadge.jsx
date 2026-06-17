@@ -2,9 +2,9 @@ import React from 'react';
 import { getRequestStatusConfig, getPaymentStatusConfig, getBooleanStatusConfig } from '../../utils/statusConfig';
 
 const baseClassByType = {
-  request: 'inline-block px-2.5 py-1 text-xs font-semibold rounded-full border',
+  request: 'inline-block px-2.5 py-1 text-xs font-semibold rounded-lg border',
   payment: 'inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded',
-  boolean: 'inline-block px-2.5 py-1 text-xs font-semibold rounded-full border',
+  boolean: 'inline-block px-2.5 py-1 text-xs font-semibold rounded-lg border',
 };
 
 const statusConfigByType = {

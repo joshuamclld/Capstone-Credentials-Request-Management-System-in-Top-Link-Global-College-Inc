@@ -278,13 +278,14 @@ class SystemAdminController extends Controller
     public function deleteDocument(int $id): JsonResponse
     {
         $document = Document::findOrFail($id);
-        $document->update(['is_active' => false]);
 
-        $this->audit('deactivate_document', 'Document', $id, "Deactivated document {$document->name} ({$document->code})");
+        $this->audit('delete_document', 'Document', $id, "Deleted document {$document->name} ({$document->code})");
+
+        $document->delete();
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Document deactivated successfully.',
+            'message' => 'Document deleted successfully.',
         ]);
     }
 

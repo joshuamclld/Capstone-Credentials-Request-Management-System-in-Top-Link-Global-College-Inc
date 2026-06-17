@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Plus, X } from 'lucide-react';
+import { FileText, Plus, X, AlertCircle } from 'lucide-react';
 import DashboardLayout from '../../DashboardLayout';
 import DashboardSearch from '../../DashboardSearch';
 import DashboardTable from '../../DashboardTable';
@@ -27,6 +27,10 @@ export default function SystemAdminCredentialTypes({ user, onLogout, onNavigate 
     const [formData, setFormData] = useState({ code: '', name: '', description: '', price: '', processing_days: '1', is_per_semester: false, is_per_page: false, is_active: true });
     const [formError, setFormError] = useState('');
     const [formLoading, setFormLoading] = useState(false);
+
+    const [deleteTarget, setDeleteTarget] = useState(null);
+    const [deleteLoading, setDeleteLoading] = useState(false);
+    const [deleteError, setDeleteError] = useState('');
 
     useEffect(() => {
         const timer = setTimeout(() => setDebouncedQuery(query), 300);
@@ -88,13 +92,29 @@ export default function SystemAdminCredentialTypes({ user, onLogout, onNavigate 
     };
 
     const handleDelete = (d) => {
-        if (!confirm(`Deactivate "${d.name}"?`)) return;
-        fetch(`/admin/system/documents/${d.id}`, {
+        setDeleteTarget(d);
+    };
+
+    const confirmDelete = () => {
+        if (!deleteTarget || deleteLoading) return;
+        setDeleteLoading(true);
+        setDeleteError('');
+        fetch(`/admin/system/documents/${deleteTarget.id}`, {
             method: 'DELETE',
             headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') },
             credentials: 'same-origin',
         })
-            .then((r) => { if (r.ok) fetchDocs(page); });
+            .then(async (r) => {
+                if (r.ok) {
+                    setDeleteTarget(null);
+                    fetchDocs(page);
+                } else {
+                    const d = await r.json();
+                    setDeleteError(d.message || 'Failed to deactivate.');
+                }
+            })
+            .catch(() => setDeleteError('Network error.'))
+            .finally(() => setDeleteLoading(false));
     };
 
     const renderRow = (d) => (
@@ -103,22 +123,49 @@ export default function SystemAdminCredentialTypes({ user, onLogout, onNavigate 
             <td className="px-6 py-4 font-medium text-slate-900">{d.name}</td>
             <td className="px-6 py-4 font-medium text-slate-900">₱{parseFloat(d.price ?? 0).toFixed(2)}</td>
             <td className="px-6 py-4 text-slate-700">{d.processing_days} day{d.processing_days !== 1 ? 's' : ''}</td>
-            <td className="px-6 py-4">{d.is_per_semester ? <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">Yes</span> : <span className="text-xs text-slate-400">No</span>}</td>
-            <td className="px-6 py-4">{d.is_per_page ? <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full">Yes</span> : <span className="text-xs text-slate-400">No</span>}</td>
-            <td className="px-6 py-4"><StatusBadge status={d.is_active ? 'active' : 'inactive'} /></td>
+            <td className="px-6 py-4">{d.is_per_semester ? <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">Yes</span> : <span className="text-xs text-slate-400">No</span>}</td>
+            <td className="px-6 py-4">{d.is_per_page ? <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">Yes</span> : <span className="text-xs text-slate-400">No</span>}</td>
+            <td className="px-6 py-4"><StatusBadge status={d.is_active ? 'active' : 'inactive'} type="boolean" /></td>
             <td className="px-6 py-4">
                 <div className="flex items-center gap-1.5">
-                    <button onClick={() => openEditModal(d)} className="p-1.5 text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors cursor-pointer" title="Edit">
+                    <button onClick={() => openEditModal(d)} className="p-1.5 text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors cursor-pointer" title="Edit">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                     </button>
                     {d.is_active && (
-                        <button onClick={() => handleDelete(d)} className="p-1.5 text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors cursor-pointer" title="Deactivate">
+                        <button onClick={() => handleDelete(d)} className="p-1.5 text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors cursor-pointer" title="Delete">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                         </button>
                     )}
                 </div>
             </td>
         </tr>
+    );
+
+    const renderDeleteModal = () => (
+        deleteTarget ? (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4" onClick={(e) => { if (e.target === e.currentTarget) setDeleteTarget(null); }}>
+                <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-md p-4 sm:p-6" onClick={(e) => e.stopPropagation()}>
+                    <h3 className="text-base font-bold text-slate-900 mb-2">Delete Credential Type</h3>
+                    <p className="text-sm text-slate-600 mb-4 sm:mb-6">
+                        Are you sure you want to delete <strong className="text-slate-900">&ldquo;{deleteTarget.name}&rdquo;</strong>? This action cannot be undone.
+                    </p>
+                    {deleteError && (
+                        <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200">
+                            <p className="text-xs text-red-600 flex items-center gap-2">
+                                <AlertCircle className="w-4 h-4 shrink-0" />
+                                {deleteError}
+                            </p>
+                        </div>
+                    )}
+                    <div className="flex gap-3 justify-end">
+                        <button onClick={() => setDeleteTarget(null)} disabled={deleteLoading} className="px-5 py-2.5 rounded-lg text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer disabled:opacity-50">Cancel</button>
+                        <button onClick={confirmDelete} disabled={deleteLoading} className="px-5 py-2.5 rounded-lg text-xs font-bold text-white bg-red-600 hover:bg-red-700 transition-colors cursor-pointer disabled:opacity-50">
+                            {deleteLoading ? 'Deleting...' : 'Yes, Delete'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        ) : null
     );
 
     const renderModal = () => (
@@ -222,13 +269,13 @@ export default function SystemAdminCredentialTypes({ user, onLogout, onNavigate 
                                             metadata={[
                                                 { label: 'Price', value: `₱${parseFloat(item.price ?? 0).toFixed(2)}` },
                                                 { label: 'Processing', value: `${item.processing_days} day${item.processing_days !== 1 ? 's' : ''}` },
-                                                { label: 'Per Semester', value: item.is_per_semester ? <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">Yes</span> : <span className="text-xs text-slate-400">No</span> },
-                                                { label: 'Per Page', value: item.is_per_page ? <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full">Yes</span> : <span className="text-xs text-slate-400">No</span> },
-                                                { label: 'Status', value: <StatusBadge status={item.is_active ? 'active' : 'inactive'} /> },
+                                                { label: 'Per Semester', value: item.is_per_semester ? <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">Yes</span> : <span className="text-xs text-slate-400">No</span> },
+                                                { label: 'Per Page', value: item.is_per_page ? <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">Yes</span> : <span className="text-xs text-slate-400">No</span> },
+                                                { label: 'Status', value: <StatusBadge status={item.is_active ? 'active' : 'inactive'} type="boolean" /> },
                                             ]}
                                             actions={[
-                                                { icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>, label: 'Edit', onClick: () => openEditModal(item) },
-                                                ...(item.is_active ? [{ icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>, label: 'Deactivate', onClick: () => handleDelete(item) }] : []),
+                                                { icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>, label: 'Edit', onClick: () => openEditModal(item), className: 'text-white bg-blue-600 hover:bg-blue-700' },
+                                                ...(item.is_active ? [{ icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>, label: 'Delete', onClick: () => handleDelete(item), className: 'text-white bg-red-600 hover:bg-red-700' }] : []),
                                             ]}
                                         />
                                     ))}
@@ -253,6 +300,7 @@ export default function SystemAdminCredentialTypes({ user, onLogout, onNavigate 
             </section>
 
             {showModal && renderModal()}
+            {renderDeleteModal()}
         </DashboardLayout>
     );
 }

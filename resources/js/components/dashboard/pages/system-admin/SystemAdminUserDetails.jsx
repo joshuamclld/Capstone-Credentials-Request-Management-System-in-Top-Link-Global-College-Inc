@@ -80,7 +80,7 @@ export default function SystemAdminUserDetails({ user, onLogout, onNavigate }) {
                                 <Hash className="w-4 h-4 text-slate-400" />
                                 <div>
                                     <p className="text-xs text-slate-500">Status</p>
-                                    <div><StatusBadge status={userData.is_active ? 'active' : 'inactive'} /></div>
+                                    <div><StatusBadge status={userData.is_active ? 'active' : 'inactive'} type="boolean" /></div>
                                 </div>
                             </div>
                             <div className="flex items-center gap-3">

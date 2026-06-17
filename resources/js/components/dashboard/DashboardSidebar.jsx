@@ -1,9 +1,6 @@
 import React from 'react';
-import { LogOut } from 'lucide-react';
 
 export default function DashboardSidebar({ items, currentUser, sidebarOpen, onClose, onLogout, onNavigate }) {
-    const adminName = currentUser?.name || 'Administrator';
-    const adminEmail = currentUser?.email || '';
     const currentPath = window.location.pathname;
 
     const isActive = (item) => {
@@ -16,7 +13,7 @@ export default function DashboardSidebar({ items, currentUser, sidebarOpen, onCl
 
     return (
         <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-primary border-r border-primary-container flex flex-col transition-transform duration-300 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-            <div className="px-6 py-6 border-b border-primary-container">
+            <div className="px-6 py-5 border-b border-primary-container">
                 <div className="flex items-center gap-3">
                     <img
                         alt="TLGC Logo"
@@ -55,25 +52,6 @@ export default function DashboardSidebar({ items, currentUser, sidebarOpen, onCl
                     </a>
                 ))}
             </nav>
-
-            <div className="px-4 py-4 border-t border-primary-container">
-                <div className="flex items-center gap-3 px-4 py-2">
-                    <div className="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center text-xs font-bold shrink-0">
-                        {adminName.charAt(0)}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-on-primary truncate">{adminName}</p>
-                        <p className="text-[11px] text-on-primary/70 truncate">{adminEmail || 'Administrator'}</p>
-                    </div>
-                    <button
-                        onClick={onLogout}
-                        className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-red-300 hover:bg-red-500/20 transition-colors cursor-pointer shrink-0 text-xs"
-                    >
-                        <LogOut className="w-4 h-4" />
-                        Sign Out
-                    </button>
-                </div>
-            </div>
         </aside>
     );
 }

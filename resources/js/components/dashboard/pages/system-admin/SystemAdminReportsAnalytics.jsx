@@ -157,10 +157,10 @@ export default function SystemAdminReportsAnalytics({ user, onLogout, onNavigate
                         <button onClick={() => doExport('excel')} disabled={exporting !== null} className={`flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-bold text-white rounded-lg transition-colors cursor-pointer disabled:opacity-50 ${exporting === 'excel' ? 'bg-emerald-600' : 'bg-emerald-700 hover:bg-emerald-800'}`}>
                             {exporting === 'excel' ? 'Exporting...' : 'Export Excel'}
                         </button>
-                        <button onClick={() => doExport('csv')} disabled={exporting !== null} className={`flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-bold rounded-lg transition-colors cursor-pointer disabled:opacity-50 ${exporting === 'csv' ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'}`}>
+                        <button onClick={() => doExport('csv')} disabled={exporting !== null} className={`flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-bold text-white rounded-lg transition-colors cursor-pointer disabled:opacity-50 ${exporting === 'csv' ? 'bg-blue-600' : 'bg-blue-600 hover:bg-blue-700'}`}>
                             {exporting === 'csv' ? 'Exporting...' : 'Export CSV'}
                         </button>
-                        <button onClick={() => doExport('pdf')} disabled={exporting !== null} className={`flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-bold rounded-lg transition-colors cursor-pointer disabled:opacity-50 ${exporting === 'pdf' ? 'bg-red-600 text-white' : 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200'}`}>
+                        <button onClick={() => doExport('pdf')} disabled={exporting !== null} className={`flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-bold text-white rounded-lg transition-colors cursor-pointer disabled:opacity-50 ${exporting === 'pdf' ? 'bg-red-600' : 'bg-red-600 hover:bg-red-700'}`}>
                             {exporting === 'pdf' ? 'Exporting...' : 'Export PDF'}
                         </button>
                     </div>
