@@ -101,6 +101,8 @@ Route::prefix('admin')->group(function () {
         Route::get('/system/students', [SystemAdminController::class, 'getStudents']);
         Route::post('/system/students', [SystemAdminController::class, 'storeStudent'])->middleware('throttle:10,10');
         Route::post('/system/students/import', [SystemAdminController::class, 'importStudents'])->middleware('throttle:3,10');
+        Route::patch('/system/students/{id}/toggle-status', [SystemAdminController::class, 'toggleStudentStatus']);
+        Route::delete('/system/students/{id}', [SystemAdminController::class, 'deleteStudent']);
     });
 
     // API routes — moved out of SPA page path to avoid hard-refresh conflict

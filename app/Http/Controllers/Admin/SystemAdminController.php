@@ -544,6 +544,34 @@ class SystemAdminController extends Controller
         ], 201);
     }
 
+    public function toggleStudentStatus(int $id): JsonResponse
+    {
+        $student = Student::findOrFail($id);
+        $student->update(['is_active' => !$student->is_active]);
+
+        $status = $student->is_active ? 'activated' : 'deactivated';
+        $this->audit('toggle_student_status', 'Student', $student->id, "{$status} student {$student->first_name} {$student->last_name} ({$student->student_number})");
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "Student {$status} successfully.",
+            'data' => $student->fresh(),
+        ]);
+    }
+
+    public function deleteStudent(int $id): JsonResponse
+    {
+        $student = Student::findOrFail($id);
+        $student->delete();
+
+        $this->audit('delete_student', 'Student', $id, "Deleted student {$student->first_name} {$student->last_name} ({$student->student_number})");
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Student deleted successfully.',
+        ]);
+    }
+
     public function importStudents(Request $request): JsonResponse
     {
         $request->validate([

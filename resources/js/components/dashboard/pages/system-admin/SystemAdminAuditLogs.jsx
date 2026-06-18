@@ -17,7 +17,7 @@ const actionColors = {
   claim_request: 'bg-purple-100 text-purple-800 border-purple-200',
   digital_document_sent: 'bg-indigo-100 text-indigo-800 border-indigo-200',
   update_status: 'bg-blue-100 text-blue-800 border-blue-200',
-  update_remarks: 'bg-slate-100 text-slate-700 border-slate-200',
+  update_remarks: 'bg-yellow-100 text-yellow-800 border-yellow-200',
   verify_payment: 'bg-emerald-100 text-emerald-800 border-emerald-200',
   create_user: 'bg-teal-100 text-teal-800 border-teal-200',
   update_user: 'bg-cyan-100 text-cyan-800 border-cyan-200',
@@ -28,6 +28,10 @@ const actionColors = {
   create_credential_type: 'bg-emerald-100 text-emerald-800 border-emerald-200',
   update_credential_type: 'bg-teal-100 text-teal-800 border-teal-200',
   deactivate_credential_type: 'bg-red-100 text-red-800 border-red-200',
+  create_student: 'bg-violet-100 text-violet-800 border-violet-200',
+  toggle_student_status: 'bg-amber-100 text-amber-800 border-amber-200',
+  delete_student: 'bg-rose-100 text-rose-800 border-rose-200',
+  import_students: 'bg-sky-100 text-sky-800 border-sky-200',
 };
 
 export default function SystemAdminAuditLogs({ user, onLogout, onNavigate }) {

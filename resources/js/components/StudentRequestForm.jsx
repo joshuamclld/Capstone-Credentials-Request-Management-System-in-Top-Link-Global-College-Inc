@@ -569,7 +569,7 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
                                       type="button"
                                       onClick={() => toggleSemester(combo)}
                                       className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 font-bold text-label-md transition-all duration-200 cursor-pointer ${isSelected
-                                        ? 'border-primary bg-primary-fixed text-primary'
+                                        ? 'border-primary bg-primary-fixed text-on-primary'
                                         : 'border-outline-variant bg-surface-container-lowest text-on-surface-variant hover:border-primary/50'
                                         }`}
                                     >
@@ -588,7 +588,7 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
                         {selectedSemesters.length > 0 && (
                           <div className="mt-4 flex flex-wrap gap-2">
                             {selectedSemesters.map(combo => (
-                              <span key={combo} className="bg-primary-fixed text-primary font-label-sm text-label-sm px-3 py-1.5 rounded-full border border-primary/20">
+                              <span key={combo} className="bg-primary-fixed text-on-primary font-label-sm text-label-sm px-3 py-1.5 rounded-full border border-primary/20">
                                 {combo}
                               </span>
                             ))}

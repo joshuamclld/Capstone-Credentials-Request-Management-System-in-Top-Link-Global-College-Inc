@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { GraduationCap, Plus, X, AlertCircle, Check, Upload, Download, FileSpreadsheet } from 'lucide-react';
+import { GraduationCap, Plus, X, AlertCircle, Check, Upload, Download, FileSpreadsheet, Trash2, Eye, Power } from 'lucide-react';
 import DashboardLayout from '../../DashboardLayout';
 import DashboardSearch from '../../DashboardSearch';
 import DashboardTable from '../../DashboardTable';
@@ -10,7 +10,7 @@ import EmptyState from '../../EmptyState';
 import { systemAdminSidebarItems } from '../../config/sidebarItems';
 import Papa from 'papaparse';
 
-const tableHeaders = ['Student Number', 'Name', 'Email', 'Status', 'Date Created'];
+const tableHeaders = ['Student Number', 'Name', 'Email', 'Status', 'Date Created', 'Action'];
 
 export default function StudentManagement({ user, onLogout, onNavigate }) {
   const stripeColors = ['bg-sky-100/75', 'bg-teal-100/75', 'bg-amber-100/75'];
@@ -28,6 +28,71 @@ export default function StudentManagement({ user, onLogout, onNavigate }) {
   const [addLoading, setAddLoading] = useState(false);
   const [addError, setAddError] = useState('');
   const [addSuccess, setAddSuccess] = useState('');
+
+  // View modal
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState(null);
+
+  const openViewModal = (student) => {
+    setSelectedStudent(student);
+    setShowViewModal(true);
+  };
+
+  // Toggle status
+  const [showToggleModal, setShowToggleModal] = useState(false);
+  const [toggleTarget, setToggleTarget] = useState(null);
+  const [toggling, setToggling] = useState(false);
+
+  // Delete
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const openToggleModal = (student) => {
+    setToggleTarget(student);
+    setShowToggleModal(true);
+  };
+
+  const handleToggleStatus = async () => {
+    if (!toggleTarget || toggling) return;
+    setToggling(true);
+    try {
+      const res = await fetch(`/admin/system/students/${toggleTarget.id}/toggle-status`, {
+        method: 'PATCH',
+        headers: { 'X-CSRF-TOKEN': getCsrf(), 'Accept': 'application/json' },
+      });
+      const data = await res.json();
+      if (data.status === 'success') {
+        setStudents(prev => prev.map(s => s.id === toggleTarget.id ? { ...s, is_active: !s.is_active } : s));
+        setShowToggleModal(false);
+        setToggleTarget(null);
+      }
+    } catch {}
+    setToggling(false);
+  };
+
+  const openDeleteModal = (student) => {
+    setDeleteTarget(student);
+    setShowDeleteModal(true);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget || deleting) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/admin/system/students/${deleteTarget.id}`, {
+        method: 'DELETE',
+        headers: { 'X-CSRF-TOKEN': getCsrf(), 'Accept': 'application/json' },
+      });
+      const data = await res.json();
+      if (data.status === 'success') {
+        setStudents(prev => prev.filter(s => s.id !== deleteTarget.id));
+        setShowDeleteModal(false);
+        setDeleteTarget(null);
+      }
+    } catch {}
+    setDeleting(false);
+  };
 
   // Import modal
   const [showImportModal, setShowImportModal] = useState(false);
@@ -209,8 +274,25 @@ export default function StudentManagement({ user, onLogout, onNavigate }) {
                   <td className="px-4 py-3.5">{s.student_number}</td>
                   <td className="px-4 py-3.5">{s.first_name} {s.last_name}</td>
                   <td className="px-4 py-3.5 text-on-surface-variant text-sm">{s.email}</td>
-                  <td className="px-4 py-3.5"><StatusBadge status={s.is_active ? 'Active' : 'Inactive'} type="boolean" /></td>
+                  <td className="px-4 py-3.5"><StatusBadge status={s.is_active ? 'active' : 'inactive'} type="boolean" /></td>
                   <td className="px-4 py-3.5 text-on-surface-variant text-sm whitespace-nowrap">{new Date(s.created_at).toLocaleDateString()}</td>
+                  <td className="px-4 py-3.5">
+                    <div className="flex items-center gap-1.5">
+                      <button onClick={() => openViewModal(s)}
+                        className="p-2 rounded-lg bg-primary text-on-primary hover:opacity-90 transition-all cursor-pointer" title="View">
+                        <Eye className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => openToggleModal(s)}
+                        className={`p-2 rounded-lg text-white transition-all cursor-pointer ${s.is_active ? 'bg-amber-600 hover:bg-amber-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
+                        title={s.is_active ? 'Deactivate' : 'Activate'}>
+                        <Power className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => openDeleteModal(s)}
+                        className="p-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-all cursor-pointer" title="Delete">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </DashboardTable>
@@ -221,17 +303,146 @@ export default function StudentManagement({ user, onLogout, onNavigate }) {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-bold text-sm text-on-surface">{s.student_number}</span>
-                    <StatusBadge status={s.is_active ? 'Active' : 'Inactive'} type="boolean" />
+                    <StatusBadge status={s.is_active ? 'active' : 'inactive'} type="boolean" />
                   </div>
                   <p className="text-sm text-on-surface">{s.first_name} {s.last_name}</p>
                   <p className="text-xs text-on-surface-variant">{s.email}</p>
                   <p className="text-xs text-on-surface-variant">{new Date(s.created_at).toLocaleDateString()}</p>
+                  <div className="flex items-center gap-1.5 mt-2">
+                    <button onClick={() => openViewModal(s)}
+                      className="p-2 rounded-lg bg-primary text-on-primary hover:opacity-90 transition-all cursor-pointer" title="View">
+                      <Eye className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => openToggleModal(s)}
+                      className={`p-2 rounded-lg text-white transition-all cursor-pointer ${s.is_active ? 'bg-amber-600 hover:bg-amber-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
+                      title={s.is_active ? 'Deactivate' : 'Activate'}>
+                      <Power className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => openDeleteModal(s)}
+                      className="p-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-all cursor-pointer" title="Delete">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
           {pagination && <DashboardPagination currentPage={pagination.current_page} lastPage={pagination.last_page} onPageChange={handlePageChange} />}
         </>
+      )}
+
+      {/* View Student Modal */}
+      {showViewModal && selectedStudent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4" onClick={() => setShowViewModal(false)}>
+          <div className="bg-surface rounded-2xl shadow-xl border border-outline-variant w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-headline-sm font-bold text-on-surface">Student Details</h3>
+              <button onClick={() => setShowViewModal(false)} className="w-8 h-8 flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors cursor-pointer rounded-full">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center gap-4 pb-4 border-b border-outline-variant">
+                <div className="w-14 h-14 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xl">
+                  {selectedStudent.first_name?.[0]}{selectedStudent.last_name?.[0]}
+                </div>
+                <div>
+                  <p className="font-bold text-lg text-on-surface">{selectedStudent.first_name} {selectedStudent.last_name}</p>
+                  <p className="text-sm text-on-surface-variant">{selectedStudent.student_number}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-label-sm text-on-surface-variant font-semibold mb-0.5">First Name</p>
+                  <p className="text-body-md text-on-surface">{selectedStudent.first_name}</p>
+                </div>
+                <div>
+                  <p className="text-label-sm text-on-surface-variant font-semibold mb-0.5">Last Name</p>
+                  <p className="text-body-md text-on-surface">{selectedStudent.last_name}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-label-sm text-on-surface-variant font-semibold mb-0.5">Student Number</p>
+                  <p className="text-body-md text-on-surface">{selectedStudent.student_number}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-label-sm text-on-surface-variant font-semibold mb-0.5">Email</p>
+                  <p className="text-body-md text-on-surface">{selectedStudent.email}</p>
+                </div>
+                <div>
+                  <p className="text-label-sm text-on-surface-variant font-semibold mb-0.5">Status</p>
+                  <StatusBadge status={selectedStudent.is_active ? 'Active' : 'Inactive'} type="boolean" />
+                </div>
+                <div>
+                  <p className="text-label-sm text-on-surface-variant font-semibold mb-0.5">Date Created</p>
+                  <p className="text-body-md text-on-surface">{new Date(selectedStudent.created_at).toLocaleDateString()}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <button onClick={() => setShowViewModal(false)}
+                className="w-full py-2.5 rounded-lg bg-primary text-on-primary font-bold hover:opacity-90 transition-all cursor-pointer">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toggle Status Confirmation Modal */}
+      {showToggleModal && toggleTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4" onClick={() => !toggling && setShowToggleModal(false)}>
+          <div className="bg-surface rounded-2xl shadow-xl border border-outline-variant w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-headline-sm font-bold text-on-surface">{toggleTarget.is_active ? 'Deactivate' : 'Activate'} Student</h3>
+              <button onClick={() => setShowToggleModal(false)} disabled={toggling} className="w-8 h-8 flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors cursor-pointer rounded-full">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-body-md text-on-surface-variant mb-6">
+              Are you sure you want to <strong>{toggleTarget.is_active ? 'deactivate' : 'activate'}</strong> student <strong>{toggleTarget.first_name} {toggleTarget.last_name}</strong> ({toggleTarget.student_number})?
+            </p>
+            <div className="flex items-center gap-3">
+              <button onClick={() => setShowToggleModal(false)} disabled={toggling}
+                className="flex-1 py-2.5 rounded-lg border border-outline-variant text-on-surface font-bold hover:bg-surface-container-high transition-colors cursor-pointer disabled:opacity-50">
+                Cancel
+              </button>
+              <button onClick={handleToggleStatus} disabled={toggling}
+                className={`flex-1 py-2.5 rounded-lg font-bold transition-all cursor-pointer disabled:opacity-50 text-white ${toggleTarget.is_active ? 'bg-amber-600 hover:bg-amber-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}>
+                {toggling ? 'Processing...' : toggleTarget.is_active ? 'Deactivate' : 'Activate'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4" onClick={() => !deleting && setShowDeleteModal(false)}>
+          <div className="bg-surface rounded-2xl shadow-xl border border-outline-variant w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-headline-sm font-bold text-on-surface">Delete Student</h3>
+              <button onClick={() => setShowDeleteModal(false)} disabled={deleting} className="w-8 h-8 flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors cursor-pointer rounded-full">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-body-md text-on-surface-variant mb-6">
+              Are you sure you want to permanently delete student <strong>{deleteTarget.first_name} {deleteTarget.last_name}</strong> ({deleteTarget.student_number})? This action cannot be undone.
+            </p>
+            <div className="flex items-center gap-3">
+              <button onClick={() => setShowDeleteModal(false)} disabled={deleting}
+                className="flex-1 py-2.5 rounded-lg border border-outline-variant text-on-surface font-bold hover:bg-surface-container-high transition-colors cursor-pointer disabled:opacity-50">
+                Cancel
+              </button>
+              <button onClick={handleDelete} disabled={deleting}
+                className="flex-1 py-2.5 rounded-lg bg-red-600 text-white font-bold hover:bg-red-700 transition-all cursor-pointer disabled:opacity-50">
+                {deleting ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Add Student Modal */}

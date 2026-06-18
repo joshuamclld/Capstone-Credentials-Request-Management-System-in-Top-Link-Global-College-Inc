@@ -16,7 +16,7 @@ export const PAYMENT_STATUS_CONFIG = {
 
 export const BOOLEAN_STATUS_CONFIG = {
   active: { label: 'Active', className: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
-  inactive: { label: 'Inactive', className: 'bg-slate-100 text-slate-700 border-slate-200' },
+  inactive: { label: 'Inactive', className: 'bg-red-100 text-red-800 border-red-200' },
 };
 
 export function getRequestStatusConfig(status) {
