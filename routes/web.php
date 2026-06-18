@@ -96,6 +96,11 @@ Route::prefix('admin')->group(function () {
 
         // Audit logs
         Route::get('/system/audit-logs', [SystemAdminController::class, 'getAuditLogs']);
+
+        // Student management
+        Route::get('/system/students', [SystemAdminController::class, 'getStudents']);
+        Route::post('/system/students', [SystemAdminController::class, 'storeStudent'])->middleware('throttle:10,10');
+        Route::post('/system/students/import', [SystemAdminController::class, 'importStudents'])->middleware('throttle:3,10');
     });
 
     // API routes — moved out of SPA page path to avoid hard-refresh conflict
@@ -139,12 +144,6 @@ Route::get('/payment-proof/{tracking_number}', [StudentRequestController::class,
 
 // Student Authentication Routes
 Route::prefix('student')->group(function () {
-    Route::post('/register', [StudentAuthController::class, 'register'])
-        ->middleware('throttle:3,1');
-    Route::post('/verify-otp', [StudentAuthController::class, 'verifyOtp'])
-        ->middleware('throttle:5,1');
-    Route::post('/resend-otp', [StudentAuthController::class, 'resendOtp'])
-        ->middleware('throttle:2,1');
     Route::post('/login', [StudentAuthController::class, 'login'])
         ->middleware('throttle:5,1');
     Route::post('/forgot-password', [StudentAuthController::class, 'forgotPassword'])

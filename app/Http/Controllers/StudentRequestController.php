@@ -130,7 +130,7 @@ class StudentRequestController extends Controller
             $paymentMethod = $validated['paymentMethod'];
             $paymentStatus = 'unpaid';
 
-            $deliveryType = $validated['deliveryType'] === 'pickup' ? 'physical' : 'digital';
+            $deliveryType = ($validated['wantDigitalCopy'] ?? false) ? 'both' : 'physical';
 
             $studentRequest = StudentRequest::create([
                 'tracking_number' => $trackingNumber,

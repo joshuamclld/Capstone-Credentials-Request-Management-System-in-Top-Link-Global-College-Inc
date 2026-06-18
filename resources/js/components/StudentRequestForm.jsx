@@ -17,6 +17,16 @@ const DOCUMENT_META = {
   tor: { icon: 'history_edu', color: 'primary', daysLabel: '7 Working Days' },
 };
 
+const cardBgColors = {
+  enrollment: 'bg-emerald-50',
+  'good-moral': 'bg-cyan-50',
+  registration: 'bg-amber-50',
+  grades: 'bg-violet-50',
+  tor: 'bg-blue-50',
+};
+
+const fallbackBgColors = ['bg-rose-50', 'bg-pink-50', 'bg-orange-50', 'bg-lime-50', 'bg-teal-50', 'bg-indigo-50', 'bg-fuchsia-50', 'bg-yellow-50'];
+
 export default function StudentRequestForm({ onNavigate, student, onLogout, currentPath }) {
   const [step, setStep] = useState(1);
 
@@ -35,7 +45,8 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
   const [pages, setPages] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState('');
   const [paymentQrUrl, setPaymentQrUrl] = useState(null);
-  const [deliveryType, setDeliveryType] = useState('');
+  const [deliveryType, setDeliveryType] = useState('pickup');
+  const [wantDigitalCopy, setWantDigitalCopy] = useState(false);
   const [purpose, setPurpose] = useState('');
 
   const [confirmations, setConfirmations] = useState({
@@ -118,7 +129,8 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
     setSelectedSemesters([]);
     setPages(1);
     setPaymentMethod('');
-    setDeliveryType('');
+    setDeliveryType('pickup');
+    setWantDigitalCopy(false);
     setPurpose('');
     setConfirmations({
       infoCorrect: false,
@@ -229,12 +241,6 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
       return;
     }
 
-    if (!deliveryType) {
-      setSubmitError('Please select a delivery method.');
-      setIsSubmitting(false);
-      return;
-    }
-
     try {
       const response = await fetch('/requests', {
         method: 'POST',
@@ -255,7 +261,8 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
           selectedSemesters: selectedSemesters,
           pages: hasPerPageDoc ? pages : null,
           paymentMethod: paymentMethod,
-          deliveryType: deliveryType,
+          deliveryType: 'pickup',
+          wantDigitalCopy: wantDigitalCopy,
           purpose: purpose,
         }),
       });
@@ -352,9 +359,9 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
                 <div className="z-10 flex flex-col items-center">
                   <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold shadow-sm transition-all duration-300 ${step >= 3 ? 'bg-primary text-on-primary ring-4 ring-primary-container/20' : 'bg-surface-container-high text-on-surface-variant'
                     }`}>
-                    <span className="material-symbols-outlined">store</span>
+                    <span className="material-symbols-outlined">payments</span>
                   </div>
-                  <span className={`font-label-md text-label-md mt-2 ${step >= 3 ? 'text-primary font-bold' : 'text-on-surface-variant'}`}>Release Method</span>
+                  <span className={`font-label-md text-label-md mt-2 ${step >= 3 ? 'text-primary font-bold' : 'text-on-surface-variant'}`}>Payment</span>
                 </div>
 
                 <div className="z-10 flex flex-col items-center">
@@ -502,14 +509,15 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
                       </div>
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                        {documents.map((doc) => {
+                        {documents.map((doc, docIdx) => {
                           const meta = DOCUMENT_META[doc.code] || {};
                           const isChecked = selectedDocs.includes(doc.code);
+                          const bgColor = cardBgColors[doc.code] || fallbackBgColors[docIdx % fallbackBgColors.length];
                           return (
                             <div
                               key={doc.code}
                               onClick={() => toggleDocument(doc.code)}
-                              className={`relative flex flex-col p-4 sm:p-6 rounded-lg border-2 cursor-pointer transition-all duration-300 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95 group ${isChecked ? 'border-primary bg-surface-container-low shadow-sm' : 'border-outline-variant bg-surface-container-lowest'
+                              className={`relative flex flex-col p-4 sm:p-6 rounded-lg border-2 cursor-pointer transition-all duration-300 ease-in-out hover:scale-[1.02] hover:shadow-md active:scale-95 group ${bgColor} ${isChecked ? 'border-primary shadow-sm' : 'border-outline-variant'
                                 }`}
                             >
                               <div className={`absolute top-4 sm:top-6 right-4 sm:right-6 w-4 h-4 sm:w-5 sm:h-5 rounded border-2 flex items-center justify-center transition-all ${isChecked ? 'border-primary bg-primary' : 'border-outline'
@@ -517,7 +525,7 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
                                 {isChecked && <span className="material-symbols-outlined text-[14px] text-white" style={{ fontSize: '14px' }}>check</span>}
                               </div>
                               <div className="flex items-center gap-3 mb-3">
-                                <span className={`material-symbols-outlined p-2 rounded-lg transition-transform duration-300 group-hover:rotate-6 ${isChecked ? 'bg-primary-fixed text-primary' : 'bg-surface-container text-on-surface-variant'
+                                <span className={`material-symbols-outlined p-2 rounded-lg transition-transform duration-300 group-hover:rotate-6 ${isChecked ? 'bg-primary-fixed text-white' : 'bg-surface-container text-on-surface-variant'
                                   }`}>
                                   {meta.icon || 'description'}
                                 </span>
@@ -639,47 +647,39 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
                 {step === 3 && (
                   <div className="animate-fade-in-up">
                     <header className="mb-4 sm:mb-8">
-                      <h2 className="font-headline-md text-lg sm:text-headline-md text-primary mb-1 sm:mb-2">Release Method &amp; Payment</h2>
-                      <p className="font-body-sm sm:font-body-md text-body-sm sm:text-body-md text-on-surface-variant">Choose how you want to receive your document and your payment method.</p>
+                      <h2 className="font-headline-md text-lg sm:text-headline-md text-primary mb-1 sm:mb-2">Payment</h2>
+                      <p className="font-body-sm sm:font-body-md text-body-sm sm:text-body-md text-on-surface-variant">Select your payment method.</p>
                     </header>
 
-                    {/* Release Type */}
-                    <div className="max-w-lg mx-auto mb-8">
-                      <h3 className="font-headline-sm text-headline-sm text-on-surface mb-4">Release Type</h3>
-                      <div className="space-y-3">
-                        <div
-                          onClick={() => setDeliveryType('pickup')}
-                          className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${deliveryType === 'pickup' ? 'border-primary bg-surface-container-low' : 'border-outline-variant bg-surface-container-lowest'
-                            }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className={`w-5 h-5 shrink-0 aspect-square rounded-full border-2 flex items-center justify-center ${deliveryType === 'pickup' ? 'border-primary' : 'border-outline'
-                              }`}>
-                              {deliveryType === 'pickup' && <div className="w-2.5 h-2.5 shrink-0 aspect-square rounded-full bg-primary"></div>}
-                            </div>
-                            <div className="min-w-0">
-                              <p className="font-label-md font-bold text-on-surface">Pick up at Registrar Office</p>
-                              <p className="text-body-sm text-on-surface-variant">Visit TLGC campus to claim your requested document.</p>
-                            </div>
-                          </div>
+                    {/* Pickup Info - default, not selectable */}
+                    <div className="max-w-lg mx-auto mb-6">
+                      <div className="flex items-start gap-3 px-4 py-3 rounded-lg bg-primary-container/20 border-l-4 border-l-primary">
+                        <div className="w-5 h-5 shrink-0 flex items-center justify-center mt-0.5">
+                          <span className="material-symbols-outlined text-primary text-lg">info</span>
                         </div>
-                        <div
-                          onClick={() => setDeliveryType('digital')}
-                          className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${deliveryType === 'digital' ? 'border-primary bg-surface-container-low' : 'border-outline-variant bg-surface-container-lowest'
-                            }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className={`w-5 h-5 shrink-0 aspect-square rounded-full border-2 flex items-center justify-center ${deliveryType === 'digital' ? 'border-primary' : 'border-outline'
-                              }`}>
-                              {deliveryType === 'digital' && <div className="w-2.5 h-2.5 shrink-0 aspect-square rounded-full bg-primary"></div>}
-                            </div>
-                            <div className="min-w-0">
-                              <p className="font-label-md font-bold text-on-surface">Digital Copy (Email)</p>
-                              <p className="text-body-sm text-on-surface-variant">Receive a PDF copy of your document via email.</p>
-                            </div>
-                          </div>
+                        <div className="min-w-0">
+                          <p className="font-label-md font-bold text-on-surface">Pick up at Registrar Office</p>
+                          <p className="text-body-sm text-on-surface-variant">Your documents will be available for claiming at TLGC campus.</p>
                         </div>
                       </div>
+                    </div>
+
+                    {/* Digital Copy Question */}
+                    <div className="max-w-lg mx-auto mb-8">
+                      <h3 className="font-headline-sm text-headline-sm text-on-surface mb-4">Would you also like a digital copy?</h3>
+                      <label
+                        onClick={() => setWantDigitalCopy(!wantDigitalCopy)}
+                        className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${wantDigitalCopy ? 'border-primary bg-surface-container-low' : 'border-outline-variant bg-surface-container-lowest'
+                          }`}
+                      >
+                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${wantDigitalCopy ? 'border-primary bg-primary' : 'border-outline'}`}>
+                          {wantDigitalCopy && <span className="material-symbols-outlined text-sm text-white leading-none">check</span>}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-label-md font-bold text-on-surface">Yes, send me a PDF copy via email</p>
+                          <p className="text-body-sm text-on-surface-variant">Receive a digital copy of your requested documents through email in addition to physical pickup.</p>
+                        </div>
+                      </label>
                     </div>
 
                     {/* Payment Method */}
@@ -698,7 +698,7 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
                             </div>
                             <div className="min-w-0">
                               <p className="font-label-md font-bold text-on-surface">Cash Payment</p>
-                              <p className="text-body-sm text-on-surface-variant">{deliveryType === 'digital' ? 'Pay at the Registrar Office on or before processing.' : 'Pay at the Registrar Office during claiming.'}</p>
+                              <p className="text-body-sm text-on-surface-variant">Pay at the Registrar Office during claiming.</p>
                             </div>
                           </div>
                         </div>
@@ -771,7 +771,7 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
                         )}
                         <div className="flex justify-between border-b border-outline-variant pb-2">
                           <span className="text-on-surface-variant font-medium">Release Method:</span>
-                          <span className="font-bold text-on-surface">{deliveryType === 'pickup' ? 'Pick up at Registrar Office' : 'Digital Copy (Email)'}</span>
+                          <span className="font-bold text-on-surface">Pick up at Registrar Office{wantDigitalCopy ? ' + Digital Copy' : ''}</span>
                         </div>
                         <div className="flex justify-between border-b border-outline-variant pb-2">
                           <span className="text-on-surface-variant font-medium">Payment Method:</span>

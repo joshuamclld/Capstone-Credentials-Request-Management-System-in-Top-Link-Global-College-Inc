@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Users, Clock, RefreshCw, ChartColumn, Shield } from 'lucide-react';
+import { FileText, Users, Clock, RefreshCw, ChartColumn, Shield, GraduationCap } from 'lucide-react';
 import DashboardLayout from '../../DashboardLayout';
 import DashboardStatCard from '../../DashboardStatCard';
 import DashboardSearch from '../../DashboardSearch';
@@ -8,6 +8,7 @@ import { systemAdminSidebarItems } from '../../config/sidebarItems';
 
 const statDefs = [
     { label: 'Total Users', key: 'total_users', icon: Users, iconBg: 'bg-blue-50', iconColor: 'text-blue-700' },
+    { label: 'Total Students', key: 'total_students', icon: GraduationCap, iconBg: 'bg-indigo-50', iconColor: 'text-indigo-700' },
     { label: 'Total Requests', key: 'total_requests', icon: FileText, iconBg: 'bg-emerald-50', iconColor: 'text-emerald-700' },
     { label: 'Pending Requests', key: 'pending_requests', icon: Clock, iconBg: 'bg-orange-50', iconColor: 'text-orange-700' },
     { label: 'Active Credentials', key: 'total_documents', icon: Shield, iconBg: 'bg-purple-50', iconColor: 'text-purple-700' },
@@ -45,6 +46,7 @@ export default function SystemAdminDashboard({ user, onLogout, onNavigate }) {
 
     const stats = {
         total_users: data.total_users,
+        total_students: data.total_students,
         total_requests: data.total_requests,
         pending_requests: data.pending_requests,
         total_documents: data.total_documents,
@@ -60,7 +62,7 @@ export default function SystemAdminDashboard({ user, onLogout, onNavigate }) {
             onLogout={onLogout}
             onNavigate={onNavigate}
         >
-            <section className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
+            <section className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-4 mb-8">
                 {statDefs.map((s) => (
                     <DashboardStatCard key={s.label} title={s.label} value={String(stats[s.key] ?? 0)} icon={s.icon} iconBg={s.iconBg} iconColor={s.iconColor} />
                 ))}
@@ -121,9 +123,9 @@ export default function SystemAdminDashboard({ user, onLogout, onNavigate }) {
                 </div>
                 <div className="p-6">
                     {data.recent_logs?.length > 0 ? (
-                        <div className="space-y-1">
+                        <div className="space-y-1 [&>div:nth-child(3n+1)]:bg-sky-100/75 [&>div:nth-child(3n+2)]:bg-teal-100/75 [&>div:nth-child(3n)]:bg-amber-100/75">
                             {data.recent_logs.map((log) => (
-                                <div key={log.id} className="flex items-start gap-3 py-3 border-b border-slate-50 last:border-0">
+                                <div key={log.id} className="flex items-start gap-3 py-3 px-3 rounded-lg border-b border-slate-50 last:border-0 -mx-3">
                                     <div className="w-2 h-2 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
                                     <div className="flex-1 min-w-0">
                                         <p className="text-sm text-slate-700">{log.description || log.action}</p>

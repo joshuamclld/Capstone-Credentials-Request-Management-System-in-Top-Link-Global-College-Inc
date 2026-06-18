@@ -189,7 +189,7 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
                   {(() => {
                     const s = getBadge(request.status, request.payment_status);
                     return (
-                      <span className={`${s.bg} px-3 py-1.5 rounded-full text-xs font-bold border shrink-0`}>
+                      <span className={`${s.bg} px-3 py-1.5 rounded text-xs font-bold border shrink-0`}>
                         {s.label}
                       </span>
                     );
@@ -252,7 +252,7 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
                   <div className="flex justify-between border-b border-outline-variant pb-2">
                     <span className="text-on-surface-variant font-medium">Release:</span>
                     <span className="font-bold text-on-surface">
-                      {request.delivery_type === 'digital' ? 'Digital (Email)' : request.delivery_type === 'physical' ? 'Physical (Pick up)' : 'Physical'}
+                      {request.delivery_type === 'both' ? 'Pick up + Digital Copy' : request.delivery_type === 'physical' ? 'Pick up at Registrar' : 'Physical'}
                     </span>
                   </div>
                   {request.is_digitally_sent && request.digitally_sent_at && (

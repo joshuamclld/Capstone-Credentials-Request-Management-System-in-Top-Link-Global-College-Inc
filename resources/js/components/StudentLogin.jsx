@@ -25,7 +25,6 @@ export default function StudentLogin({ onNavigate, onLoginSuccess }) {
       });
       const data = await res.json();
       if (!res.ok) {
-        if (data.needs_verification) { onNavigate(`/student/verify-otp?student_id=${data.student_id}`); return; }
         setError(data.message || 'Login failed.');
         setLoading(false);
         return;
@@ -79,11 +78,6 @@ export default function StudentLogin({ onNavigate, onLoginSuccess }) {
         </form>
 
         <p className="text-center text-body-sm text-on-surface-variant mt-6">
-          Don't have an account?{' '}
-          <button type="button" onClick={() => onNavigate('/student/register')} className="text-primary font-bold hover:underline cursor-pointer">Register</button>
-        </p>
-
-        <p className="text-center text-body-sm text-on-surface-variant mt-3">
           <button type="button" onClick={() => onNavigate('/track')} className="text-primary font-bold hover:underline cursor-pointer">Track Request without Login</button>
         </p>
       </StudentAuthWindow>

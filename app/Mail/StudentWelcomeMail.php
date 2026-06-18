@@ -2,37 +2,38 @@
 
 namespace App\Mail;
 
-use App\Models\Student;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class StudentOtpMail extends Mailable
+class StudentWelcomeMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public string $otp;
     public string $studentName;
+    public string $studentNumber;
+    public string $password;
 
-    public function __construct(Student $student, string $otp)
+    public function __construct(string $studentName, string $studentNumber, string $password)
     {
-        $this->otp = $otp;
-        $this->studentName = $student->first_name . ' ' . $student->last_name;
+        $this->studentName = $studentName;
+        $this->studentNumber = $studentNumber;
+        $this->password = $password;
     }
 
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Verify Your Account — TLGC CRMS',
+            subject: 'Welcome to TLGC CRMS — Your Account Details',
         );
     }
 
     public function content(): Content
     {
         return new Content(
-            html: 'emails.student-otp',
+            html: 'emails.student-welcome',
         );
     }
 }

@@ -368,7 +368,7 @@ export default function RequestDetails({ user, onLogout, onNavigate }) {
                                     <div className="flex items-center justify-between">
                                         <span className="text-xs font-medium text-slate-500">Release</span>
                                         <span className="text-sm font-medium text-slate-900">
-                                            {request.delivery_type === 'digital' ? 'Digital (Email)' : request.delivery_type === 'physical' ? 'Physical (Pick up)' : 'Physical'}
+                                            {request.delivery_type === 'both' ? 'Pick up + Digital Copy' : request.delivery_type === 'physical' ? 'Pick up at Registrar' : 'Physical'}
                                         </span>
                                     </div>
                                     <div className="pt-3 border-t border-slate-100">
@@ -425,7 +425,7 @@ export default function RequestDetails({ user, onLogout, onNavigate }) {
                             </div>
 
                             {/* Digital Document — only show if delivery is digital or already sent */}
-                            {(request.delivery_type === 'digital' || request.is_digitally_sent) && (
+                            {(request.delivery_type === 'both' || request.delivery_type === 'digital' || request.is_digitally_sent) && (
                             <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                                 <div className="flex items-center gap-2 px-6 py-4 bg-emerald-50 border-b border-emerald-100">
                                     <Upload className="w-4 h-4 text-emerald-700" />

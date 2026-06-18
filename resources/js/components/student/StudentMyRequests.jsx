@@ -4,6 +4,7 @@ import StudentDashboardLayout from './StudentDashboardLayout';
 import { getRequestStatusConfig, getPaymentStatusConfig } from '../../utils/statusConfig';
 
 export default function StudentMyRequests({ student, onLogout, onNavigate, currentPath }) {
+  const stripeColors = ['bg-sky-100/75', 'bg-teal-100/75', 'bg-amber-100/75'];
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(null);
@@ -128,46 +129,52 @@ export default function StudentMyRequests({ student, onLogout, onNavigate, curre
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="bg-slate-50 border-b border-slate-200">
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Tracking No.</th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Documents</th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Payment</th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Date</th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Fee</th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Action</th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Tracking No.</th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Documents</th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Payment</th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Date</th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Fee</th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Action</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {requests.map(req => (
-                        <tr key={req.tracking_number} className="hover:bg-slate-50 transition-colors">
-                          <td className="px-4 py-3 font-mono text-xs font-medium text-emerald-700">{req.tracking_number}</td>
-                          <td className="px-4 py-3 text-slate-700 max-w-[200px] truncate" title={(req.documents || []).join(', ')}>{(req.documents || []).join(', ')}</td>
-                          <td className="px-4 py-3"><span className={`text-xs font-bold px-2.5 py-1 rounded border ${getRequestStatusConfig(req.status).className}`}>{req.status}</span></td>
-                          <td className="px-4 py-3"><span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${getPaymentStatusConfig(req.payment_status).className}`}>{getPaymentStatusConfig(req.payment_status).label}</span></td>
-                          <td className="px-4 py-3 text-xs text-slate-500">{req.created_at}</td>
-                          <td className="px-4 py-3 text-sm font-medium text-slate-900">₱{Number(req.total_fee).toFixed(2)}</td>
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-1.5">
+                      {requests.map((req, index) => (
+                        <tr key={req.tracking_number} className={`${stripeColors[index % 3]} hover:bg-slate-200 transition-colors`}>
+                          <td className="px-6 py-4 font-mono text-xs font-medium text-emerald-700">{req.tracking_number}</td>
+                          <td className="px-6 py-4 text-slate-700 max-w-[240px] truncate" title={(req.documents || []).join(', ')}>{(req.documents || []).join(', ')}</td>
+                          <td className="px-6 py-4"><span className={`text-xs font-bold px-2.5 py-1 rounded border ${getRequestStatusConfig(req.status).className}`}>{req.status}</span></td>
+                          <td className="px-6 py-4"><span className={`text-xs font-bold px-2.5 py-1 rounded border ${getPaymentStatusConfig(req.payment_status).className}`}>{getPaymentStatusConfig(req.payment_status).label}</span></td>
+                          <td className="px-6 py-4 text-sm text-slate-500">{req.created_at}</td>
+                          <td className="px-6 py-4 text-sm font-semibold text-slate-900">₱{Number(req.total_fee).toFixed(2)}</td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-2">
                               <button
                                 onClick={() => onNavigate(`/student/requests/${req.tracking_number}`)}
-                                className="px-2.5 py-1.5 text-xs font-medium text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg transition-colors cursor-pointer whitespace-nowrap"
+                                className="px-3 py-1.5 text-xs font-medium text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg transition-colors cursor-pointer whitespace-nowrap"
                               >
                                 View
                               </button>
-                              {canCancel(req) && (
-                                <button
-                                  onClick={() => handleCancelClick(req)}
-                                  disabled={cancelling === req.tracking_number}
-                                  className="px-2.5 py-1.5 text-xs font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors cursor-pointer disabled:opacity-50 whitespace-nowrap"
-                                >
-                                  {cancelling === req.tracking_number ? '...' : 'Cancel'}
-                                </button>
-                              )}
+                              <button
+                                onClick={() => handleCancelClick(req)}
+                                disabled={
+                                  cancelling === req.tracking_number ||
+                                  req.status !== 'Pending' ||
+                                  (req.payment_method === 'online' && req.payment_status === 'paid')
+                                }
+                                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap ${
+                                  req.status !== 'Pending'
+                                    ? 'text-gray-400 bg-gray-300 cursor-not-allowed'
+                                    : 'text-white bg-red-600 hover:bg-red-700 cursor-pointer disabled:opacity-50'
+                                }`}
+                              >
+                                {cancelling === req.tracking_number ? '...' : 'Cancel'}
+                              </button>
                               {req.status === 'Ready for Release' && (
                                 <button
                                   onClick={() => handleClaim(req)}
                                   disabled={claiming === req.tracking_number}
-                                  className="px-2.5 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors cursor-pointer disabled:opacity-50 whitespace-nowrap"
+                                  className="px-3 py-1.5 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors cursor-pointer disabled:opacity-50 whitespace-nowrap"
                                 >
                                   {claiming === req.tracking_number ? '...' : 'Claim'}
                                 </button>
@@ -209,20 +216,26 @@ export default function StudentMyRequests({ student, onLogout, onNavigate, curre
                       >
                         View Details
                       </button>
-                      {canCancel(req) && (
-                        <button
-                          onClick={() => handleCancelClick(req)}
-                          disabled={cancelling === req.tracking_number}
-                          className="flex-1 py-2.5 text-xs font-bold text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors cursor-pointer disabled:opacity-50"
+                      <button
+                        onClick={() => handleCancelClick(req)}
+                        disabled={
+                          cancelling === req.tracking_number ||
+                          req.status !== 'Pending' ||
+                          (req.payment_method === 'online' && req.payment_status === 'paid')
+                        }
+                        className={`flex-1 py-2.5 text-xs font-bold rounded-lg transition-colors ${
+                          req.status !== 'Pending'
+                            ? 'text-gray-400 bg-gray-300 cursor-not-allowed'
+                            : 'text-white bg-red-600 hover:bg-red-700 cursor-pointer disabled:opacity-50'
+                        }`}
                         >
                           {cancelling === req.tracking_number ? '...' : 'Cancel'}
                         </button>
-                      )}
                       {req.status === 'Ready for Release' && (
                         <button
                           onClick={() => handleClaim(req)}
                           disabled={claiming === req.tracking_number}
-                          className="flex-1 py-2.5 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors cursor-pointer disabled:opacity-50"
+                          className="flex-1 py-2.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
                         >
                           {claiming === req.tracking_number ? '...' : 'Claim'}
                         </button>

@@ -10,12 +10,15 @@ use App\Http\Requests\UpdateDocumentRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\AuditLog;
 use App\Models\Document;
+use App\Models\Student;
 use App\Models\StudentRequest;
 use App\Models\User;
+use App\Mail\StudentWelcomeMail;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Maatwebsite\Excel\Facades\Excel;
 
 class SystemAdminController extends Controller
@@ -38,6 +41,7 @@ class SystemAdminController extends Controller
     public function dashboard(): JsonResponse
     {
         $totalUsers = User::count();
+        $totalStudents = Student::count();
         $totalRequests = StudentRequest::count();
         $pendingRequests = StudentRequest::where('status', 'Pending')->count();
         $totalDocuments = Document::where('is_active', true)->count();
@@ -57,6 +61,7 @@ class SystemAdminController extends Controller
             'status' => 'success',
             'data' => [
                 'total_users' => $totalUsers,
+                'total_students' => $totalStudents,
                 'total_requests' => $totalRequests,
                 'pending_requests' => $pendingRequests,
                 'total_documents' => $totalDocuments,
@@ -471,6 +476,131 @@ class SystemAdminController extends Controller
                 'last_page' => $logs->lastPage(),
                 'total' => $logs->total(),
                 'per_page' => $logs->perPage(),
+            ],
+        ]);
+    }
+
+    // ─── Student Management ───────────────────────────────────────────────────
+
+    public function getStudents(Request $request): JsonResponse
+    {
+        $query = Student::query();
+
+        if ($search = $request->input('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('student_number', 'like', "%{$search}%")
+                    ->orWhere('first_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        $students = $query->latest()->paginate(15);
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $students->items(),
+            'pagination' => [
+                'current_page' => $students->currentPage(),
+                'last_page' => $students->lastPage(),
+                'total' => $students->total(),
+                'per_page' => $students->perPage(),
+            ],
+        ]);
+    }
+
+    public function storeStudent(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'student_number' => 'required|string|max:50|unique:students,student_number',
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'email' => 'required|email|max:255|unique:students,email',
+        ]);
+
+        $password = 'TLGC' . $validated['last_name'] . $validated['student_number'];
+
+        $student = Student::create([
+            'student_number' => $validated['student_number'],
+            'first_name' => $validated['first_name'],
+            'last_name' => $validated['last_name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($password),
+            'email_verified_at' => now(),
+        ]);
+
+        Mail::to($student->email)->queue(new StudentWelcomeMail(
+            $student->first_name . ' ' . $student->last_name,
+            $student->student_number,
+            $password,
+        ));
+
+        $this->audit('create_student', 'Student', $student->id, "Created student {$student->first_name} {$student->last_name} ({$student->student_number})");
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Student created successfully. Login credentials sent via email.',
+            'data' => $student,
+        ], 201);
+    }
+
+    public function importStudents(Request $request): JsonResponse
+    {
+        $request->validate([
+            'students' => 'required|array|min:1',
+            'students.*.student_number' => 'required|string|max:50',
+            'students.*.first_name' => 'required|string|max:255',
+            'students.*.last_name' => 'required|string|max:255',
+            'students.*.email' => 'required|email|max:255',
+        ]);
+
+        $created = 0;
+        $skipped = 0;
+        $errors = [];
+
+        foreach ($request->input('students') as $index => $data) {
+            $exists = Student::where('student_number', $data['student_number'])
+                ->orWhere('email', $data['email'])
+                ->exists();
+
+            if ($exists) {
+                $skipped++;
+                continue;
+            }
+
+            $password = 'TLGC' . $data['last_name'] . $data['student_number'];
+
+            try {
+                $student = Student::create([
+                    'student_number' => $data['student_number'],
+                    'first_name' => $data['first_name'],
+                    'last_name' => $data['last_name'],
+                    'email' => $data['email'],
+                    'password' => Hash::make($password),
+                    'email_verified_at' => now(),
+                ]);
+
+                Mail::to($student->email)->queue(new StudentWelcomeMail(
+                    $student->first_name . ' ' . $student->last_name,
+                    $student->student_number,
+                    $password,
+                ));
+
+                $created++;
+            } catch (\Exception $e) {
+                $errors[] = "Row " . ($index + 1) . " ({$data['student_number']}): " . $e->getMessage();
+            }
+        }
+
+        $this->audit('import_students', 'Student', null, "Imported {$created} students ({$skipped} skipped)");
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "Import complete: {$created} created, {$skipped} skipped.",
+            'data' => [
+                'created' => $created,
+                'skipped' => $skipped,
+                'errors' => $errors,
             ],
         ]);
     }

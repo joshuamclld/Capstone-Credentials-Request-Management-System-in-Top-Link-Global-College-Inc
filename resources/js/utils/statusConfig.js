@@ -49,8 +49,6 @@ export function buildTimeline(status, payment_status, delivery_type) {
     ];
   }
 
-  const isDigital = delivery_type === 'digital';
-
   const checks = [
     () => true,
     () => payment_status === 'paid',
@@ -64,7 +62,7 @@ export function buildTimeline(status, payment_status, delivery_type) {
     { step: 'Payment Verified', desc: 'Your processing fee has been confirmed.', key: 'payment' },
     { step: 'Currently Processing', desc: 'The Registrar is now preparing and verifying your academic records.', key: 'processing' },
     { step: 'Ready for Release', desc: 'Your document is prepared and certified, ready for release.', key: 'ready' },
-    { step: isDigital ? 'Delivered' : 'Claimed', desc: isDigital ? 'Document has been delivered via email.' : 'Document released to student.', key: 'claimed' },
+    { step: delivery_type === 'digital' ? 'Delivered' : 'Claimed', desc: delivery_type === 'digital' ? 'Document has been delivered via email.' : delivery_type === 'both' ? 'Document released to student. Digital copy sent via email.' : 'Document released to student.', key: 'claimed' },
   ];
 
   const activeIndex = (() => {

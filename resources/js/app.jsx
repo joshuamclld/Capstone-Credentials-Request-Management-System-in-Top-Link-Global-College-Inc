@@ -8,8 +8,6 @@ import StudentMyRequests from './components/student/StudentMyRequests';
 import StudentRequestDetail from './components/student/StudentRequestDetail';
 import StudentProfile from './components/student/StudentProfile';
 import StudentLogin from './components/StudentLogin';
-import StudentRegister from './components/StudentRegister';
-import StudentOtpVerify from './components/StudentOtpVerify';
 import AdminLogin from './components/AdminLogin';
 import ErrorBoundary from './components/ErrorBoundary';
 
@@ -31,6 +29,7 @@ import SystemAdminUserDetails from './components/dashboard/pages/system-admin/Sy
 import SystemAdminCredentialTypes from './components/dashboard/pages/system-admin/SystemAdminCredentialTypes';
 import SystemAdminReportsAnalytics from './components/dashboard/pages/system-admin/SystemAdminReportsAnalytics';
 import SystemAdminAuditLogs from './components/dashboard/pages/system-admin/SystemAdminAuditLogs';
+import StudentManagement from './components/dashboard/pages/system-admin/StudentManagement';
 import '../css/app.css';
 
 function App() {
@@ -104,7 +103,7 @@ function App() {
   // Auto-redirect authenticated students away from guest pages
   useEffect(() => {
     if (studentUser && studentAuthChecked) {
-      const guestPaths = ['/', '/student/login', '/student/register', '/login'];
+      const guestPaths = ['/', '/student/login', '/login'];
       if (guestPaths.includes(currentPath)) {
         navigate('/student/dashboard');
       }
@@ -367,14 +366,6 @@ function App() {
     return <StudentLogin onNavigate={navigate} onLoginSuccess={handleStudentLoginSuccess} />;
   }
 
-  if (currentPath === '/student/register') {
-    return <StudentRegister onNavigate={navigate} />;
-  }
-
-  if (currentPath === '/student/verify-otp') {
-    return <StudentOtpVerify onNavigate={navigate} onLoginSuccess={handleStudentLoginSuccess} />;
-  }
-
   // Legacy redirect — /system/* and /system-* → /system-admin/*
   if ((currentPath.startsWith('/system/') || currentPath.startsWith('/system-')) && !currentPath.startsWith('/system-admin')) {
     setTimeout(() => navigate(currentPath.replace('/system', '/system-admin')), 0);
@@ -404,6 +395,10 @@ function App() {
 
   if (currentPath === '/system-admin/audit-logs') {
     return <SystemAdminAuditLogs user={user} onLogout={handleLogout} onNavigate={navigate} />;
+  }
+
+  if (currentPath === '/system-admin/students') {
+    return <StudentManagement user={user} onLogout={handleLogout} onNavigate={navigate} />;
   }
 
   // Fallback: Default to Student Landing Page

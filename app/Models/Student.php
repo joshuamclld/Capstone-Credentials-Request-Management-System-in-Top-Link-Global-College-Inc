@@ -20,6 +20,7 @@ class Student extends Authenticatable
         'section',
         'password',
         'is_active',
+        'email_verified_at',
     ];
 
     protected $hidden = [

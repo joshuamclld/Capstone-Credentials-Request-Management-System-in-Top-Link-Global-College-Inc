@@ -28,7 +28,6 @@ export default function StudentFooter({ student, onNavigate, onOpenAuth }) {
                 <a className="text-body-sm text-on-surface-variant hover:text-primary transition-colors" href="/request" onClick={(e) => { e.preventDefault(); onNavigate('/request'); }}>Request Documents</a>
               ) : (
                 <>
-                  <a className="text-body-sm text-on-surface-variant hover:text-primary transition-colors" href="/student/register" onClick={(e) => { e.preventDefault(); onOpenAuth('register'); }}>Create Account</a>
                   <a className="text-body-sm text-on-surface-variant hover:text-primary transition-colors" href="/student/login" onClick={(e) => { e.preventDefault(); onOpenAuth('login'); }}>Sign In</a>
                 </>
               )}

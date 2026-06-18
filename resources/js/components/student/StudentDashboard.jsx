@@ -132,7 +132,7 @@ export default function StudentDashboard({ student, onLogout, onNavigate, curren
                     <p className="text-label-sm text-on-surface-variant">{req.tracking_number} · {req.created_at}</p>
                   </div>
                   <div className="flex items-center gap-3 ml-3">
-                    <span className={`text-label-sm font-bold px-2.5 py-1 rounded-full border shrink-0 ${getRequestStatusConfig(req.status).className}`}>
+                    <span className={`text-label-sm font-bold px-2.5 py-1 rounded border shrink-0 ${getRequestStatusConfig(req.status).className}`}>
                       {req.status}
                     </span>
                     <span className="material-symbols-outlined text-on-surface-variant text-xl">chevron_right</span>

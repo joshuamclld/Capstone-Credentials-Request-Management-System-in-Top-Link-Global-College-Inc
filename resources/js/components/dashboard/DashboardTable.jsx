@@ -15,7 +15,7 @@ export default function DashboardTable({ headers, children, emptyState }) {
                         </tr>
                     </thead>
                     {hasRows && (
-                        <tbody className="divide-y divide-slate-100">{children}</tbody>
+                        <tbody className="divide-y divide-slate-100 [&_tr:nth-child(3n+1)]:bg-sky-100/75 [&_tr:nth-child(3n+2)]:bg-teal-100/75 [&_tr:nth-child(3n)]:bg-amber-100/75">{children}</tbody>
                     )}
                 </table>
             </div>
