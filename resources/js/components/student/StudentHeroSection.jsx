@@ -37,15 +37,6 @@ export default function StudentHeroSection({ onNavigate, onOpenAuth, student }) 
               </button>
             ) : (
               <button
-                onClick={(e) => { e.preventDefault(); onOpenAuth('register'); }}
-                className="bg-primary text-on-primary font-label-md text-label-md px-6 sm:px-10 py-3 sm:py-5 rounded-xl flex items-center justify-center gap-2 sm:gap-3 hover:opacity-90 hover:scale-[1.02] transition-all shadow-lg shadow-primary/20 cursor-pointer"
-              >
-                Create Student Account
-                <span className="material-symbols-outlined text-lg sm:text-2xl">arrow_forward</span>
-              </button>
-            )}
-            {!student && (
-              <button
                 onClick={(e) => { e.preventDefault(); onOpenAuth('login'); }}
                 className="border-2 border-primary/20 text-primary font-label-md text-label-md px-6 sm:px-10 py-3 sm:py-5 rounded-xl flex items-center justify-center gap-2 sm:gap-3 hover:bg-primary/5 transition-all cursor-pointer"
               >
