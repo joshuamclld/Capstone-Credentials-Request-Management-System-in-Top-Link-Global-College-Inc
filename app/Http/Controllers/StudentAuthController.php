@@ -48,7 +48,7 @@ class StudentAuthController extends Controller
         if (!$student) {
             return response()->json([
                 'success' => false,
-                'message' => 'Account not registered.',
+                'message' => 'Account not found. Please visit the registrar office to have your account created.',
             ], 404);
         }
 
