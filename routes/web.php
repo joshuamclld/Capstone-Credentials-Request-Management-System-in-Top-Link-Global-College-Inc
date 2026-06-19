@@ -150,8 +150,6 @@ Route::prefix('student')->group(function () {
         ->middleware('throttle:5,1');
     Route::post('/forgot-password', [StudentAuthController::class, 'forgotPassword'])
         ->middleware('throttle:3,1');
-    Route::post('/verify-reset-otp', [StudentAuthController::class, 'verifyResetOtp'])
-        ->middleware('throttle:5,1');
     Route::post('/reset-password', [StudentAuthController::class, 'resetPassword'])
         ->middleware('throttle:5,1');
     Route::post('/logout', [StudentAuthController::class, 'logout'])->middleware('auth:student');

@@ -7,7 +7,6 @@ import StudentDashboard from './components/student/StudentDashboard';
 import StudentMyRequests from './components/student/StudentMyRequests';
 import StudentRequestDetail from './components/student/StudentRequestDetail';
 import StudentProfile from './components/student/StudentProfile';
-import StudentLogin from './components/StudentLogin';
 import AdminLogin from './components/AdminLogin';
 import ErrorBoundary from './components/ErrorBoundary';
 
@@ -88,11 +87,6 @@ function App() {
     setCurrentPath(path);
     // Scroll to top on navigation
     window.scrollTo({ top: 0, behavior: 'instant' });
-  };
-
-  const handleStudentLoginSuccess = (studentData) => {
-    setStudentUser(studentData);
-    navigate('/student/dashboard');
   };
 
   const handleStudentModalLogin = (studentData) => {
@@ -363,7 +357,7 @@ function App() {
 
   // Student Authentication Routes
   if (currentPath === '/student/login') {
-    return <StudentLogin onNavigate={navigate} onLoginSuccess={handleStudentLoginSuccess} />;
+    return <StudentLanding student={studentUser} onLogout={handleStudentLogout} onNavigate={navigate} currentPath={currentPath} initialAuthTab="login" onStudentLogin={handleStudentModalLogin} />;
   }
 
   // Legacy redirect — /system/* and /system-* → /system-admin/*
