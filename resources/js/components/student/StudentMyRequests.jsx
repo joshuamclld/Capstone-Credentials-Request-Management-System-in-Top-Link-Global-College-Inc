@@ -4,7 +4,7 @@ import StudentDashboardLayout from './StudentDashboardLayout';
 import { getRequestStatusConfig, getPaymentStatusConfig } from '../../utils/statusConfig';
 
 export default function StudentMyRequests({ student, onLogout, onNavigate, currentPath }) {
-  const stripeColors = ['bg-sky-100/75', 'bg-teal-100/75', 'bg-amber-100/75'];
+  const stripeColors = ['bg-white', 'bg-black/5'];
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(null);
@@ -140,7 +140,7 @@ export default function StudentMyRequests({ student, onLogout, onNavigate, curre
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {requests.map((req, index) => (
-                        <tr key={req.tracking_number} className={`${stripeColors[index % 3]} hover:bg-slate-200 transition-colors`}>
+                        <tr key={req.tracking_number} className={`${stripeColors[index % 2]} hover:bg-slate-200 transition-colors`}>
                           <td className="px-6 py-4 font-mono text-xs font-medium text-emerald-700">{req.tracking_number}</td>
                           <td className="px-6 py-4 text-slate-700 max-w-[240px] truncate" title={(req.documents || []).join(', ')}>{(req.documents || []).join(', ')}</td>
                           <td className="px-6 py-4"><span className={`text-xs font-bold px-2.5 py-1 rounded border ${getRequestStatusConfig(req.status).className}`}>{req.status}</span></td>

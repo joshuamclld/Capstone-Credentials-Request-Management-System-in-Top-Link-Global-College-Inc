@@ -13,7 +13,7 @@ import Papa from 'papaparse';
 const tableHeaders = ['Student Number', 'Name', 'Email', 'Status', 'Date Created', 'Action'];
 
 export default function StudentManagement({ user, onLogout, onNavigate }) {
-  const stripeColors = ['bg-sky-100/75', 'bg-teal-100/75', 'bg-amber-100/75'];
+  const stripeColors = ['bg-white', 'bg-black/5'];
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [students, setStudents] = useState([]);
@@ -583,7 +583,7 @@ export default function StudentManagement({ user, onLogout, onNavigate }) {
                     </thead>
                     <tbody>
                       {csvPreview.map((row, i) => (
-                        <tr key={i} className={`border-t border-outline-variant/50 ${stripeColors[i % 3]}`}>
+                        <tr key={i} className={`border-t border-outline-variant/50 ${stripeColors[i % 2]}`}>
                           <td className="px-3 py-2 font-mono text-xs">{row.student_number}</td>
                           <td className="px-3 py-2">{row.first_name}</td>
                           <td className="px-3 py-2">{row.last_name}</td>

@@ -37,13 +37,6 @@
         </p>
     </div>
 
-    {{-- Login link --}}
-    <div style="text-align:center;margin-bottom:24px;">
-        <a href="{{ url('/student/login') }}" style="display:inline-block;padding:12px 32px;background-color:#065f46;color:#ffffff;font-size:14px;font-weight:700;border-radius:8px;text-decoration:none;">
-            Sign In to TLGC CRMS
-        </a>
-    </div>
-
     {{-- Footer note --}}
     <p style="font-size:13px;color:#94a3b8;text-align:center;margin:0;line-height:1.5;">
         If you did not expect this email, please contact the Registrar Office at TLGC.

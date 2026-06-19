@@ -123,7 +123,7 @@ export default function SystemAdminDashboard({ user, onLogout, onNavigate }) {
                 </div>
                 <div className="p-6">
                     {data.recent_logs?.length > 0 ? (
-                        <div className="space-y-1 [&>div:nth-child(3n+1)]:bg-sky-100/75 [&>div:nth-child(3n+2)]:bg-teal-100/75 [&>div:nth-child(3n)]:bg-amber-100/75">
+                        <div className="space-y-1 [&>div:nth-child(odd)]:bg-white [&>div:nth-child(even)]:bg-black/5">
                             {data.recent_logs.map((log) => (
                                 <div key={log.id} className="flex items-start gap-3 py-3 px-3 rounded-lg border-b border-slate-50 last:border-0 -mx-3">
                                     <div className="w-2 h-2 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
