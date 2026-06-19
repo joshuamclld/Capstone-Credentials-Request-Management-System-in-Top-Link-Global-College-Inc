@@ -9,7 +9,7 @@ class DatabaseBackup extends Command
 {
     protected $signature = 'db:backup {--keep=7 : Number of recent backups to keep}';
 
-    protected $description = 'Dump the MySQL database to a backup file in storage/app/backups';
+    protected $description = 'Dump the MySQL database to a backup file and restore into a replica database';
 
     public function handle(): int
     {
@@ -21,8 +21,10 @@ class DatabaseBackup extends Command
 
         $path = Storage::disk($disk)->path('backups/' . $filename);
 
-        $command = sprintf(
-            'mysqldump --user=%s --password=%s --host=%s --port=%s %s > %s 2>&1',
+        $this->info('Dumping primary database...');
+
+        $dumpCommand = sprintf(
+            'mysqldump --user=%s --password=%s --host=%s --port=%s %s > %s 2>/dev/null',
             escapeshellarg($db['username']),
             escapeshellarg($db['password']),
             escapeshellarg($db['host']),
@@ -33,14 +35,39 @@ class DatabaseBackup extends Command
 
         $output = null;
         $resultCode = null;
-        exec($command, $output, $resultCode);
+        exec($dumpCommand, $output, $resultCode);
 
         if ($resultCode !== 0) {
-            $this->error('Backup failed: ' . implode("\n", $output));
+            $this->error('Backup dump failed.');
             return self::FAILURE;
         }
 
-        $this->info("Database dumped to: storage/app/private/backups/{$filename}");
+        $this->info("Dumped to: storage/app/private/backups/{$filename}");
+
+        $backupDb = env('DB_BACKUP_DATABASE', $db['database'] . '_backup');
+
+        $this->info("Restoring into replica database: {$backupDb}...");
+
+        $restoreCommand = sprintf(
+            'mysql --user=%s --password=%s --host=%s --port=%s %s < %s 2>/dev/null',
+            escapeshellarg($db['username']),
+            escapeshellarg($db['password']),
+            escapeshellarg($db['host']),
+            escapeshellarg($db['port'] ?? '3306'),
+            escapeshellarg($backupDb),
+            escapeshellarg($path)
+        );
+
+        $output = null;
+        $resultCode = null;
+        exec($restoreCommand, $output, $resultCode);
+
+        if ($resultCode !== 0) {
+            $this->error('Replica restore failed.');
+            return self::FAILURE;
+        }
+
+        $this->info("Replica database {$backupDb} updated successfully.");
 
         $keep = (int) $this->option('keep');
         $files = collect(Storage::disk($disk)->files('backups'))
