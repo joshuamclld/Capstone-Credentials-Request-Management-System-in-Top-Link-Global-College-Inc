@@ -30,7 +30,7 @@ class AdminAuthController extends Controller
 
         if (!$user) {
             return response()->json([
-                'status' => 'error',
+                'success' => false,
                 'message' => 'Account not registered.',
             ], 404);
         }
@@ -42,7 +42,7 @@ class AdminAuthController extends Controller
                 Auth::logout();
                 $request->session()->invalidate();
                 return response()->json([
-                    'status' => 'error',
+                    'success' => false,
                     'message' => 'Your account has been deactivated.',
                 ], 403);
             }
@@ -50,7 +50,7 @@ class AdminAuthController extends Controller
             if (!in_array($user->role, ['registrar', 'cashier', 'system_admin'])) {
                 Auth::logout();
                 return response()->json([
-                    'status' => 'error',
+                    'success' => false,
                     'message' => 'Invalid credentials or insufficient permissions.',
                 ], 401);
             }
@@ -58,14 +58,14 @@ class AdminAuthController extends Controller
             $request->session()->regenerate();
 
             return response()->json([
-                'status' => 'success',
+                'success' => true,
                 'message' => 'Login successful',
                 'user' => $user->only(['id', 'name', 'email', 'role', 'contact_number', 'is_active', 'is_super_admin']),
             ]);
         }
 
         return response()->json([
-            'status' => 'error',
+            'success' => false,
             'message' => 'Invalid credentials.',
         ], 401);
     }
@@ -83,7 +83,7 @@ class AdminAuthController extends Controller
         $request->session()->regenerateToken();
 
         return response()->json([
-            'status' => 'success',
+            'success' => true,
             'message' => 'Logged out successfully'
         ]);
     }

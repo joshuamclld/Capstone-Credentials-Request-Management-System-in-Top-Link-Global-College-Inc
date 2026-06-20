@@ -4,20 +4,18 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
-use App\Models\Document;
 use App\Models\Notification;
+use App\Models\Student;
 use App\Models\StudentNotification;
 use App\Models\StudentRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 class RegistrarRequestController extends Controller
 {
     public function getRequestsData(Request $request): JsonResponse
     {
-        $perPage = min(max((int) $request->query('per_page', 10), 1), 100);
+        $perPage = min(max((int) $request->query('per_page', config('requests.per_page')), 1), 100);
         $daily = $request->boolean('daily');
 
         $statsQuery = StudentRequest::query();
@@ -147,12 +145,23 @@ class RegistrarRequestController extends Controller
             'delivery_type' => $request->delivery_type,
             'payment_proof' => $request->payment_proof ? url('/payment-proof/' . $request->tracking_number) : null,
             'digitally_sent_by_name' => $request->digitally_sent_by ? \App\Models\User::find($request->digitally_sent_by)?->name : null,
-            'date_of_birth' => $request->student?->date_of_birth?->format('Y-m-d'),
-            'gender' => $request->student?->gender,
-            'emergency_contact_person' => $request->student?->emergency_contact_person,
-            'emergency_contact_number' => $request->student?->emergency_contact_number,
-            'complete_address' => $request->student?->complete_address,
+            ...$this->studentFields($request->student),
         ]);
+    }
+
+    private function studentFields(?Student $student): array
+    {
+        if (!$student) {
+            return [];
+        }
+
+        return [
+            'date_of_birth' => $student->date_of_birth?->format('Y-m-d'),
+            'gender' => $student->gender,
+            'emergency_contact_person' => $student->emergency_contact_person,
+            'emergency_contact_number' => $student->emergency_contact_number,
+            'complete_address' => $student->complete_address,
+        ];
     }
 
     public function update(Request $request, int $id): JsonResponse
@@ -164,7 +173,7 @@ class RegistrarRequestController extends Controller
         }
 
         $validated = $request->validate([
-            'status' => 'nullable|string|in:Pending,Processing,Ready for Release,Claimed',
+            'status' => 'nullable|string|in:' . implode(',', config('requests.statuses')),
             'remarks' => 'nullable|string|max:1000',
         ]);
 
@@ -172,17 +181,9 @@ class RegistrarRequestController extends Controller
         $newStatus = $validated['status'] ?? $currentStatus;
 
         if ($newStatus !== $currentStatus) {
-            $allowedTransitions = [
-                'Pending' => 'Processing',
-                'Processing' => 'Ready for Release',
-                'Ready for Release' => 'Claimed',
-            ];
+            $allowedTransitions = config('requests.transitions');
 
-            $allowedReverseTransitions = [
-                'Processing' => 'Pending',
-                'Ready for Release' => 'Processing',
-                'Claimed' => 'Ready for Release',
-            ];
+            $allowedReverseTransitions = config('requests.reverse_transitions');
 
             $isForward = isset($allowedTransitions[$currentStatus]) && $allowedTransitions[$currentStatus] === $newStatus;
             $isReverse = isset($allowedReverseTransitions[$currentStatus]) && $allowedReverseTransitions[$currentStatus] === $newStatus;
@@ -193,7 +194,7 @@ class RegistrarRequestController extends Controller
                 ], 422);
             }
 
-            if ($isForward && in_array($newStatus, ['Processing', 'Ready for Release', 'Claimed']) && $studentRequest->payment_status !== 'paid') {
+            if ($isForward && in_array($newStatus, ['Processing', 'Ready for Release', 'Claimed']) && $studentRequest->payment_status !== config('requests.paid_status')) {
                 return response()->json([
                     'message' => 'Payment must be verified before processing this request.',
                 ], 422);
@@ -226,7 +227,6 @@ class RegistrarRequestController extends Controller
                     'title' => $title,
                     'message' => $message,
                     'action_url' => "/student/requests/{$studentRequest->tracking_number}",
-                    'created_by' => auth()->id(),
                 ]);
             }
         }
@@ -257,11 +257,7 @@ class RegistrarRequestController extends Controller
                 'course' => $studentRequest->course,
                 'year_level' => $studentRequest->year_level,
                 'section' => $studentRequest->section,
-                'date_of_birth' => $studentRequest->student?->date_of_birth?->format('Y-m-d'),
-                'gender' => $studentRequest->student?->gender,
-                'emergency_contact_person' => $studentRequest->student?->emergency_contact_person,
-                'emergency_contact_number' => $studentRequest->student?->emergency_contact_number,
-                'complete_address' => $studentRequest->student?->complete_address,
+                ...$this->studentFields($studentRequest->student),
                 'email' => $studentRequest->email,
                 'phone' => $studentRequest->contact_number,
                 'purpose' => $studentRequest->purpose,

@@ -176,6 +176,20 @@ function App() {
     };
   }, [isAuthenticated]);
 
+  // Refresh CSRF token every 30 minutes to prevent token mismatch on network changes
+  useEffect(() => {
+    const refresh = () => {
+      fetch('/csrf-token')
+        .then(r => r.json())
+        .then(data => {
+          document.querySelector('meta[name="csrf-token"]')?.setAttribute('content', data.token);
+        })
+        .catch(() => {});
+    };
+    const interval = setInterval(refresh, 30 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   const handleLogout = () => {
     fetch('/admin/logout', {
       method: 'POST',

@@ -17,6 +17,24 @@ const colors = {
   status_update: 'border-l-amber-500',
 };
 
+function playNotificationSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = 800;
+    osc.type = 'sine';
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.3);
+  } catch (e) {
+    // Audio not supported
+  }
+}
+
 export default function StudentToastNotification() {
   const [toasts, setToasts] = useState([]);
   const [dismissing, setDismissing] = useState(new Set());
@@ -24,6 +42,7 @@ export default function StudentToastNotification() {
   const initialLoadRef = useRef(true);
 
   const addToast = useCallback((n) => {
+    playNotificationSound();
     const toastId = Date.now() + Math.random();
     setToasts(prev => [...prev, { ...n, toastId }]);
     setTimeout(() => {

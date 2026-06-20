@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class StudentRequest extends Model
 {
@@ -15,12 +17,12 @@ class StudentRequest extends Model
         'digital_document_path', 'is_digitally_sent', 'digitally_sent_at', 'digitally_sent_by', 'delivery_type',
     ];
 
-    public function student()
+    public function student(): BelongsTo
     {
         return $this->belongsTo(Student::class);
     }
 
-    public function documents()
+    public function documents(): BelongsToMany
     {
         return $this->belongsToMany(Document::class, 'document_request')
             ->withTimestamps();
@@ -34,6 +36,7 @@ class StudentRequest extends Model
             'verified_at' => 'datetime',
             'is_digitally_sent' => 'boolean',
             'digitally_sent_at' => 'datetime',
+            'pages' => 'integer',
         ];
     }
 }

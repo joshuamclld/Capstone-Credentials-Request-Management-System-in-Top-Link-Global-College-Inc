@@ -58,7 +58,7 @@ class SystemAdminController extends Controller
         $recentLogs = AuditLog::latest()->take(10)->get();
 
         return response()->json([
-            'status' => 'success',
+            'success' => true,
             'data' => [
                 'total_users' => $totalUsers,
                 'total_students' => $totalStudents,
@@ -78,7 +78,7 @@ class SystemAdminController extends Controller
     {
         $user = auth()->user();
         if ($user->role === 'system_admin' && !$user->is_super_admin) {
-            return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
+            return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
         }
 
         $query = User::query();
@@ -97,7 +97,7 @@ class SystemAdminController extends Controller
         $users = $query->orderBy('created_at', 'desc')->paginate(10);
 
         return response()->json([
-            'status' => 'success',
+            'success' => true,
             'data' => $users->items(),
             'pagination' => [
                 'current_page' => $users->currentPage(),
@@ -112,13 +112,13 @@ class SystemAdminController extends Controller
     {
         $authUser = auth()->user();
         if ($authUser->role === 'system_admin' && !$authUser->is_super_admin) {
-            return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
+            return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
         }
 
         $user = User::findOrFail($id);
 
         return response()->json([
-            'status' => 'success',
+            'success' => true,
             'data' => $user->only(['id', 'name', 'email', 'role', 'contact_number', 'is_active', 'is_super_admin', 'created_at', 'updated_at']),
             'request_count' => StudentRequest::where('verified_by_user_id', $user->id)->count(),
         ]);
@@ -128,7 +128,7 @@ class SystemAdminController extends Controller
     {
         $authUser = auth()->user();
         if ($authUser->role === 'system_admin' && !$authUser->is_super_admin) {
-            return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
+            return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
         }
 
         $data = $request->validated();
@@ -141,7 +141,7 @@ class SystemAdminController extends Controller
         $this->audit('create_user', 'User', $user->id, "Created user {$user->name} ({$user->email})");
 
         return response()->json([
-            'status' => 'success',
+            'success' => true,
             'message' => 'User created successfully.',
             'data' => $user->only(['id', 'name', 'email', 'role', 'contact_number', 'is_active', 'is_super_admin', 'created_at']),
         ], 201);
@@ -151,7 +151,7 @@ class SystemAdminController extends Controller
     {
         $authUser = auth()->user();
         if ($authUser->role === 'system_admin' && !$authUser->is_super_admin) {
-            return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
+            return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
         }
 
         $user = User::findOrFail($id);
@@ -159,13 +159,13 @@ class SystemAdminController extends Controller
         if ($user->id === auth()->id()) {
             if ($request->has('is_active') && !$request->input('is_active')) {
                 return response()->json([
-                    'status' => 'error',
+                    'success' => false,
                     'message' => 'You cannot deactivate your own account.',
                 ], 422);
             }
             if ($request->has('is_super_admin') && !$request->input('is_super_admin')) {
                 return response()->json([
-                    'status' => 'error',
+                    'success' => false,
                     'message' => 'You cannot remove your own super admin privileges.',
                 ], 422);
             }
@@ -184,7 +184,7 @@ class SystemAdminController extends Controller
         $this->audit('update_user', 'User', $user->id, "Updated user {$user->name} ({$user->email})");
 
         return response()->json([
-            'status' => 'success',
+            'success' => true,
             'message' => 'User updated successfully.',
             'data' => $user->fresh()->only(['id', 'name', 'email', 'role', 'contact_number', 'is_active', 'is_super_admin', 'created_at', 'updated_at']),
         ]);
@@ -194,14 +194,14 @@ class SystemAdminController extends Controller
     {
         $authUser = auth()->user();
         if ($authUser->role === 'system_admin' && !$authUser->is_super_admin) {
-            return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
+            return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
         }
 
         $user = User::findOrFail($id);
 
         if ($user->id === auth()->id()) {
             return response()->json([
-                'status' => 'error',
+                'success' => false,
                 'message' => 'You cannot delete your own account.',
             ], 422);
         }
@@ -211,7 +211,7 @@ class SystemAdminController extends Controller
         $this->audit('delete_user', 'User', $id, "Deleted user {$user->name} ({$user->email})");
 
         return response()->json([
-            'status' => 'success',
+            'success' => true,
             'message' => 'User deleted successfully.',
         ]);
     }
@@ -232,7 +232,7 @@ class SystemAdminController extends Controller
         $documents = $query->orderBy('created_at', 'desc')->paginate(10);
 
         return response()->json([
-            'status' => 'success',
+            'success' => true,
             'data' => $documents->items(),
             'pagination' => [
                 'current_page' => $documents->currentPage(),
@@ -248,7 +248,7 @@ class SystemAdminController extends Controller
         $document = Document::findOrFail($id);
 
         return response()->json([
-            'status' => 'success',
+            'success' => true,
             'data' => $document,
         ]);
     }
@@ -260,7 +260,7 @@ class SystemAdminController extends Controller
         $this->audit('create_document', 'Document', $document->id, "Created document {$document->name} ({$document->code})");
 
         return response()->json([
-            'status' => 'success',
+            'success' => true,
             'message' => 'Document created successfully.',
             'data' => $document,
         ], 201);
@@ -274,7 +274,7 @@ class SystemAdminController extends Controller
         $this->audit('update_document', 'Document', $document->id, "Updated document {$document->name} ({$document->code})");
 
         return response()->json([
-            'status' => 'success',
+            'success' => true,
             'message' => 'Document updated successfully.',
             'data' => $document->fresh(),
         ]);
@@ -289,7 +289,7 @@ class SystemAdminController extends Controller
         $document->delete();
 
         return response()->json([
-            'status' => 'success',
+            'success' => true,
             'message' => 'Document deleted successfully.',
         ]);
     }
@@ -344,7 +344,7 @@ class SystemAdminController extends Controller
             })->values();
 
         return response()->json([
-            'status' => 'success',
+            'success' => true,
             'data' => [
                 'total_requests' => $totalRequests,
                 'total_paid' => $totalPaid,
@@ -469,7 +469,7 @@ class SystemAdminController extends Controller
         $logs = $query->latest()->paginate(15);
 
         return response()->json([
-            'status' => 'success',
+            'success' => true,
             'data' => $logs->items(),
             'pagination' => [
                 'current_page' => $logs->currentPage(),
@@ -498,7 +498,7 @@ class SystemAdminController extends Controller
         $students = $query->latest()->paginate(15);
 
         return response()->json([
-            'status' => 'success',
+            'success' => true,
             'data' => $students->items(),
             'pagination' => [
                 'current_page' => $students->currentPage(),
@@ -538,7 +538,7 @@ class SystemAdminController extends Controller
         $this->audit('create_student', 'Student', $student->id, "Created student {$student->first_name} {$student->last_name} ({$student->student_number})");
 
         return response()->json([
-            'status' => 'success',
+            'success' => true,
             'message' => 'Student created successfully. Login credentials sent via email.',
             'data' => $student,
         ], 201);
@@ -553,7 +553,7 @@ class SystemAdminController extends Controller
         $this->audit('toggle_student_status', 'Student', $student->id, "{$status} student {$student->first_name} {$student->last_name} ({$student->student_number})");
 
         return response()->json([
-            'status' => 'success',
+            'success' => true,
             'message' => "Student {$status} successfully.",
             'data' => $student->fresh(),
         ]);
@@ -567,7 +567,7 @@ class SystemAdminController extends Controller
         $this->audit('delete_student', 'Student', $id, "Deleted student {$student->first_name} {$student->last_name} ({$student->student_number})");
 
         return response()->json([
-            'status' => 'success',
+            'success' => true,
             'message' => 'Student deleted successfully.',
         ]);
     }
@@ -623,7 +623,7 @@ class SystemAdminController extends Controller
         $this->audit('import_students', 'Student', null, "Imported {$created} students ({$skipped} skipped)");
 
         return response()->json([
-            'status' => 'success',
+            'success' => true,
             'message' => "Import complete: {$created} created, {$skipped} skipped.",
             'data' => [
                 'created' => $created,

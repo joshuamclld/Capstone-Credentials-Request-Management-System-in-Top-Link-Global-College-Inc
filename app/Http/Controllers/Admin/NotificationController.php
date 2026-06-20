@@ -3,23 +3,17 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Traits\NotifiableControllerTrait;
 use App\Models\Notification;
 use Illuminate\Http\JsonResponse;
 
 class NotificationController extends Controller
 {
+    use NotifiableControllerTrait;
+
     public function index(): JsonResponse
     {
-        $user = auth()->user();
-
-        $notifications = Notification::where('user_id', $user->id)
-            ->latest()
-            ->take(10)
-            ->get();
-
-        $unreadCount = Notification::where('user_id', $user->id)
-            ->where('is_read', false)
-            ->count();
+        [$notifications, $unreadCount] = $this->getNotifications(new Notification, 'user_id');
 
         return response()->json([
             'success' => true,
@@ -30,41 +24,24 @@ class NotificationController extends Controller
 
     public function markAsRead(int $id): JsonResponse
     {
-        $notification = Notification::where('user_id', auth()->id())
-            ->where('id', $id)
-            ->firstOrFail();
-
-        $notification->update(['is_read' => true]);
-
+        $this->markAsRead(new Notification, 'user_id', $id);
         return response()->json(['success' => true, 'message' => 'Notification marked as read.']);
     }
 
     public function markAllAsRead(): JsonResponse
     {
-        Notification::where('user_id', auth()->id())
-            ->where('is_read', false)
-            ->update(['is_read' => true]);
-
+        $this->markAllAsRead(new Notification, 'user_id');
         return response()->json(['success' => true, 'message' => 'All notifications marked as read.']);
     }
 
     public function getAll(): JsonResponse
     {
-        $perPage = min((int) request('per_page', 20), 100);
-
-        $notifications = Notification::where('user_id', auth()->id())
-            ->latest()
-            ->paginate($perPage);
+        $data = $this->getAllNotifications(new Notification, 'user_id');
 
         return response()->json([
             'success' => true,
-            'notifications' => $notifications->items(),
-            'pagination' => [
-                'current_page' => $notifications->currentPage(),
-                'last_page' => $notifications->lastPage(),
-                'per_page' => $notifications->perPage(),
-                'total' => $notifications->total(),
-            ],
+            'notifications' => $data['items'],
+            'pagination' => $data['pagination'],
         ]);
     }
 }

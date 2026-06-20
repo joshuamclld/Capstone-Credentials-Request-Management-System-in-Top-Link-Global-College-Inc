@@ -166,16 +166,6 @@ class StudentRequestController extends Controller
             Notification::notifyRole('registrar', 'new_request', 'New Credential Request', "{$validated['fullName']} submitted a request", (string) $studentRequest->id, "/admin/requests/{$studentRequest->id}");
             Notification::notifyRole('cashier', 'new_request', 'New Credential Request', "{$validated['fullName']} submitted a new request waiting for payment.", (string) $studentRequest->id, "/cashier/payments/{$studentRequest->id}");
 
-            if (auth('student')->check()) {
-                StudentNotification::create([
-                    'student_id' => auth('student')->id(),
-                    'type' => 'new_request',
-                    'title' => 'Request Submitted',
-                    'message' => "Your request {$trackingNumber} has been submitted successfully.",
-                    'action_url' => "/student/requests/{$trackingNumber}",
-                ]);
-            }
-
             return [
                 'tracking_number' => $trackingNumber,
             ];
@@ -330,52 +320,6 @@ class StudentRequestController extends Controller
         ]);
     }
 
-    public function claim(string $trackingNumber)
-    {
-        $student = auth('student')->user();
-
-        $request = StudentRequest::where('tracking_number', $trackingNumber)->first();
-
-        if (!$request) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Tracking number not found.',
-            ], 404);
-        }
-
-        if (!$request->student_id || $request->student_id !== $student->id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'This request does not belong to you.',
-            ], 403);
-        }
-
-        if ($request->status !== 'Ready for Release') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Only requests that are Ready for Release can be claimed.',
-            ], 422);
-        }
-
-        $request->status = 'Claimed';
-        $request->save();
-
-        Notification::notifyRole('registrar', 'request_claimed', 'Request Claimed', "Request {$request->tracking_number} was marked as claimed by the student.", (string) $request->id, "/admin/requests/{$request->id}");
-
-        AuditLog::create([
-            'action' => 'claim_request',
-            'performed_by' => 'Student: ' . $student->first_name . ' ' . $student->last_name,
-            'performed_by_id' => $student->id,
-            'target_type' => 'StudentRequest',
-            'target_id' => $request->id,
-            'description' => "Student claimed request {$request->tracking_number}",
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Request marked as claimed successfully.',
-        ]);
-    }
 
 
     public function uploadPaymentProof(Request $request, string $trackingNumber)

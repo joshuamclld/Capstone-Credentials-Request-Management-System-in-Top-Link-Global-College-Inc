@@ -48,7 +48,7 @@ export default function AdminLogin({ onLoginSuccess }) {
                 return response.json();
             })
             .then(data => {
-                if (data.status === 'success') {
+                if (data.success) {
                     setStatus('success');
                     onLoginSuccess(data.user);
                 } else {

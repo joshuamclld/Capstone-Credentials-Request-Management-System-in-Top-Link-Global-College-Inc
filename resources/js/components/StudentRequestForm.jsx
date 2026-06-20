@@ -136,7 +136,6 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
     setPages(1);
     setPaymentMethod('');
     setDeliveryType('pickup');
-    setWantDigitalCopy(false);
     setPurpose('');
     setConfirmations({
       infoCorrect: false,

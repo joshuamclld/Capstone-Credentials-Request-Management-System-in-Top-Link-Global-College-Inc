@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\StudentResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -19,13 +20,7 @@ class StudentProfileController extends Controller
 
         return response()->json([
             'success' => true,
-            'student' => collect($student->toArray())->only([
-                'id', 'student_number', 'first_name', 'last_name',
-                'email',
-                'date_of_birth', 'gender',
-                'emergency_contact_person', 'emergency_contact_number',
-                'complete_address',
-            ])->all(),
+            'student' => new StudentResource($student),
         ]);
     }
 
@@ -54,13 +49,7 @@ class StudentProfileController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Profile updated successfully.',
-            'student' => collect($student->fresh()->toArray())->only([
-                'id', 'student_number', 'first_name', 'last_name',
-                'email',
-                'date_of_birth', 'gender',
-                'emergency_contact_person', 'emergency_contact_number',
-                'complete_address',
-            ])->all(),
+            'student' => new StudentResource($student->fresh()),
         ]);
     }
 

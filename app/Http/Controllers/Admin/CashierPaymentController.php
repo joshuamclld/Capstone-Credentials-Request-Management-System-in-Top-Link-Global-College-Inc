@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
-use App\Models\Document;
 use App\Models\Notification;
 use App\Models\PaymentSetting;
 use App\Models\StudentNotification;
@@ -18,7 +17,7 @@ class CashierPaymentController extends Controller
 {
     public function getPaymentsData(Request $request): JsonResponse
     {
-        $perPage = min(max((int) $request->query('per_page', 10), 1), 100);
+        $perPage = min(max((int) $request->query('per_page', config('requests.per_page')), 1), 100);
         $daily = $request->boolean('daily');
         $dateFrom = $request->query('date_from');
         $dateTo = $request->query('date_to');
@@ -162,7 +161,6 @@ class CashierPaymentController extends Controller
                     'title' => 'Payment Verified',
                     'message' => "Your payment for request {$locked->tracking_number} has been verified.",
                     'action_url' => "/student/requests/{$locked->tracking_number}",
-                    'created_by' => auth()->id(),
                 ]);
             }
 

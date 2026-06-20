@@ -3,23 +3,17 @@
 namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Traits\NotifiableControllerTrait;
 use App\Models\StudentNotification;
 use Illuminate\Http\JsonResponse;
 
 class StudentNotificationController extends Controller
 {
+    use NotifiableControllerTrait;
+
     public function index(): JsonResponse
     {
-        $student = auth('student')->user();
-
-        $notifications = StudentNotification::where('student_id', $student->id)
-            ->latest()
-            ->take(10)
-            ->get();
-
-        $unreadCount = StudentNotification::where('student_id', $student->id)
-            ->where('is_read', false)
-            ->count();
+        [$notifications, $unreadCount] = $this->getNotifications(new StudentNotification, 'student_id');
 
         return response()->json([
             'success' => true,
@@ -27,6 +21,30 @@ class StudentNotificationController extends Controller
             'unread_count' => $unreadCount,
         ]);
     }
+
+    public function markAsRead(int $id): JsonResponse
+    {
+        $this->markAsRead(new StudentNotification, 'student_id', $id);
+        return response()->json(['success' => true, 'message' => 'Notification marked as read.']);
+    }
+
+    public function markAllAsRead(): JsonResponse
+    {
+        $this->markAllAsRead(new StudentNotification, 'student_id');
+        return response()->json(['success' => true, 'message' => 'All notifications marked as read.']);
+    }
+
+    public function getAll(): JsonResponse
+    {
+        $data = $this->getAllNotifications(new StudentNotification, 'student_id');
+
+        return response()->json([
+            'success' => true,
+            'notifications' => $data['items'],
+            'pagination' => $data['pagination'],
+        ]);
+    }
+}
 
     public function markAsRead(int $id): JsonResponse
     {

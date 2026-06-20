@@ -62,7 +62,7 @@ export default function StudentManagement({ user, onLogout, onNavigate }) {
         headers: { 'X-CSRF-TOKEN': getCsrf(), 'Accept': 'application/json' },
       });
       const data = await res.json();
-      if (data.status === 'success') {
+      if (data.success) {
         setStudents(prev => prev.map(s => s.id === toggleTarget.id ? { ...s, is_active: !s.is_active } : s));
         setShowToggleModal(false);
         setToggleTarget(null);
@@ -85,7 +85,7 @@ export default function StudentManagement({ user, onLogout, onNavigate }) {
         headers: { 'X-CSRF-TOKEN': getCsrf(), 'Accept': 'application/json' },
       });
       const data = await res.json();
-      if (data.status === 'success') {
+      if (data.success) {
         setStudents(prev => prev.filter(s => s.id !== deleteTarget.id));
         setShowDeleteModal(false);
         setDeleteTarget(null);
@@ -183,7 +183,7 @@ export default function StudentManagement({ user, onLogout, onNavigate }) {
         body: JSON.stringify({ students: csvData }),
       });
       const data = await res.json();
-      if (data.status === 'success') {
+      if (data.success) {
         setImportResult(data.data);
         setCsvData(null);
         setCsvPreview(null);
@@ -223,7 +223,7 @@ export default function StudentManagement({ user, onLogout, onNavigate }) {
         body: JSON.stringify(addForm),
       });
       const data = await res.json();
-      if (data.status === 'success') {
+      if (data.success) {
         setAddSuccess(`Student created. Credentials sent to ${addForm.email}`);
         setAddForm({ student_number: '', first_name: '', last_name: '', email: '' });
         fetchStudents(page);
