@@ -8,3 +8,4 @@ Route::get('/health', function () {
         'service' => config('app.name', 'CRMS'),
     ]);
 });
+ 

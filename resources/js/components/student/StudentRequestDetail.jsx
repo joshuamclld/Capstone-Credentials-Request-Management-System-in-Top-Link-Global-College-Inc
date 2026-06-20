@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FileText, BadgeCheck, Clock, PackageCheck, CheckCheck, AlertCircle, XCircle, ArrowLeft } from 'lucide-react';
 import StudentDashboardLayout from './StudentDashboardLayout';
 import RegistrarRemarksCard from './RegistrarRemarksCard';
@@ -14,7 +14,6 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
   const [cancelling, setCancelling] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelModalError, setCancelModalError] = useState('');
-  const [claiming, setClaiming] = useState(false);
   const [proofUploading, setProofUploading] = useState(false);
   const [proofError, setProofError] = useState('');
   const [proofModalUrl, setProofModalUrl] = useState(null);
@@ -47,7 +46,10 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
       setLoading(false);
       if (!req) setError('Request not found.');
     });
-  }, [trackingNumber]);
+
+    const interval = setInterval(fetchRequest, 10000);
+    return () => clearInterval(interval);
+  }, [trackingNumber, fetchRequest]);
 
   useEffect(() => {
     if (!request || request.payment_method !== 'online') return;
@@ -126,29 +128,7 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
     setCancelModalError('');
   };
 
-  const handleClaim = async () => {
-    if (!request || claiming) return;
-    setClaiming(true);
-    try {
-      const res = await fetch(`/requests/${encodeURIComponent(request.tracking_number)}/claim`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
-        },
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setRequest(prev => prev ? { ...prev, status: 'Claimed' } : prev);
-      }
-    } catch {
-      // ignore
-    }
-    setClaiming(false);
-  };
-
-  const timeline = request ? buildTimeline(request.status, request.payment_status, request.delivery_type) : [];
+  const timeline = request ? buildTimeline(request.status, request.payment_status) : [];
 
   return (
     <StudentDashboardLayout title="Request Details" subtitle={trackingNumber || ''} student={student} onLogout={onLogout} onNavigate={onNavigate} currentPath={currentPath}>
@@ -230,6 +210,26 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
                     </div>
                   )}
                   <div className="flex justify-between border-b border-outline-variant pb-2">
+                    <span className="text-on-surface-variant font-medium">Date of Birth:</span>
+                    <span className="font-bold text-on-surface text-right">{request.date_of_birth ? request.date_of_birth.slice(0, 10) : '-'}</span>
+                  </div>
+                  <div className="flex justify-between border-b border-outline-variant pb-2">
+                    <span className="text-on-surface-variant font-medium">Gender:</span>
+                    <span className="font-bold text-on-surface text-right">{request.gender || '-'}</span>
+                  </div>
+                  <div className="flex justify-between border-b border-outline-variant pb-2">
+                    <span className="text-on-surface-variant font-medium">Emergency Contact:</span>
+                    <span className="font-bold text-on-surface text-right">{request.emergency_contact_person || '-'}</span>
+                  </div>
+                  <div className="flex justify-between border-b border-outline-variant pb-2">
+                    <span className="text-on-surface-variant font-medium">Emergency Contact No.:</span>
+                    <span className="font-bold text-on-surface text-right">{request.emergency_contact_number || '-'}</span>
+                  </div>
+                  <div className="flex justify-between border-b border-outline-variant pb-2">
+                    <span className="text-on-surface-variant font-medium">Complete Address:</span>
+                    <span className="font-bold text-on-surface text-right">{request.complete_address || '-'}</span>
+                  </div>
+                  <div className="flex justify-between border-b border-outline-variant pb-2">
                     <span className="text-on-surface-variant font-medium">Request Date:</span>
                     <span className="font-bold text-on-surface">{request.created_at}</span>
                   </div>
@@ -251,16 +251,8 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
                   </div>
                   <div className="flex justify-between border-b border-outline-variant pb-2">
                     <span className="text-on-surface-variant font-medium">Release:</span>
-                    <span className="font-bold text-on-surface">
-                      {request.delivery_type === 'both' ? 'Pick up + Digital Copy' : request.delivery_type === 'physical' ? 'Pick up at Registrar' : 'Physical'}
-                    </span>
+                    <span className="font-bold text-on-surface">Pick up at Registrar</span>
                   </div>
-                  {request.is_digitally_sent && request.digitally_sent_at && (
-                    <div className="flex justify-between pb-2">
-                      <span className="text-on-surface-variant font-medium">Digital Copy Sent:</span>
-                      <span className="font-bold text-on-surface text-right">{new Date(request.digitally_sent_at).toLocaleString()}</span>
-                    </div>
-                  )}
                 </div>
 
                 <div className="mt-6 pt-4 border-t-2 border-primary/20 flex justify-between items-center">
@@ -269,16 +261,6 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
                 </div>
 
                 <div className="mt-6 pt-4 border-t border-outline-variant flex flex-col sm:flex-row gap-2 sm:justify-end">
-                  {request.status === 'Ready for Release' && (
-                    <button
-                      onClick={handleClaim}
-                      disabled={claiming}
-                      className="flex items-center justify-center sm:justify-start gap-2 px-4 py-3 sm:py-2 text-sm font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 disabled:opacity-50 transition-colors cursor-pointer whitespace-nowrap"
-                    >
-                      <CheckCheck className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
-                      {claiming ? 'Marking...' : 'Mark as Claimed'}
-                    </button>
-                  )}
                   {request.status === 'Pending' && request.payment_status !== 'paid' && (
                     <button
                       onClick={handleCancelClick}

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreStudentRequest;
 use App\Models\AuditLog;
 use App\Models\Notification;
+use App\Models\StudentNotification;
 use App\Models\StudentRequest;
 use App\Models\Document;
 use Illuminate\Http\Request;
@@ -113,6 +114,13 @@ class StudentRequestController extends Controller
             $validated['studentId'] = $student->student_number;
             $validated['fullName'] = $student->last_name . ', ' . $student->first_name;
             $validated['email'] = $student->email;
+
+            if (!$student->date_of_birth || !$student->gender || !$student->emergency_contact_person || !$student->emergency_contact_number || !$student->complete_address) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Please complete your profile (Date of Birth, Gender, Emergency Contact, and Complete Address) before submitting a request.',
+                ], 422);
+            }
         }
 
         $result = DB::transaction(function () use ($validated) {
@@ -130,7 +138,7 @@ class StudentRequestController extends Controller
             $paymentMethod = $validated['paymentMethod'];
             $paymentStatus = 'unpaid';
 
-            $deliveryType = ($validated['wantDigitalCopy'] ?? false) ? 'both' : 'physical';
+            $deliveryType = 'physical';
 
             $studentRequest = StudentRequest::create([
                 'tracking_number' => $trackingNumber,
@@ -157,6 +165,16 @@ class StudentRequestController extends Controller
 
             Notification::notifyRole('registrar', 'new_request', 'New Credential Request', "{$validated['fullName']} submitted a request", (string) $studentRequest->id, "/admin/requests/{$studentRequest->id}");
             Notification::notifyRole('cashier', 'new_request', 'New Credential Request', "{$validated['fullName']} submitted a new request waiting for payment.", (string) $studentRequest->id, "/cashier/payments/{$studentRequest->id}");
+
+            if (auth('student')->check()) {
+                StudentNotification::create([
+                    'student_id' => auth('student')->id(),
+                    'type' => 'new_request',
+                    'title' => 'Request Submitted',
+                    'message' => "Your request {$trackingNumber} has been submitted successfully.",
+                    'action_url' => "/student/requests/{$trackingNumber}",
+                ]);
+            }
 
             return [
                 'tracking_number' => $trackingNumber,
@@ -219,6 +237,11 @@ class StudentRequestController extends Controller
                     'created_at' => $studentRequest->created_at->format('F d, Y'),
                     'year_level' => $studentRequest->year_level,
                     'section' => $studentRequest->section,
+                    'date_of_birth' => $studentRequest->student?->date_of_birth?->format('Y-m-d'),
+                    'gender' => $studentRequest->student?->gender,
+                    'emergency_contact_person' => $studentRequest->student?->emergency_contact_person,
+                    'emergency_contact_number' => $studentRequest->student?->emergency_contact_number,
+                    'complete_address' => $studentRequest->student?->complete_address,
                     'delivery_type' => $studentRequest->delivery_type,
                     'payment_proof' => $studentRequest->payment_proof ? url('/payment-proof/' . $studentRequest->tracking_number) : null,
                 ],
@@ -292,6 +315,14 @@ class StudentRequestController extends Controller
         $trackingNumberDisplay = $request->tracking_number;
         Notification::notifyRole('registrar', 'request_cancelled', 'Request Cancelled', "{$trackingNumberDisplay} was cancelled by the student.", (string) $request->id, "/admin/requests/{$request->id}");
         Notification::notifyRole('cashier', 'request_cancelled', 'Request Cancelled', "{$trackingNumberDisplay} was cancelled.", (string) $request->id, "/cashier/payments/{$request->id}");
+
+        StudentNotification::create([
+            'student_id' => $student->id,
+            'type' => 'request_cancelled',
+            'title' => 'Request Cancelled',
+            'message' => "Your request {$trackingNumberDisplay} has been cancelled.",
+            'action_url' => "/student/requests/{$request->tracking_number}",
+        ]);
 
         return response()->json([
             'success' => true,

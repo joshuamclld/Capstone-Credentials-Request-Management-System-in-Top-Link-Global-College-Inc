@@ -46,7 +46,6 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
   const [paymentMethod, setPaymentMethod] = useState('');
   const [paymentQrUrl, setPaymentQrUrl] = useState(null);
   const [deliveryType, setDeliveryType] = useState('pickup');
-  const [wantDigitalCopy, setWantDigitalCopy] = useState(false);
   const [purpose, setPurpose] = useState('');
 
   const [confirmations, setConfirmations] = useState({
@@ -58,6 +57,13 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
   const [documents, setDocuments] = useState([]);
   const [docsLoading, setDocsLoading] = useState(true);
   const isAuthenticated = Boolean(student);
+  const isProfileComplete = !isAuthenticated || (
+    student?.date_of_birth &&
+    student?.gender &&
+    student?.emergency_contact_person &&
+    student?.emergency_contact_number &&
+    student?.complete_address
+  );
 
   useEffect(() => {
     if (student) {
@@ -193,6 +199,10 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
   const handleNextStep = (e) => {
     e.preventDefault();
     setStepError('');
+    if (isAuthenticated && !isProfileComplete) {
+      setStepError('Please complete your profile before proceeding.');
+      return;
+    }
     if (step === 2) {
       if (selectedDocs.length === 0) {
         setStepError('Please select at least one document.');
@@ -226,6 +236,10 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isSubmitting) return;
+    if (isAuthenticated && !isProfileComplete) {
+      setSubmitError('Please complete your profile before submitting.');
+      return;
+    }
     setIsSubmitting(true);
     setSubmitError('');
 
@@ -262,7 +276,6 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
           pages: hasPerPageDoc ? pages : null,
           paymentMethod: paymentMethod,
           deliveryType: 'pickup',
-          wantDigitalCopy: wantDigitalCopy,
           purpose: purpose,
         }),
       });
@@ -375,6 +388,21 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
             </div>
 
             <form onSubmit={step === 4 ? handleSubmit : handleNextStep}>
+              {isAuthenticated && !isProfileComplete && (
+                <div className="mb-6 p-4 sm:p-5 bg-amber-50 border border-amber-200 rounded-xl">
+                  <div className="flex items-start gap-3">
+                    <span className="material-symbols-outlined text-amber-600 text-2xl shrink-0 mt-0.5">warning</span>
+                    <div>
+                      <h3 className="text-sm font-bold text-amber-800 mb-1">Complete Your Profile First</h3>
+                      <p className="text-body-sm text-amber-700">
+                        Please fill in your Date of Birth, Gender, Emergency Contact, and Complete Address in your{' '}
+                        <button type="button" onClick={() => onNavigate('/student/profile')} className="font-bold underline hover:text-amber-900 cursor-pointer">Profile Settings</button>
+                        {' '}before you can submit a request.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
               <div className="flex items-center justify-center gap-2 mb-5 sm:mb-6">
                 {[1, 2, 3, 4].map(s => (
                   <div key={s} className={`w-2 h-2 rounded-full transition-colors ${s <= step ? 'bg-primary' : 'bg-outline-variant'}`} />
@@ -664,24 +692,6 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
                       </div>
                     </div>
 
-                    {/* Digital Copy Question */}
-                    <div className="max-w-lg mx-auto mb-8">
-                      <h3 className="font-headline-sm text-headline-sm text-on-surface mb-4">Would you also like a digital copy?</h3>
-                      <label
-                        onClick={() => setWantDigitalCopy(!wantDigitalCopy)}
-                        className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${wantDigitalCopy ? 'border-primary bg-surface-container-low' : 'border-outline-variant bg-surface-container-lowest'
-                          }`}
-                      >
-                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${wantDigitalCopy ? 'border-primary bg-primary' : 'border-outline'}`}>
-                          {wantDigitalCopy && <span className="material-symbols-outlined text-sm text-white leading-none">check</span>}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="font-label-md font-bold text-on-surface">Yes, send me a PDF copy via email</p>
-                          <p className="text-body-sm text-on-surface-variant">Receive a digital copy of your requested documents through email in addition to physical pickup.</p>
-                        </div>
-                      </label>
-                    </div>
-
                     {/* Payment Method */}
                     <div className="max-w-lg mx-auto mb-8">
                       <h3 className="font-headline-sm text-headline-sm text-on-surface mb-4">Payment Method</h3>
@@ -771,7 +781,7 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
                         )}
                         <div className="flex justify-between border-b border-outline-variant pb-2">
                           <span className="text-on-surface-variant font-medium">Release Method:</span>
-                          <span className="font-bold text-on-surface">Pick up at Registrar Office{wantDigitalCopy ? ' + Digital Copy' : ''}</span>
+                          <span className="font-bold text-on-surface">Pick up at Registrar Office</span>
                         </div>
                         <div className="flex justify-between border-b border-outline-variant pb-2">
                           <span className="text-on-surface-variant font-medium">Payment Method:</span>

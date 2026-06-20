@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Clock, ArrowLeft, ChevronRight, CreditCard, User, BookOpen, MessageSquare, ShieldAlert, ShieldCheck, Upload, CheckCircle } from 'lucide-react';
+import { FileText, Clock, ArrowLeft, ChevronRight, CreditCard, User, BookOpen, MessageSquare, ShieldAlert, ShieldCheck } from 'lucide-react';
 import DashboardLayout from '../DashboardLayout';
 import DashboardDropdown from '../../common/DashboardDropdown';
 import { registrarSidebarItems } from '../config/sidebarItems';
@@ -23,9 +23,6 @@ export default function RequestDetails({ user, onLogout, onNavigate }) {
     const [saving, setSaving] = useState(false);
     const [remarksSaving, setRemarksSaving] = useState(false);
     const [message, setMessage] = useState(null);
-    const [sendingDigital, setSendingDigital] = useState(false);
-    const [digitalFile, setDigitalFile] = useState(null);
-    const [digitalMessage, setDigitalMessage] = useState(null);
     const id = window.location.pathname.split('/').filter(Boolean).pop();
 
     useEffect(() => {
@@ -119,39 +116,6 @@ export default function RequestDetails({ user, onLogout, onNavigate }) {
                 setMessage({ type: 'error', text: 'An error occurred while saving.' });
                 setRemarksSaving(false);
             });
-    };
-
-    const canSendDigital = ['Ready for Release', 'Claimed'].includes(request?.status);
-
-    const handleSendDocument = () => {
-        if (sendingDigital || !digitalFile) return;
-        setSendingDigital(true);
-        setDigitalMessage(null);
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-        const formData = new FormData();
-        formData.append('pdf', digitalFile);
-        fetch(`/admin/api/requests/${id}/send-document`, {
-            method: 'POST',
-            headers: { 'X-CSRF-TOKEN': csrfToken },
-            body: formData,
-            credentials: 'same-origin',
-        })
-            .then(async (res) => {
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.message || 'Failed to send document.');
-                return data;
-            })
-            .then((data) => {
-                setDigitalMessage({ type: 'success', text: data.message });
-                setDigitalFile(null);
-                if (data.request) {
-                    setRequest(prev => ({ ...prev, ...data.request }));
-                }
-            })
-            .catch((err) => {
-                setDigitalMessage({ type: 'error', text: err.message });
-            })
-            .finally(() => setSendingDigital(false));
     };
 
     const statusCfg = (s) => getRequestStatusConfig(s);
@@ -266,6 +230,26 @@ export default function RequestDetails({ user, onLogout, onNavigate }) {
                                         <p className="text-sm font-medium text-slate-900">{request.section || '-'}</p>
                                     </div>
                                     <div>
+                                        <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Date of Birth</p>
+                                        <p className="text-sm text-slate-700">{request.date_of_birth ? request.date_of_birth.slice(0, 10) : '-'}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Gender</p>
+                                        <p className="text-sm text-slate-700">{request.gender || '-'}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Emergency Contact</p>
+                                        <p className="text-sm text-slate-700">{request.emergency_contact_person || '-'}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Emergency Contact No.</p>
+                                        <p className="text-sm text-slate-700">{request.emergency_contact_number || '-'}</p>
+                                    </div>
+                                    <div className="sm:col-span-2">
+                                        <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Complete Address</p>
+                                        <p className="text-sm text-slate-700">{request.complete_address || '-'}</p>
+                                    </div>
+                                    <div>
                                         <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Email</p>
                                         <p className="text-sm text-slate-700">{request.email}</p>
                                     </div>
@@ -368,7 +352,7 @@ export default function RequestDetails({ user, onLogout, onNavigate }) {
                                     <div className="flex items-center justify-between">
                                         <span className="text-xs font-medium text-slate-500">Release</span>
                                         <span className="text-sm font-medium text-slate-900">
-                                            {request.delivery_type === 'both' ? 'Pick up + Digital Copy' : request.delivery_type === 'physical' ? 'Pick up at Registrar' : 'Physical'}
+                                            Pick up at Registrar
                                         </span>
                                     </div>
                                     <div className="pt-3 border-t border-slate-100">
@@ -423,88 +407,6 @@ export default function RequestDetails({ user, onLogout, onNavigate }) {
                                     </button>
                                 </div>
                             </div>
-
-                            {/* Digital Document — only show if delivery is digital or already sent */}
-                            {(request.delivery_type === 'both' || request.delivery_type === 'digital' || request.is_digitally_sent) && (
-                            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                                <div className="flex items-center gap-2 px-6 py-4 bg-emerald-50 border-b border-emerald-100">
-                                    <Upload className="w-4 h-4 text-emerald-700" />
-                                    <h2 className="text-sm font-bold text-emerald-800">Digital Document</h2>
-                                </div>
-                                <div className="p-6 space-y-4">
-                                    {digitalMessage && (
-                                        <div className={`px-3 py-2 rounded-lg text-xs font-medium border ${
-                                            digitalMessage.type === 'success'
-                                                ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                                                : 'bg-red-50 text-red-800 border-red-200'
-                                        }`}>
-                                            {digitalMessage.text}
-                                        </div>
-                                    )}
-
-                                    {request.is_digitally_sent ? (
-                                        <div className="flex flex-col items-center gap-2 p-4 bg-emerald-50 rounded-lg border border-emerald-200 text-center">
-                                            <CheckCircle className="w-8 h-8 text-emerald-600" />
-                                            <p className="text-sm font-bold text-emerald-800">Digital Copy Sent</p>
-                                            {request.digitally_sent_at && (
-                                                <p className="text-xs text-emerald-600">
-                                                    Sent: {new Date(request.digitally_sent_at).toLocaleString()}
-                                                </p>
-                                            )}
-                                            {request.digitally_sent_by_name && (
-                                                <p className="text-xs text-emerald-600">
-                                                    Sent by: {request.digitally_sent_by_name}
-                                                </p>
-                                            )}
-                                        </div>
-                                    ) : (
-                                        <>
-                                            <p className="text-xs text-slate-500 leading-relaxed">
-                                                Upload a signed PDF to send a digital copy to the student's email.
-                                            </p>
-
-                                            <div>
-                                                <label className="block text-xs font-medium text-slate-600 mb-1">Student Email</label>
-                                                <div className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700">
-                                                    {request.email || 'No email on file'}
-                                                </div>
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-xs font-medium text-slate-600 mb-1">Upload PDF</label>
-                                                <input
-                                                    type="file"
-                                                    accept=".pdf,application/pdf"
-                                                    onChange={(e) => setDigitalFile(e.target.files[0] || null)}
-                                                    className="w-full text-sm text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer"
-                                                />
-                                                {digitalFile && (
-                                                    <p className="text-xs text-slate-500 mt-1">{digitalFile.name}</p>
-                                                )}
-                                            </div>
-
-                                            <button
-                                                onClick={handleSendDocument}
-                                                disabled={sendingDigital || !digitalFile || !canSendDigital || !request.email}
-                                                className="w-full py-2.5 text-sm font-bold text-white bg-emerald-700 hover:bg-emerald-800 disabled:bg-emerald-400 rounded-lg transition-colors cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                                            >
-                                                {sendingDigital ? (
-                                                    'Sending...'
-                                                ) : (
-                                                    <><Upload className="w-4 h-4" /> Send Digital Copy</>
-                                                )}
-                                            </button>
-
-                                            {!canSendDigital && (
-                                                <p className="text-xs text-amber-600 text-center">
-                                                    Status must be Ready for Release or Claimed to send digitally.
-                                                </p>
-                                            )}
-                                        </>
-                                    )}
-                                </div>
-                            </div>
-                            )}
 
                         </div>
                     </div>

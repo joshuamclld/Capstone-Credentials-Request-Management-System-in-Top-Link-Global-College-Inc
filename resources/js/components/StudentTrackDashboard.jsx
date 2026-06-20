@@ -129,7 +129,7 @@ export default function StudentTrackDashboard({ studentUser, onLogout, onNavigat
     }
   }, [studentUser]);
 
-  const timeline = request ? buildTimeline(request.status, request.payment_status, request.delivery_type) : [];
+  const timeline = request ? buildTimeline(request.status, request.payment_status) : [];
 
   const openAuth = () => { setAuthModalTab('login'); setAuthModalOpen(true); };
   const closeAuth = () => setAuthModalOpen(false);

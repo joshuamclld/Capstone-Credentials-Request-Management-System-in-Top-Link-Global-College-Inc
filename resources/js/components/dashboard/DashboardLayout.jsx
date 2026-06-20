@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Menu, LogOut } from 'lucide-react';
 import DashboardSidebar from './DashboardSidebar';
 import NotificationBell from '../common/NotificationBell';
+import ToastNotification from '../common/ToastNotification';
 
 export default function DashboardLayout({ title, subtitle, sidebarItems, currentUser, roleLabel, onLogout, onNavigate, children }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -22,6 +23,7 @@ export default function DashboardLayout({ title, subtitle, sidebarItems, current
     return (
         <div className="min-h-screen flex"
              style={{ background: 'linear-gradient(135deg, var(--color-surface) 0%, var(--color-surface-container-low) 40%, var(--color-primary-container) 100%)' }}>
+            <ToastNotification />
             {sidebarOpen && (
                 <div
                     className="fixed inset-0 bg-black/40 z-40 lg:hidden"

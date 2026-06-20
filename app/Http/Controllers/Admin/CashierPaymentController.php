@@ -7,6 +7,7 @@ use App\Models\AuditLog;
 use App\Models\Document;
 use App\Models\Notification;
 use App\Models\PaymentSetting;
+use App\Models\StudentNotification;
 use App\Models\StudentRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -19,10 +20,19 @@ class CashierPaymentController extends Controller
     {
         $perPage = min(max((int) $request->query('per_page', 10), 1), 100);
         $daily = $request->boolean('daily');
+        $dateFrom = $request->query('date_from');
+        $dateTo = $request->query('date_to');
+        $hasDateRange = $dateFrom && $dateTo;
 
         $requestsQuery = StudentRequest::query();
         $dailyStatsQuery = StudentRequest::query();
-        if ($daily) {
+
+        if ($hasDateRange) {
+            $dailyStatsQuery->whereDate('created_at', '>=', $dateFrom)
+                ->whereDate('created_at', '<=', $dateTo);
+            $requestsQuery->whereDate('created_at', '>=', $dateFrom)
+                ->whereDate('created_at', '<=', $dateTo);
+        } elseif ($daily) {
             $dailyStatsQuery->whereDate('created_at', today());
             $requestsQuery->whereDate('created_at', today());
         }
@@ -37,15 +47,21 @@ class CashierPaymentController extends Controller
             ->whereYear('created_at', now()->year)
             ->count();
 
-        $todayStats = StudentRequest::where('payment_status', 'paid')
-            ->whereDate(\DB::raw('COALESCE(verified_at, created_at)'), today())
-            ->selectRaw("
-                COUNT(*) as paid_today,
-                SUM(CASE WHEN payment_method = 'online' THEN 1 ELSE 0 END) as daily_online_count,
-                SUM(CASE WHEN payment_method = 'online' THEN total_fee ELSE 0 END) as daily_online_total,
-                SUM(CASE WHEN payment_method != 'online' OR payment_method IS NULL THEN 1 ELSE 0 END) as daily_cash_count,
-                SUM(CASE WHEN payment_method != 'online' OR payment_method IS NULL THEN total_fee ELSE 0 END) as daily_cash_total
-            ")->first();
+        $paidStatsQuery = StudentRequest::where('payment_status', 'paid');
+        if ($hasDateRange) {
+            $paidStatsQuery->whereDate('created_at', '>=', $dateFrom)
+                ->whereDate('created_at', '<=', $dateTo);
+        } else {
+            $paidStatsQuery->whereDate(\DB::raw('COALESCE(verified_at, created_at)'), today());
+        }
+
+        $todayStats = (clone $paidStatsQuery)->selectRaw("
+            COUNT(*) as paid_today,
+            SUM(CASE WHEN payment_method = 'online' THEN 1 ELSE 0 END) as daily_online_count,
+            SUM(CASE WHEN payment_method = 'online' THEN total_fee ELSE 0 END) as daily_online_total,
+            SUM(CASE WHEN payment_method != 'online' OR payment_method IS NULL THEN 1 ELSE 0 END) as daily_cash_count,
+            SUM(CASE WHEN payment_method != 'online' OR payment_method IS NULL THEN total_fee ELSE 0 END) as daily_cash_total
+        ")->first();
 
         $stats = [
             'pending_payments' => (int) $dailyCounts->pending_payments,
@@ -138,6 +154,17 @@ class CashierPaymentController extends Controller
             $locked->save();
 
             Notification::notifyRole('registrar', 'payment_verified', 'Payment Verified', "Payment verified for {$locked->tracking_number}", (string) $locked->id, "/admin/requests/{$locked->id}", auth()->id());
+
+            if ($locked->student_id) {
+                StudentNotification::create([
+                    'student_id' => $locked->student_id,
+                    'type' => 'payment_verified',
+                    'title' => 'Payment Verified',
+                    'message' => "Your payment for request {$locked->tracking_number} has been verified.",
+                    'action_url' => "/student/requests/{$locked->tracking_number}",
+                    'created_by' => auth()->id(),
+                ]);
+            }
 
             AuditLog::create([
                 'action' => 'verify_payment',

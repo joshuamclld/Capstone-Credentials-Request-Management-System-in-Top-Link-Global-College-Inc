@@ -27,10 +27,14 @@ class StudentAuthController extends Controller
                 'first_name' => $student->first_name,
                 'last_name' => $student->last_name,
                 'email' => $student->email,
+                'date_of_birth' => $student->date_of_birth?->format('Y-m-d'),
+                'gender' => $student->gender,
+                'emergency_contact_person' => $student->emergency_contact_person,
+                'emergency_contact_number' => $student->emergency_contact_number,
+                'complete_address' => $student->complete_address,
             ],
         ]);
     }
-
 
 
     public function login(Request $request): JsonResponse
@@ -76,6 +80,11 @@ class StudentAuthController extends Controller
                 'first_name' => $student->first_name,
                 'last_name' => $student->last_name,
                 'email' => $student->email,
+                'date_of_birth' => $student->date_of_birth?->format('Y-m-d'),
+                'gender' => $student->gender,
+                'emergency_contact_person' => $student->emergency_contact_person,
+                'emergency_contact_number' => $student->emergency_contact_number,
+                'complete_address' => $student->complete_address,
             ],
         ]);
     }
@@ -135,6 +144,11 @@ class StudentAuthController extends Controller
                 'first_name' => $student->first_name,
                 'last_name' => $student->last_name,
                 'email' => $student->email,
+                'date_of_birth' => $student->date_of_birth?->format('Y-m-d'),
+                'gender' => $student->gender,
+                'emergency_contact_person' => $student->emergency_contact_person,
+                'emergency_contact_number' => $student->emergency_contact_number,
+                'complete_address' => $student->complete_address,
             ],
         ]);
     }

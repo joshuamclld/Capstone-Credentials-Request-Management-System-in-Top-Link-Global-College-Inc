@@ -41,7 +41,7 @@ export function getBadge(status, payment_status) {
   return { label: c.label, bg: c.className };
 }
 
-export function buildTimeline(status, payment_status, delivery_type) {
+export function buildTimeline(status, payment_status) {
   if (status === 'Cancelled') {
     return [
       { step: 'Request Submitted', desc: 'Your application was successfully received.', done: true, active: false },
@@ -62,7 +62,7 @@ export function buildTimeline(status, payment_status, delivery_type) {
     { step: 'Payment Verified', desc: 'Your processing fee has been confirmed.', key: 'payment' },
     { step: 'Currently Processing', desc: 'The Registrar is now preparing and verifying your academic records.', key: 'processing' },
     { step: 'Ready for Release', desc: 'Your document is prepared and certified, ready for release.', key: 'ready' },
-    { step: delivery_type === 'digital' ? 'Delivered' : 'Claimed', desc: delivery_type === 'digital' ? 'Document has been delivered via email.' : delivery_type === 'both' ? 'Document released to student. Digital copy sent via email.' : 'Document released to student.', key: 'claimed' },
+    { step: 'Claimed', desc: 'Document released to student.', key: 'claimed' },
   ];
 
   const activeIndex = (() => {

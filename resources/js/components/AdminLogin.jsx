@@ -62,20 +62,34 @@ export default function AdminLogin({ onLoginSuccess }) {
     };
 
     return (
-        <div className="bg-surface font-body-md text-on-surface flex flex-col min-h-screen">
-            {/* Main Content Area */}
-            <main className="flex-grow flex items-center justify-center px-margin-mobile py-12">
-                <div className="animate-card w-full max-w-[440px] bg-surface-container-lowest border border-outline-variant rounded-lg p-8 md:p-10 shadow-sm">
+        <>
+            <style>{`
+                @keyframes gradientShift {
+                    0% { background-position: 0% 0%; }
+                    25% { background-position: 100% 0%; }
+                    50% { background-position: 100% 100%; }
+                    75% { background-position: 0% 100%; }
+                    100% { background-position: 0% 0%; }
+                }
+            `}</style>
+        <div className="font-body-md flex flex-col min-h-screen relative" style={{
+            background: 'radial-gradient(circle at 50% 50%, rgba(0,0,0,0.75), rgba(0,0,0,0.5) 60%, rgba(0,0,0,0.3))',
+            backgroundSize: '150% 150%',
+            animation: 'gradientShift 20s ease-in-out infinite',
+        }}>
+            <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: 'url(/images/bg.png)', zIndex: -1 }} />
+                <main className="flex-grow flex items-center justify-center px-margin-mobile py-12">
+                <div className="animate-card w-full max-w-[320px] md:max-w-[440px] bg-surface-container-lowest border border-outline-variant rounded-lg p-4 md:p-10 shadow-sm">
 
                     {/* Logo and Branding */}
-                    <div className="flex flex-col items-center mb-10 text-center">
+                    <div className="flex flex-col items-center mb-6 md:mb-10 text-center">
                         <img
                             alt="Top Link Global College Logo"
-                            className="h-24 w-24 mb-6 object-contain"
+                            className="h-16 w-16 md:h-24 md:w-24 mb-4 md:mb-6 object-contain"
                             src="/images/logo.png"
                         />
-                        <h1 className="text-headline-md font-headline-md text-on-surface mb-1">Registrar Admin Portal</h1>
-                        <p className="text-body-sm font-body-sm text-on-surface-variant">Credentials Request Management System</p>
+                        <h1 className="text-headline-sm md:text-headline-md font-headline-md text-on-surface mb-1">Registrar Admin Portal</h1>
+                        <p className="text-label-sm md:text-body-sm font-body-sm text-on-surface-variant">Credentials Request Management System</p>
                     </div>
 
                     {/* Login Form */}
@@ -223,6 +237,7 @@ export default function AdminLogin({ onLoginSuccess }) {
                     </div>
                 </div>
             </main>
-        </div>
+            </div>
+        </>
     );
 }

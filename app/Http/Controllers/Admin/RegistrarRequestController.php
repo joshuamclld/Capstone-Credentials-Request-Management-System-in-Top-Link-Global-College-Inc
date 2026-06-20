@@ -3,15 +3,14 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Mail\DigitalDocumentMail;
 use App\Models\AuditLog;
 use App\Models\Document;
 use App\Models\Notification;
+use App\Models\StudentNotification;
 use App\Models\StudentRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 
 class RegistrarRequestController extends Controller
@@ -148,6 +147,11 @@ class RegistrarRequestController extends Controller
             'delivery_type' => $request->delivery_type,
             'payment_proof' => $request->payment_proof ? url('/payment-proof/' . $request->tracking_number) : null,
             'digitally_sent_by_name' => $request->digitally_sent_by ? \App\Models\User::find($request->digitally_sent_by)?->name : null,
+            'date_of_birth' => $request->student?->date_of_birth?->format('Y-m-d'),
+            'gender' => $request->student?->gender,
+            'emergency_contact_person' => $request->student?->emergency_contact_person,
+            'emergency_contact_number' => $request->student?->emergency_contact_number,
+            'complete_address' => $request->student?->complete_address,
         ]);
     }
 
@@ -205,11 +209,32 @@ class RegistrarRequestController extends Controller
         $studentRequest->save();
 
         if ($newStatus !== $currentStatus) {
-            Notification::notifyRole('registrar', 'status_update', 'Request Status Updated', "Request {$studentRequest->tracking_number} moved to {$newStatus}", (string) $studentRequest->id, "/admin/requests/{$studentRequest->id}", auth()->id());
+            if ($newStatus === 'Claimed') {
+                Notification::notifyRole('registrar', 'request_claimed', 'Request Claimed', "Request {$studentRequest->tracking_number} was marked as claimed.", (string) $studentRequest->id, "/admin/requests/{$studentRequest->id}", auth()->id());
+            } else {
+                Notification::notifyRole('registrar', 'status_update', 'Request Status Updated', "Request {$studentRequest->tracking_number} moved to {$newStatus}", (string) $studentRequest->id, "/admin/requests/{$studentRequest->id}", auth()->id());
+            }
+
+            if ($studentRequest->student_id) {
+                $title = $newStatus === 'Claimed' ? 'Request Claimed' : 'Request Status Updated';
+                $message = $newStatus === 'Claimed'
+                    ? "Your request {$studentRequest->tracking_number} has been marked as claimed."
+                    : "Your request {$studentRequest->tracking_number} has been updated to: {$newStatus}";
+                StudentNotification::create([
+                    'student_id' => $studentRequest->student_id,
+                    'type' => $newStatus === 'Claimed' ? 'request_claimed' : 'status_update',
+                    'title' => $title,
+                    'message' => $message,
+                    'action_url' => "/student/requests/{$studentRequest->tracking_number}",
+                    'created_by' => auth()->id(),
+                ]);
+            }
         }
 
         AuditLog::create([
-            'action' => $newStatus !== $currentStatus ? 'update_status' : 'update_remarks',
+            'action' => $newStatus !== $currentStatus
+                ? ($newStatus === 'Claimed' ? 'claim_request' : 'update_status')
+                : 'update_remarks',
             'performed_by' => auth()->user()->name,
             'performed_by_id' => auth()->id(),
             'target_type' => 'StudentRequest',
@@ -232,6 +257,11 @@ class RegistrarRequestController extends Controller
                 'course' => $studentRequest->course,
                 'year_level' => $studentRequest->year_level,
                 'section' => $studentRequest->section,
+                'date_of_birth' => $studentRequest->student?->date_of_birth?->format('Y-m-d'),
+                'gender' => $studentRequest->student?->gender,
+                'emergency_contact_person' => $studentRequest->student?->emergency_contact_person,
+                'emergency_contact_number' => $studentRequest->student?->emergency_contact_number,
+                'complete_address' => $studentRequest->student?->complete_address,
                 'email' => $studentRequest->email,
                 'phone' => $studentRequest->contact_number,
                 'purpose' => $studentRequest->purpose,
@@ -251,103 +281,6 @@ class RegistrarRequestController extends Controller
                 'digitally_sent_by' => $studentRequest->digitally_sent_by,
                 'delivery_type' => $studentRequest->delivery_type,
                 'digitally_sent_by_name' => $studentRequest->digitally_sent_by ? \App\Models\User::find($studentRequest->digitally_sent_by)?->name : null,
-            ],
-        ]);
-    }
-
-    public function sendDigitalDocument(Request $request, int $id): JsonResponse
-    {
-        $studentRequest = StudentRequest::find($id);
-
-        if (!$studentRequest) {
-            return response()->json(['success' => false, 'message' => 'Request not found.'], 404);
-        }
-
-        if ($studentRequest->is_digitally_sent) {
-            return response()->json(['success' => false, 'message' => 'Digital document has already been sent.'], 422);
-        }
-
-        if (!in_array($studentRequest->status, ['Ready for Release', 'Claimed'])) {
-            return response()->json(['success' => false, 'message' => 'Document can only be sent when status is Ready for Release or Claimed.'], 422);
-        }
-
-        if (!$studentRequest->email) {
-            return response()->json(['success' => false, 'message' => 'Student has no email address on file.'], 422);
-        }
-
-        $request->validate([
-            'pdf' => 'required|mimes:pdf|max:10240',
-        ]);
-
-        $user = auth()->user();
-        $studentRequest->load('documents');
-        $documentNames = $studentRequest->documents->pluck('name')->toArray();
-        $documentName = implode(', ', $documentNames);
-
-        try {
-            DB::transaction(function () use ($request, $studentRequest, $user, $documentName, $documentNames) {
-                $safeTracking = preg_replace('/[^A-Za-z0-9\-]/', '', $studentRequest->tracking_number);
-                $filename = $safeTracking . '-' . time() . '.pdf';
-                $path = $request->file('pdf')->storeAs('documents', $filename, 'local');
-
-                Mail::to($studentRequest->email)->queue(new DigitalDocumentMail($studentRequest, $documentName, $path));
-
-                $studentRequest->update([
-                    'digital_document_path' => $path,
-                    'is_digitally_sent' => true,
-                    'digitally_sent_at' => now(),
-                    'digitally_sent_by' => $user->id,
-                    'delivery_type' => $studentRequest->delivery_type ?: ($studentRequest->status === 'Claimed' ? 'digital' : 'both'),
-                ]);
-
-                AuditLog::create([
-                    'action' => 'digital_document_sent',
-                    'performed_by' => $user->name,
-                    'performed_by_id' => $user->id,
-                    'target_type' => 'StudentRequest',
-                    'target_id' => $studentRequest->id,
-                    'description' => "Sent {$documentName} digitally to {$studentRequest->email}",
-                ]);
-            });
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to send digital document. Please check mail configuration and try again.',
-            ], 500);
-        }
-
-        $studentRequest->refresh();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Digital document sent successfully.',
-            'request' => [
-                'id' => $studentRequest->id,
-                'tracking_number' => $studentRequest->tracking_number,
-                'student_name' => $studentRequest->full_name,
-                'student_number' => $studentRequest->student_number,
-                'course' => $studentRequest->course,
-                'year_level' => $studentRequest->year_level,
-                'section' => $studentRequest->section,
-                'email' => $studentRequest->email,
-                'phone' => $studentRequest->contact_number,
-                'purpose' => $studentRequest->purpose,
-                'document_names' => $documentNames,
-                'semesters' => $studentRequest->semesters ?? [],
-                'pages' => $studentRequest->pages,
-                'payment_method' => $studentRequest->payment_method,
-                'payment_status' => $studentRequest->payment_status,
-                'status' => $studentRequest->status,
-                'total_fee' => (float) $studentRequest->total_fee,
-                'remarks' => $studentRequest->remarks ?? '',
-                'verified_by' => $studentRequest->verified_by,
-                'verified_at' => $studentRequest->verified_at,
-                'created_at' => $studentRequest->created_at->format('Y-m-d'),
-                'is_digitally_sent' => true,
-                'digitally_sent_at' => $studentRequest->digitally_sent_at,
-                'digitally_sent_by' => $user->id,
-                'delivery_type' => $studentRequest->delivery_type,
-                'digitally_sent_by_name' => $user->name,
             ],
         ]);
     }

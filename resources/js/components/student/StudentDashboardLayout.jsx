@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { User, LogOut } from 'lucide-react';
 import StudentDashboardSidebar from './StudentDashboardSidebar';
 import StudentBottomNavbar from './StudentBottomNavbar';
+import StudentToastNotification from '../common/StudentToastNotification';
+import StudentNotificationBell from '../common/StudentNotificationBell';
 
 export default function StudentDashboardLayout({ title, subtitle, student, onLogout, onNavigate, currentPath, children }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -22,6 +24,7 @@ export default function StudentDashboardLayout({ title, subtitle, student, onLog
 
   return (
     <div className="min-h-screen bg-surface flex">
+      <StudentToastNotification />
       <div className="hidden lg:block">
         <StudentDashboardSidebar
           student={student}
@@ -42,7 +45,9 @@ export default function StudentDashboardLayout({ title, subtitle, student, onLog
                 {subtitle && <p className="text-xs text-on-surface-variant truncate hidden sm:block">{subtitle}</p>}
               </div>
             </div>
-            <div ref={dropdownRef} className="relative shrink-0">
+            <div className="flex items-center gap-2">
+              <StudentNotificationBell onNavigate={onNavigate} />
+              <div ref={dropdownRef} className="relative shrink-0">
               <button
                 onClick={() => setDropdownOpen(!dropdownOpen)}
                 className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-surface-container-high transition-colors cursor-pointer"
@@ -72,6 +77,7 @@ export default function StudentDashboardLayout({ title, subtitle, student, onLog
                   </button>
                 </div>
               )}
+            </div>
             </div>
           </div>
         </header>

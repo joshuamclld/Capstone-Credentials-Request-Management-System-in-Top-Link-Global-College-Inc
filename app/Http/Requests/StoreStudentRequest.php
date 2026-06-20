@@ -37,7 +37,6 @@ class StoreStudentRequest extends FormRequest
             'pages' => 'nullable|integer|min:1',
             'paymentMethod' => 'required|string|in:cash,online',
             'deliveryType' => 'sometimes|string|in:pickup',
-            'wantDigitalCopy' => 'sometimes|boolean',
             'purpose' => 'required|string|max:1000',
             'yearLevel' => 'required|string|in:1st Year,2nd Year,3rd Year',
             'section' => 'required|string|in:A,B,C,D,E,F,G,H',

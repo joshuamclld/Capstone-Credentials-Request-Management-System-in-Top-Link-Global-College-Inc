@@ -71,7 +71,7 @@ export default function StudentLanding({ student, onLogout, onNavigate, currentP
               </div>
               <div className="absolute top-6 sm:top-10 right-6 sm:right-10 text-surface-container-high font-bold text-3xl sm:text-5xl opacity-30 group-hover:opacity-100 transition-opacity">03</div>
               <h3 className="font-headline-sm text-lg sm:text-xl text-on-background mb-2 sm:mb-4">3. Track & Release</h3>
-              <p className="text-body-sm sm:text-body-md text-on-surface-variant leading-relaxed">Monitor your request status — Pending → Processing → Ready for Release → Claimed. Pick up on campus or receive digitally.</p>
+              <p className="text-body-sm sm:text-body-md text-on-surface-variant leading-relaxed">Monitor your request status — Pending → Processing → Ready for Release → Claimed.</p>
             </div>
           </div>
         </section>
@@ -80,8 +80,8 @@ export default function StudentLanding({ student, onLogout, onNavigate, currentP
           <div className="grid grid-cols-1 md:grid-cols-4 md:grid-rows-2 gap-4 sm:gap-6 h-auto md:h-[500px]">
             <div className="md:col-span-2 md:row-span-2 bg-primary-container p-6 sm:p-8 md:p-12 rounded-3xl text-on-primary flex flex-col justify-between overflow-hidden relative group hover:shadow-2xl transition-all">
               <div className="relative z-10">
-                <h4 className="font-headline-md text-xl sm:text-2xl md:text-3xl mb-3 sm:mb-6">Two Release Options</h4>
-                <p className="font-body-md sm:font-body-lg opacity-90 max-w-xs">Pick up your printed documents at the registrar's office, or receive a digital copy via email.</p>
+                <h4 className="font-headline-md text-xl sm:text-2xl md:text-3xl mb-3 sm:mb-6">Pick up at Registrar</h4>
+                <p className="font-body-md sm:font-body-lg opacity-90 max-w-xs">Pick up your printed documents at the registrar's office.</p>
               </div>
               <div className="relative z-10 mt-4 sm:mt-8">
                 <div className="flex items-center gap-3">

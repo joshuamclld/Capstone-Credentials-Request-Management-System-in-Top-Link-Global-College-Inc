@@ -138,6 +138,12 @@ function App() {
   const handleLoginSuccess = (userData) => {
     setIsAuthenticated(true);
     setUser(userData);
+    fetch('/csrf-token')
+      .then(r => r.json())
+      .then(data => {
+        document.querySelector('meta[name="csrf-token"]')?.setAttribute('content', data.token);
+      })
+      .catch(() => {});
     const dashboard = userData.role === 'cashier'
       ? '/cashier-dashboard'
       : userData.role === 'system_admin'

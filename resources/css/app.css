@@ -159,3 +159,13 @@
     border-color: var(--color-primary-container);
     box-shadow: 0 0 0 1px var(--color-primary-container);
 }
+
+@keyframes slideInRight {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideOutRight {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(100%); opacity: 0; }
+}

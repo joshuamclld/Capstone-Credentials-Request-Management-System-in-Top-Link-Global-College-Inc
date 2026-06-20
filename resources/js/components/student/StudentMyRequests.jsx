@@ -10,7 +10,6 @@ export default function StudentMyRequests({ student, onLogout, onNavigate, curre
   const [cancelling, setCancelling] = useState(null);
   const [cancelModal, setCancelModal] = useState(null);
   const [cancelError, setCancelError] = useState('');
-  const [claiming, setClaiming] = useState(null);
 
   const getCsrf = () => document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
@@ -74,30 +73,6 @@ export default function StudentMyRequests({ student, onLogout, onNavigate, curre
       setCancelError('Network error.');
     }
     setCancelling(null);
-  };
-
-  const handleClaim = async (req) => {
-    if (claiming) return;
-    setClaiming(req.tracking_number);
-    try {
-      const res = await fetch(`/requests/${encodeURIComponent(req.tracking_number)}/claim`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'X-CSRF-TOKEN': getCsrf(),
-        },
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setRequests(prev => prev.map(r =>
-          r.tracking_number === req.tracking_number ? { ...r, status: 'Claimed' } : r
-        ));
-      }
-    } catch {
-      // ignore
-    }
-    setClaiming(null);
   };
 
   const canCancel = (req) => {
@@ -170,15 +145,6 @@ export default function StudentMyRequests({ student, onLogout, onNavigate, curre
                               >
                                 {cancelling === req.tracking_number ? '...' : 'Cancel'}
                               </button>
-                              {req.status === 'Ready for Release' && (
-                                <button
-                                  onClick={() => handleClaim(req)}
-                                  disabled={claiming === req.tracking_number}
-                                  className="px-3 py-1.5 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors cursor-pointer disabled:opacity-50 whitespace-nowrap"
-                                >
-                                  {claiming === req.tracking_number ? '...' : 'Claim'}
-                                </button>
-                              )}
                             </div>
                           </td>
                         </tr>
@@ -231,16 +197,7 @@ export default function StudentMyRequests({ student, onLogout, onNavigate, curre
                         >
                           {cancelling === req.tracking_number ? '...' : 'Cancel'}
                         </button>
-                      {req.status === 'Ready for Release' && (
-                        <button
-                          onClick={() => handleClaim(req)}
-                          disabled={claiming === req.tracking_number}
-                          className="flex-1 py-2.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
-                        >
-                          {claiming === req.tracking_number ? '...' : 'Claim'}
-                        </button>
-                      )}
-                    </div>
+                      </div>
                   </div>
                 ))}
               </div>

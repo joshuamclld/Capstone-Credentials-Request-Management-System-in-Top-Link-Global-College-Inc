@@ -15,9 +15,11 @@ class Student extends Authenticatable
         'first_name',
         'last_name',
         'email',
-        'course',
-        'year_level',
-        'section',
+        'date_of_birth',
+        'gender',
+        'emergency_contact_person',
+        'emergency_contact_number',
+        'complete_address',
         'password',
         'is_active',
         'email_verified_at',
@@ -34,6 +36,7 @@ class Student extends Authenticatable
             'password' => 'hashed',
             'email_verified_at' => 'datetime',
             'is_active' => 'boolean',
+            'date_of_birth' => 'date:Y-m-d',
         ];
     }
 

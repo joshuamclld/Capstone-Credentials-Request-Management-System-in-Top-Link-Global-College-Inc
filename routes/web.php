@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\CashierPaymentController;
 use App\Http\Controllers\Admin\RegistrarRequestController;
 use App\Http\Controllers\Admin\SystemAdminController;
 use App\Http\Controllers\StudentAuthController;
+use App\Http\Controllers\Student\StudentNotificationController;
 use App\Http\Controllers\StudentRequestController;
 use App\Http\Controllers\StudentProfileController;
 use App\Http\Controllers\DocumentController;
@@ -117,10 +118,6 @@ Route::prefix('admin')->group(function () {
         Route::patch('/requests/{id}', [RegistrarRequestController::class, 'update'])
             ->middleware('admin')
             ->whereNumber('id');
-
-        Route::post('/requests/{id}/send-document', [RegistrarRequestController::class, 'sendDigitalDocument'])
-            ->middleware(['admin', 'throttle:10,1'])
-            ->whereNumber('id');
     });
 });
 
@@ -136,8 +133,6 @@ Route::post('/requests', [StudentRequestController::class, 'store'])
 Route::get('/requests/{tracking_number}', [StudentRequestController::class, 'show'])
     ->middleware('throttle:30,1');
 Route::patch('/requests/{tracking_number}/cancel', [StudentRequestController::class, 'cancel'])
-    ->middleware(['auth:student', 'throttle:5,1']);
-Route::patch('/requests/{tracking_number}/claim', [StudentRequestController::class, 'claim'])
     ->middleware(['auth:student', 'throttle:5,1']);
 Route::get('/documents', [DocumentController::class, 'index']);
 Route::get('/online-payment-status', [CashierPaymentController::class, 'getOnlinePaymentStatus']);
@@ -161,6 +156,12 @@ Route::prefix('student')->group(function () {
         Route::get('/api/requests/{tracking_number}', [StudentRequestController::class, 'myRequestDetail']);
         Route::post('/api/requests/{tracking_number}/upload-proof', [StudentRequestController::class, 'uploadPaymentProof']);
 
+        // Student notifications (API)
+        Route::get('/api/notifications', [StudentNotificationController::class, 'index']);
+        Route::get('/api/notifications/all', [StudentNotificationController::class, 'getAll']);
+        Route::patch('/notifications/{id}/read', [StudentNotificationController::class, 'markAsRead'])->whereNumber('id');
+        Route::patch('/notifications/read-all', [StudentNotificationController::class, 'markAllAsRead']);
+
         // Student Profile (GET moved to /api/ to avoid SPA refresh conflict)
         Route::get('/api/profile', [StudentProfileController::class, 'show']);
         Route::patch('/profile', [StudentProfileController::class, 'update'])
@@ -168,6 +169,10 @@ Route::prefix('student')->group(function () {
         Route::patch('/profile/password', [StudentProfileController::class, 'updatePassword'])
             ->middleware('throttle:20,1');
     });
+});
+
+Route::get('/csrf-token', function () {
+    return response()->json(['token' => csrf_token()]);
 });
 
 Route::get('/student/{any?}', function () { return view('welcome'); })->where('any', '.*');

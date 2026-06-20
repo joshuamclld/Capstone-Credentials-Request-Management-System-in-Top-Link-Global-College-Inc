@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, X, User, BookOpen, CreditCard, ShieldCheck, FileText } from 'lucide-react';
+import { CheckCircle, X, User, BookOpen, CreditCard, ShieldCheck, FileText, Calendar } from 'lucide-react';
 import DashboardLayout from '../DashboardLayout';
 import DashboardSearch from '../DashboardSearch';
 import DashboardTable from '../DashboardTable';
@@ -21,10 +21,20 @@ export default function PaidTransactions({ user, onLogout, onNavigate }) {
     const [selectedId, setSelectedId] = useState(null);
     const [details, setDetails] = useState(null);
     const [detailsLoading, setDetailsLoading] = useState(false);
+    const [dateFrom, setDateFrom] = useState('');
+    const [dateTo, setDateTo] = useState('');
+
+    const buildUrl = () => {
+        let url = '/admin/payments-data?per_page=9999&payment_status=paid';
+        if (dateFrom && dateTo) {
+            url += `&date_from=${encodeURIComponent(dateFrom)}&date_to=${encodeURIComponent(dateTo)}`;
+        }
+        return url;
+    };
 
     const fetchData = () => {
         setLoading(true);
-        fetch(`/admin/payments-data?per_page=9999&payment_status=paid`, { credentials: 'same-origin' })
+        fetch(buildUrl(), { credentials: 'same-origin' })
             .then((res) => {
                 if (!res.ok) throw new Error('Failed to fetch');
                 return res.json();
@@ -41,7 +51,7 @@ export default function PaidTransactions({ user, onLogout, onNavigate }) {
 
     useEffect(() => {
         fetchData();
-    }, []);
+    }, [dateFrom, dateTo]);
 
     const openDetails = (id) => {
         setSelectedId(id);
@@ -83,7 +93,7 @@ export default function PaidTransactions({ user, onLogout, onNavigate }) {
         if (newPage >= 1 && newPage <= totalPages) setPage(newPage);
     };
 
-    useEffect(() => { setPage(1); }, [query]);
+    useEffect(() => { setPage(1); }, [query, dateFrom, dateTo]);
 
     const renderRow = (req) => (
         <tr key={req.id} className="hover:bg-slate-50 transition-colors">
@@ -103,9 +113,13 @@ export default function PaidTransactions({ user, onLogout, onNavigate }) {
         </tr>
     );
 
+    const rangeLabel = dateFrom && dateTo
+        ? `Completed payment transactions. Filtered: ${dateFrom} — ${dateTo}`
+        : 'Completed payment transactions.';
+
     if (loading) {
         return (
-            <DashboardLayout title="Paid Transactions" subtitle="Completed payment transactions." sidebarItems={cashierSidebarItems} currentUser={user} roleLabel="Cashier / Accounting" onLogout={onLogout} onNavigate={onNavigate}>
+            <DashboardLayout title="Paid Transactions" subtitle={rangeLabel} sidebarItems={cashierSidebarItems} currentUser={user} roleLabel="Cashier / Accounting" onLogout={onLogout} onNavigate={onNavigate}>
                 <div className="flex items-center justify-center py-20 text-slate-500 text-sm">Loading transactions...</div>
             </DashboardLayout>
         );
@@ -113,7 +127,7 @@ export default function PaidTransactions({ user, onLogout, onNavigate }) {
 
     if (error) {
         return (
-            <DashboardLayout title="Paid Transactions" subtitle="Completed payment transactions." sidebarItems={cashierSidebarItems} currentUser={user} roleLabel="Cashier / Accounting" onLogout={onLogout} onNavigate={onNavigate}>
+            <DashboardLayout title="Paid Transactions" subtitle={rangeLabel} sidebarItems={cashierSidebarItems} currentUser={user} roleLabel="Cashier / Accounting" onLogout={onLogout} onNavigate={onNavigate}>
                 <div className="flex items-center justify-center py-20 text-red-500 text-sm">Error: {error}</div>
             </DashboardLayout>
         );
@@ -123,13 +137,45 @@ export default function PaidTransactions({ user, onLogout, onNavigate }) {
         <>
             <DashboardLayout
                 title="Paid Transactions"
-                subtitle="Completed payment transactions."
+                subtitle={rangeLabel}
                 sidebarItems={cashierSidebarItems}
                 currentUser={user}
                 roleLabel="Cashier / Accounting"
                 onLogout={onLogout}
                 onNavigate={onNavigate}
             >
+            <section className="bg-white rounded-xl border border-slate-200 shadow-sm mb-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-6 py-4">
+                    <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-slate-500" />
+                        <span className="text-sm font-bold text-slate-900">Filter by Date</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <input
+                            type="date"
+                            value={dateFrom}
+                            onChange={(e) => setDateFrom(e.target.value)}
+                            className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg bg-white text-slate-800 focus:outline-none focus:border-emerald-400"
+                        />
+                        <span className="text-xs text-slate-400">to</span>
+                        <input
+                            type="date"
+                            value={dateTo}
+                            min={dateFrom}
+                            onChange={(e) => setDateTo(e.target.value)}
+                            className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg bg-white text-slate-800 focus:outline-none focus:border-emerald-400"
+                        />
+                        {(dateFrom || dateTo) && (
+                            <button
+                                onClick={() => { setDateFrom(''); setDateTo(''); }}
+                                className="px-3 py-1.5 text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg transition-colors cursor-pointer"
+                            >
+                                All
+                            </button>
+                        )}
+                    </div>
+                </div>
+            </section>
             <section className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-6 py-5 border-b border-slate-200">
                     <DashboardSearch
