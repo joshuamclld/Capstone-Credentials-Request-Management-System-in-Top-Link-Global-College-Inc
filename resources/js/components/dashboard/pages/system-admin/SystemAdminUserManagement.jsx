@@ -271,7 +271,7 @@ export default function SystemAdminUserManagement({ user, onLogout, onNavigate, 
                         <div className="relative">
                             <input type={showPassword ? 'text' : 'password'} value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} autoComplete="new-password" className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 pr-10 focus:outline-none focus:ring-1 focus:ring-emerald-500" placeholder={isEdit ? 'New password...' : 'Password'} />
                             <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer">
-                                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                {showPassword ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                             </button>
                         </div>
                     </div>
@@ -280,7 +280,7 @@ export default function SystemAdminUserManagement({ user, onLogout, onNavigate, 
                         <div className="relative">
                             <input type={showPassword ? 'text' : 'password'} value={formData.password_confirmation} onChange={(e) => setFormData({ ...formData, password_confirmation: e.target.value })} autoComplete="new-password" className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 pr-10 focus:outline-none focus:ring-1 focus:ring-emerald-500" placeholder="Repeat password" />
                             <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer">
-                                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                {showPassword ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                             </button>
                         </div>
                     </div>

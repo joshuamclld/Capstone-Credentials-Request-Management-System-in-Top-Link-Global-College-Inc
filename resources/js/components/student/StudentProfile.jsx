@@ -269,7 +269,7 @@ export default function StudentProfile({ student, onLogout, onNavigate, currentP
                     <div className="relative">
                       <input name="current_password" type={showCurrent ? 'text' : 'password'} value={passwordForm.current_password} onChange={handlePasswordChange} className={inputClass + ' pr-10' + (errors.current_password ? ' ' + inputErrorClass : '')} autoComplete="off" />
                       <button type="button" onClick={() => setShowCurrent(!showCurrent)} className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface cursor-pointer">
-                        {showCurrent ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        {showCurrent ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                       </button>
                     </div>
                     {errors.current_password && <p className="text-body-xs text-error mt-1">{errors.current_password[0]}</p>}
@@ -279,7 +279,7 @@ export default function StudentProfile({ student, onLogout, onNavigate, currentP
                     <div className="relative">
                       <input name="new_password" type={showNew ? 'text' : 'password'} value={passwordForm.new_password} onChange={handlePasswordChange} className={inputClass + ' pr-10' + (errors.new_password ? ' ' + inputErrorClass : '')} placeholder="Min. 8 characters" autoComplete="new-password" />
                       <button type="button" onClick={() => setShowNew(!showNew)} className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface cursor-pointer">
-                        {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        {showNew ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                       </button>
                     </div>
                     {errors.new_password && <p className="text-body-xs text-error mt-1">{errors.new_password[0]}</p>}
@@ -289,7 +289,7 @@ export default function StudentProfile({ student, onLogout, onNavigate, currentP
                     <div className="relative">
                       <input name="new_password_confirmation" type={showConfirm ? 'text' : 'password'} value={passwordForm.new_password_confirmation} onChange={handlePasswordChange} className={inputClass + ' pr-10' + (errors.new_password_confirmation ? ' ' + inputErrorClass : '')} placeholder="Repeat your password" autoComplete="off" />
                       <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface cursor-pointer">
-                        {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        {showConfirm ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                       </button>
                     </div>
                     {errors.new_password_confirmation && <p className="text-body-xs text-error mt-1">{errors.new_password_confirmation[0]}</p>}

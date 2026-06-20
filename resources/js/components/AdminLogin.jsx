@@ -140,7 +140,7 @@ export default function AdminLogin({ onLoginSuccess }) {
                                     onClick={() => setShowPassword(!showPassword)}
                                     disabled={status === 'loading' || status === 'success'}
                                 >
-                                    {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
+                                    {showPassword ? <Eye className="size-5" /> : <EyeOff className="size-5" />}
                                 </button>
                             </div>
                         </div>

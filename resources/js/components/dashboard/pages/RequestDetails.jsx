@@ -12,6 +12,13 @@ const statusOptions = [
     { label: 'Claimed', value: 'Claimed' },
 ];
 
+const transitions = {
+    'Pending': ['Processing'],
+    'Processing': ['Pending', 'Ready for Release'],
+    'Ready for Release': ['Processing', 'Claimed'],
+    'Claimed': ['Ready for Release'],
+};
+
 const paymentLockedStatuses = ['Processing', 'Ready for Release', 'Claimed'];
 
 export default function RequestDetails({ user, onLogout, onNavigate }) {
@@ -389,7 +396,7 @@ export default function RequestDetails({ user, onLogout, onNavigate }) {
                                     <div>
                                         <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Request Status</label>
                                         <DashboardDropdown
-                                            options={statusOptions}
+                                            options={statusOptions.filter(o => o.value === status || (transitions[status] || []).includes(o.value))}
                                             value={status}
                                             onChange={setStatus}
                                             placeholder="Select status"

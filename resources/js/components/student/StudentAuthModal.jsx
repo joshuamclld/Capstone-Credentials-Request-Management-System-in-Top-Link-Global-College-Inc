@@ -52,33 +52,31 @@ function LoginForm({ onSuccess, onClose, onForgotPassword }) {
             className="w-full px-4 py-2 sm:py-3 pr-12 bg-surface-container-lowest border border-outline-variant rounded-lg focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-body-md"
             placeholder="Enter your password" />
           <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant cursor-pointer">
-            {showPassword ? <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" /> : <Eye className="w-4 h-4 sm:w-5 sm:h-5" />}
+            {showPassword ? <Eye className="w-4 h-4 sm:w-5 sm:h-5" /> : <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" />}
           </button>
         </div>
       </div>
-      <div className="flex justify-end -mt-2 sm:-mt-1">
-        <button type="button" onClick={onForgotPassword} className="text-label-sm text-primary/70 hover:text-primary font-medium hover:underline cursor-pointer transition-colors">
-          Forgot Password?
-        </button>
-      </div>
       <button type="submit" disabled={loading} className="w-full py-2.5 sm:py-4 rounded-lg bg-primary text-on-primary font-bold hover:opacity-90 shadow-lg transition-all cursor-pointer disabled:opacity-50">
         {loading ? 'Signing in...' : 'Sign In'}
+      </button>
+      <button type="button" onClick={onForgotPassword} className="w-full py-2.5 sm:py-4 rounded-lg border border-outline-variant text-on-surface font-bold hover:bg-surface-container-high transition-all cursor-pointer">
+        Forgot Password?
       </button>
     </form>
   );
 }
 
 function ForgotPasswordForm({ onBackToLogin, onLoginSuccess }) {
-  const [step, setStep] = useState('login');
   const [login, setLogin] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [studentId, setStudentId] = useState(null);
-  const [studentName, setStudentName] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [studentId, setStudentId] = useState(null);
+  const [studentName, setStudentName] = useState('');
+  const [step, setStep] = useState('lookup');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const getCsrf = () => document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
@@ -148,7 +146,7 @@ function ForgotPasswordForm({ onBackToLogin, onLoginSuccess }) {
               className="w-full px-4 py-2 sm:py-3 pr-12 bg-surface-container-lowest border border-outline-variant rounded-lg focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-body-md"
               placeholder="Enter new password" autoFocus />
             <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant cursor-pointer">
-              {showPassword ? <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" /> : <Eye className="w-4 h-4 sm:w-5 sm:h-5" />}
+{showPassword ? <Eye className="w-4 h-4 sm:w-5 sm:h-5" /> : <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" />}
             </button>
           </div>
         </div>
@@ -159,7 +157,7 @@ function ForgotPasswordForm({ onBackToLogin, onLoginSuccess }) {
               className="w-full px-4 py-2 sm:py-3 pr-12 bg-surface-container-lowest border border-outline-variant rounded-lg focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-body-md"
               placeholder="Confirm new password" />
             <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant cursor-pointer">
-              {showConfirm ? <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" /> : <Eye className="w-4 h-4 sm:w-5 sm:h-5" />}
+              {showConfirm ? <Eye className="w-4 h-4 sm:w-5 sm:h-5" /> : <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" />}
             </button>
           </div>
         </div>
