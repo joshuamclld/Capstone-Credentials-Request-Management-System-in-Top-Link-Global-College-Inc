@@ -43,8 +43,11 @@ export default function StudentLanding({ student, onLogout, onNavigate, currentP
           </div>
         </section>
 
-        <section className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-12 md:py-24 bg-surface-container-low rounded-3xl mx-4 md:mx-auto">
-          <div className="text-center mb-8 md:mb-16">
+        <section className="relative bg-cover bg-center bg-fixed max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-12 md:py-24 rounded-3xl mx-4 md:mx-auto overflow-hidden"
+          style={{ backgroundImage: "url('/images/bg_landingpage.jpeg')" }}>
+          <div className="absolute inset-0 bg-surface-container-low/95"></div>
+          <div className="relative z-10">
+            <div className="text-center mb-8 md:mb-16">
             <h2 className="font-headline-md text-xl sm:text-2xl md:text-3xl text-on-background mb-3 sm:mb-4">How It Works</h2>
             <p className="text-body-sm sm:text-body-md text-on-surface-variant max-w-xl mx-auto">From submission to release — the full request lifecycle.</p>
           </div>
@@ -73,6 +76,7 @@ export default function StudentLanding({ student, onLogout, onNavigate, currentP
               <h3 className="font-headline-sm text-lg sm:text-xl text-on-background mb-2 sm:mb-4">3. Track & Release</h3>
               <p className="text-body-sm sm:text-body-md text-on-surface-variant leading-relaxed">Monitor your request status — Pending → Processing → Ready for Release → Claimed.</p>
             </div>
+          </div>
           </div>
         </section>
 

@@ -306,14 +306,6 @@ class StudentRequestController extends Controller
         Notification::notifyRole('registrar', 'request_cancelled', 'Request Cancelled', "{$trackingNumberDisplay} was cancelled by the student.", (string) $request->id, "/admin/requests/{$request->id}");
         Notification::notifyRole('cashier', 'request_cancelled', 'Request Cancelled', "{$trackingNumberDisplay} was cancelled.", (string) $request->id, "/cashier/payments/{$request->id}");
 
-        StudentNotification::create([
-            'student_id' => $student->id,
-            'type' => 'request_cancelled',
-            'title' => 'Request Cancelled',
-            'message' => "Your request {$trackingNumberDisplay} has been cancelled.",
-            'action_url' => "/student/requests/{$request->tracking_number}",
-        ]);
-
         return response()->json([
             'success' => true,
             'message' => 'Request cancelled successfully.',

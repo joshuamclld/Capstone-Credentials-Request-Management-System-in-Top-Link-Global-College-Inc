@@ -6,39 +6,44 @@ use Illuminate\Database\Eloquent\Model;
 
 trait NotifiableControllerTrait
 {
-    protected function getNotifications(Model $model, string $userKey, int $limit = 10): array
+    private function getUserId(): ?int
+    {
+        return auth('student')->id() ?? auth()->id();
+    }
+
+    protected function _getNotifications(Model $model, string $userKey, int $limit = 10): array
     {
         return [
-            $model->where($userKey, auth()->id())
+            $model->where($userKey, $this->getUserId())
                 ->latest()
                 ->take($limit)
                 ->get(),
-            $model->where($userKey, auth()->id())
+            $model->where($userKey, $this->getUserId())
                 ->where('is_read', false)
                 ->count(),
         ];
     }
 
-    protected function markAsRead(Model $model, string $userKey, int $id): bool
+    protected function _markAsRead(Model $model, string $userKey, int $id): bool
     {
-        return $model->where($userKey, auth()->id())
+        return $model->where($userKey, $this->getUserId())
             ->where('id', $id)
             ->firstOrFail()
             ->update(['is_read' => true]);
     }
 
-    protected function markAllAsRead(Model $model, string $userKey): int
+    protected function _markAllAsRead(Model $model, string $userKey): int
     {
-        return $model->where($userKey, auth()->id())
+        return $model->where($userKey, $this->getUserId())
             ->where('is_read', false)
             ->update(['is_read' => true]);
     }
 
-    protected function getAllNotifications(Model $model, string $userKey, int $perPage = 20): array
+    protected function _getAllNotifications(Model $model, string $userKey, int $perPage = 20): array
     {
         $perPage = min((int) request('per_page', $perPage), 100);
 
-        $notifications = $model->where($userKey, auth()->id())
+        $notifications = $model->where($userKey, $this->getUserId())
             ->latest()
             ->paginate($perPage);
 

@@ -9,7 +9,9 @@ const benefits = [
 
 export default function StudentHeroSection({ onNavigate, onOpenAuth, student }) {
   return (
-    <section className="relative overflow-hidden bg-surface-container-low max-md:py-6 md:py-28">
+    <section className="relative overflow-hidden bg-cover bg-center bg-fixed max-md:py-6 md:py-28"
+      style={{ backgroundImage: "url('/images/bg_landingpage.jpeg')" }}>
+      <div className="absolute inset-0 bg-white/70"></div>
       <div className="relative z-10 max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop flex flex-col lg:flex-row items-center gap-8 md:gap-16">
         {/* Left */}
         <div className="flex-1 text-center lg:text-left">
@@ -30,7 +32,7 @@ export default function StudentHeroSection({ onNavigate, onOpenAuth, student }) 
             {student ? (
               <button
                 onClick={(e) => { e.preventDefault(); onNavigate('/request'); }}
-                className="bg-primary text-on-primary font-label-md text-label-md px-6 sm:px-10 py-3 sm:py-5 rounded-xl flex items-center justify-center gap-2 sm:gap-3 hover:opacity-90 hover:scale-[1.02] transition-all shadow-lg shadow-primary/20 cursor-pointer"
+                className="bg-primary text-on-primary font-label-md text-label-md px-6 sm:px-10 py-3 sm:py-5 rounded-xl flex items-center justify-center gap-2 sm:gap-3 hover:brightness-110 hover:scale-[1.02] transition-all shadow-lg shadow-primary/20 cursor-pointer"
               >
                 Request Documents
                 <span className="material-symbols-outlined text-lg sm:text-2xl">edit_document</span>
@@ -38,7 +40,7 @@ export default function StudentHeroSection({ onNavigate, onOpenAuth, student }) 
             ) : (
               <button
                 onClick={(e) => { e.preventDefault(); onOpenAuth('login'); }}
-                className="border-2 border-primary/20 text-primary font-label-md text-label-md px-6 sm:px-10 py-3 sm:py-5 rounded-xl flex items-center justify-center gap-2 sm:gap-3 hover:bg-primary/5 transition-all cursor-pointer"
+                className="bg-primary text-on-primary font-label-md text-label-md px-6 sm:px-10 py-3 sm:py-5 rounded-xl flex items-center justify-center gap-2 sm:gap-3 hover:brightness-110 hover:scale-[1.02] transition-all shadow-lg shadow-primary/20 cursor-pointer"
               >
                 Sign In
                 <span className="material-symbols-outlined text-lg sm:text-2xl">login</span>
@@ -46,7 +48,7 @@ export default function StudentHeroSection({ onNavigate, onOpenAuth, student }) 
             )}
             <button
               onClick={(e) => { e.preventDefault(); onNavigate('/track'); }}
-              className="border-2 border-outline-variant text-on-surface-variant font-label-md text-label-md px-6 sm:px-10 py-3 sm:py-5 rounded-xl flex items-center justify-center gap-2 sm:gap-3 hover:bg-surface-container-high transition-all cursor-pointer"
+              className="bg-primary-container text-on-primary-container font-label-md text-label-md px-6 sm:px-10 py-3 sm:py-5 rounded-xl flex items-center justify-center gap-2 sm:gap-3 hover:brightness-110 hover:scale-[1.02] transition-all shadow-lg shadow-primary-container/20 cursor-pointer"
             >
               Track Request
               <span className="material-symbols-outlined text-lg sm:text-2xl">search</span>

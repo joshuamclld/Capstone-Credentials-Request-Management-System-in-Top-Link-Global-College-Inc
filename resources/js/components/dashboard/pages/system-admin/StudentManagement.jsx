@@ -9,6 +9,7 @@ import StatusBadge from '../../StatusBadge';
 import EmptyState from '../../EmptyState';
 import { systemAdminSidebarItems } from '../../config/sidebarItems';
 import Papa from 'papaparse';
+import * as XLSX from 'xlsx';
 
 const tableHeaders = ['Student Number', 'Name', 'Email', 'Status', 'Date Created', 'Action'];
 
@@ -144,30 +145,70 @@ export default function StudentManagement({ user, onLogout, onNavigate }) {
     setImportResult(null);
     setImportError('');
 
-    Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: (results) => {
-        const required = ['student_number', 'first_name', 'last_name', 'email'];
-        const headers = Object.keys(results.data[0] || {});
-        const missing = required.filter(h => !headers.includes(h));
+    const ext = file.name.split('.').pop().toLowerCase();
 
-        if (missing.length > 0) {
-          setImportError(`CSV missing required columns: ${missing.join(', ')}`);
+    if (ext === 'csv') {
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: (results) => {
+          const required = ['student_number', 'first_name', 'last_name', 'email'];
+          const headers = Object.keys(results.data[0] || {});
+          const missing = required.filter(h => !headers.includes(h));
+
+          if (missing.length > 0) {
+            setImportError(`CSV missing required columns: ${missing.join(', ')}`);
+            setCsvData(null);
+            setCsvPreview(null);
+            return;
+          }
+
+          setCsvData(results.data);
+          setCsvPreview(results.data.slice(0, 5));
+        },
+        error: () => {
+          setImportError('Failed to parse CSV file.');
           setCsvData(null);
           setCsvPreview(null);
-          return;
-        }
+        },
+      });
+    } else if (ext === 'xlsx' || ext === 'xls') {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const data = new Uint8Array(ev.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const sheet = workbook.Sheets[workbook.SheetNames[0]];
+          const json = XLSX.utils.sheet_to_json(sheet);
 
-        setCsvData(results.data);
-        setCsvPreview(results.data.slice(0, 5));
-      },
-      error: () => {
-        setImportError('Failed to parse CSV file.');
-        setCsvData(null);
-        setCsvPreview(null);
-      },
-    });
+          if (json.length === 0) {
+            setImportError('Excel file is empty.');
+            setCsvData(null);
+            setCsvPreview(null);
+            return;
+          }
+
+          const required = ['student_number', 'first_name', 'last_name', 'email'];
+          const headers = Object.keys(json[0] || {});
+          const missing = required.filter(h => !headers.includes(h));
+
+          if (missing.length > 0) {
+            setImportError(`Excel missing required columns: ${missing.join(', ')}`);
+            setCsvData(null);
+            setCsvPreview(null);
+            return;
+          }
+
+          setCsvData(json);
+          setCsvPreview(json.slice(0, 5));
+        } catch {
+          setImportError('Failed to parse Excel file.');
+          setCsvData(null);
+          setCsvPreview(null);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
   };
 
   const handleImport = async () => {
@@ -249,7 +290,7 @@ export default function StudentManagement({ user, onLogout, onNavigate }) {
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <button onClick={openImportModal}
-            className="px-4 py-2 rounded-lg border border-outline-variant text-on-surface font-bold hover:bg-surface-container-high transition-colors cursor-pointer flex items-center gap-2 text-sm whitespace-nowrap">
+            className="px-4 py-2 rounded-lg bg-primary-container text-on-primary-container font-bold hover:opacity-90 transition-opacity cursor-pointer flex items-center gap-2 text-sm whitespace-nowrap">
             <Upload className="w-4 h-4" /> Import CSV
           </button>
           <button onClick={openAddModal}
@@ -526,21 +567,21 @@ export default function StudentManagement({ user, onLogout, onNavigate }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4" onClick={() => !importing && setShowImportModal(false)}>
           <div className="bg-surface rounded-2xl shadow-xl border border-outline-variant w-full max-w-lg max-h-[90vh] overflow-y-auto p-6" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-headline-sm font-bold text-on-surface">Import Students from CSV</h3>
+              <h3 className="text-headline-sm font-bold text-on-surface">Import Students from CSV or Excel</h3>
               <button onClick={() => setShowImportModal(false)} disabled={importing} className="w-8 h-8 flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors cursor-pointer rounded-full">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <p className="text-body-sm text-on-surface-variant mb-4">Upload a CSV file with columns: <strong>student_number</strong>, <strong>first_name</strong>, <strong>last_name</strong>, <strong>email</strong>.</p>
+            <p className="text-body-sm text-on-surface-variant mb-4">Upload a CSV or Excel file with columns: <strong>student_number</strong>, <strong>first_name</strong>, <strong>last_name</strong>, <strong>email</strong>.</p>
 
             {!importResult && (
               <>
                 <div className="border-2 border-dashed border-outline-variant rounded-lg p-8 text-center hover:border-primary transition-colors cursor-pointer" onClick={() => fileInputRef.current?.click()}>
                   <FileSpreadsheet className="w-10 h-10 text-on-surface-variant/50 mx-auto mb-2" />
-                  <p className="text-body-md text-on-surface-variant mb-1">Click to select a CSV file</p>
+                  <p className="text-body-md text-on-surface-variant mb-1">Click to select a CSV or Excel file</p>
                   <p className="text-body-sm text-on-surface-variant/60">or drag and drop</p>
-                  <input ref={fileInputRef} type="file" accept=".csv" onChange={handleFileSelect} className="hidden" />
+                  <input ref={fileInputRef} type="file" accept=".csv,.xlsx,.xls" onChange={handleFileSelect} className="hidden" />
                 </div>
 
                 <div className="mt-4 flex items-center justify-between">

@@ -13,7 +13,7 @@ class NotificationController extends Controller
 
     public function index(): JsonResponse
     {
-        [$notifications, $unreadCount] = $this->getNotifications(new Notification, 'user_id');
+        [$notifications, $unreadCount] = $this->_getNotifications(new Notification, 'user_id');
 
         return response()->json([
             'success' => true,
@@ -24,19 +24,19 @@ class NotificationController extends Controller
 
     public function markAsRead(int $id): JsonResponse
     {
-        $this->markAsRead(new Notification, 'user_id', $id);
+        $this->_markAsRead(new Notification, 'user_id', $id);
         return response()->json(['success' => true, 'message' => 'Notification marked as read.']);
     }
 
     public function markAllAsRead(): JsonResponse
     {
-        $this->markAllAsRead(new Notification, 'user_id');
+        $this->_markAllAsRead(new Notification, 'user_id');
         return response()->json(['success' => true, 'message' => 'All notifications marked as read.']);
     }
 
     public function getAll(): JsonResponse
     {
-        $data = $this->getAllNotifications(new Notification, 'user_id');
+        $data = $this->_getAllNotifications(new Notification, 'user_id');
 
         return response()->json([
             'success' => true,
