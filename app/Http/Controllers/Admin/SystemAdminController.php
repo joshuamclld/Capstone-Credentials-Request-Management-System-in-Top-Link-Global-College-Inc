@@ -13,6 +13,7 @@ use App\Models\Document;
 use App\Models\Student;
 use App\Models\StudentRequest;
 use App\Models\User;
+use App\Models\Course;
 use App\Mail\StudentWelcomeMail;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
@@ -438,12 +439,19 @@ class SystemAdminController extends Controller
         $totalRevenue = $requests->where('payment_status', 'paid')->sum('total_fee');
         $totalPaid = $requests->where('payment_status', 'paid')->count();
 
+        $logoPath = public_path('images/logo.png');
+        $logoSrc = '';
+        if (file_exists($logoPath)) {
+            $logoSrc = 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath));
+        }
+
         $pdf = Pdf::loadView('reports.pdf', [
             'requests' => $requests,
             'totalRequests' => $requests->count(),
             'totalPaid' => $totalPaid,
             'totalRevenue' => $totalRevenue,
             'generatedAt' => now()->format('F d, Y h:i A'),
+            'logoSrc' => $logoSrc,
         ])->setPaper('a4', 'landscape');
 
         return $pdf->download('crms-report-' . now()->format('Y-m-d') . '.pdf');
@@ -631,5 +639,37 @@ class SystemAdminController extends Controller
                 'errors' => $errors,
             ],
         ]);
+    }
+
+    public function getCourses(): JsonResponse
+    {
+        $courses = Course::orderBy('name')->get();
+        return response()->json(['success' => true, 'courses' => $courses]);
+    }
+
+    public function storeCourse(Request $request): JsonResponse
+    {
+        $data = $request->validate(['name' => 'required|string|max:255']);
+        $course = Course::create($data);
+        return response()->json(['success' => true, 'course' => $course], 201);
+    }
+
+    public function updateCourse(Request $request, Course $course): JsonResponse
+    {
+        $data = $request->validate(['name' => 'required|string|max:255']);
+        $course->update($data);
+        return response()->json(['success' => true, 'course' => $course]);
+    }
+
+    public function deleteCourse(Course $course): JsonResponse
+    {
+        $course->delete();
+        return response()->json(['success' => true]);
+    }
+
+    public function toggleCourseStatus(Course $course): JsonResponse
+    {
+        $course->update(['is_active' => !$course->is_active]);
+        return response()->json(['success' => true, 'course' => $course]);
     }
 }

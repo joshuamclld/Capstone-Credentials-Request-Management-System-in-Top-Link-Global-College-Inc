@@ -16,6 +16,9 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
   const [cancelModalError, setCancelModalError] = useState('');
   const [proofUploading, setProofUploading] = useState(false);
   const [proofError, setProofError] = useState('');
+  const [pendingFile, setPendingFile] = useState(null);
+  const [pendingPreviewUrl, setPendingPreviewUrl] = useState(null);
+  const [showConfirmUpload, setShowConfirmUpload] = useState(false);
   const [proofModalUrl, setProofModalUrl] = useState(null);
   const [paymentQrUrl, setPaymentQrUrl] = useState(null);
 
@@ -64,10 +67,29 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
   const handleUploadProof = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      setProofError('File too large. Maximum size is 10MB.');
+      return;
+    }
+    setPendingFile(file);
+    setPendingPreviewUrl(URL.createObjectURL(file));
+    setShowConfirmUpload(true);
+  };
+
+  const closeConfirmUpload = () => {
+    setShowConfirmUpload(false);
+    setPendingFile(null);
+    if (pendingPreviewUrl) URL.revokeObjectURL(pendingPreviewUrl);
+    setPendingPreviewUrl(null);
+  };
+
+  const confirmUpload = async () => {
+    if (!pendingFile) return;
+    setShowConfirmUpload(false);
     setProofUploading(true);
     setProofError('');
     const formData = new FormData();
-    formData.append('proof', file);
+    formData.append('proof', pendingFile);
     try {
       const res = await fetch(`/student/api/requests/${encodeURIComponent(trackingNumber)}/upload-proof`, {
         method: 'POST',
@@ -80,10 +102,13 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
       } else {
         setRequest(prev => prev ? { ...prev, payment_proof: data.proof_url } : prev);
       }
-    } catch {
-      setProofError('Network error.');
+    } catch (err) {
+      setProofError('Upload failed. Please check the file size (max 10MB) and try again.');
     }
     setProofUploading(false);
+    setPendingFile(null);
+    if (pendingPreviewUrl) URL.revokeObjectURL(pendingPreviewUrl);
+    setPendingPreviewUrl(null);
   };
 
   const handleCancelClick = () => {
@@ -296,6 +321,7 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
                           disabled={proofUploading}
                           className="w-full text-xs text-slate-600 file:mr-3 file:py-3 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-amber-100 file:text-amber-800 hover:file:bg-amber-200 cursor-pointer"
                         />
+                        <p className="text-[10px] text-slate-400 mt-1">Max file size: 10MB</p>
                         {proofUploading && <p className="text-xs text-amber-700 mt-1">Uploading...</p>}
                         {proofError && <p className="text-xs text-red-600 mt-1">{proofError}</p>}
                       </div>
@@ -393,6 +419,36 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
                 className="px-5 py-2.5 rounded-lg font-label-md text-label-md font-bold text-on-primary bg-red-600 hover:bg-red-700 transition-colors cursor-pointer disabled:opacity-50"
               >
                 {cancelling ? 'Cancelling...' : 'Confirm Cancellation'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showConfirmUpload && pendingFile && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4" onClick={closeConfirmUpload}>
+          <div className="bg-surface rounded-2xl shadow-xl border border-outline-variant w-full max-w-md p-4 sm:p-6" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-headline-sm font-bold text-on-surface mb-2">Upload Payment Proof</h3>
+            {pendingPreviewUrl && (
+              <div className="mb-3 rounded-xl overflow-hidden border border-outline-variant bg-surface-container-low">
+                <img src={pendingPreviewUrl} alt="Preview" className="w-full max-h-48 object-contain" />
+              </div>
+            )}
+            <p className="text-body-sm sm:text-body-md text-on-surface-variant mb-4">
+              Are you sure you want to upload <strong className="text-on-surface">{pendingFile.name}</strong> ({(pendingFile.size / 1024 / 1024).toFixed(1)}MB) as your payment proof?
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={closeConfirmUpload}
+                className="px-5 py-2.5 rounded-lg font-label-md text-label-md font-bold text-on-surface-variant bg-surface-container-high hover:bg-surface-container-higher transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmUpload}
+                className="px-5 py-2.5 rounded-lg font-label-md text-label-md font-bold text-on-primary bg-primary hover:brightness-110 transition-all cursor-pointer"
+              >
+                Upload
               </button>
             </div>
           </div>

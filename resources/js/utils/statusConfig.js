@@ -1,7 +1,7 @@
 export const REQUEST_STATUS_CONFIG = {
   Pending: { label: 'Pending', className: 'bg-amber-100 text-amber-800 border-amber-200' },
   Processing: { label: 'Processing', className: 'bg-blue-100 text-blue-800 border-blue-200' },
-  'Ready for Release': { label: 'Ready for Release', className: 'bg-purple-100 text-purple-800 border-purple-200' },
+  'Release': { label: 'Release', className: 'bg-purple-100 text-purple-800 border-purple-200' },
   Claimed: { label: 'Claimed', className: 'bg-slate-200 text-slate-700 border-slate-300' },
   Cancelled: { label: 'Cancelled', className: 'bg-red-100 text-red-800 border-red-200' },
 };
@@ -52,8 +52,8 @@ export function buildTimeline(status, payment_status) {
   const checks = [
     () => true,
     () => payment_status === 'paid',
-    () => ['Processing', 'Ready for Release', 'Claimed'].includes(status),
-    () => ['Ready for Release', 'Claimed'].includes(status),
+    () => ['Processing', 'Release', 'Claimed'].includes(status),
+    () => ['Release', 'Claimed'].includes(status),
     () => status === 'Claimed',
   ];
 
@@ -61,7 +61,7 @@ export function buildTimeline(status, payment_status) {
     { step: 'Request Submitted', desc: 'Your application was successfully received by the Registrar\'s Office.', key: 'submitted' },
     { step: 'Payment Verified', desc: 'Your processing fee has been confirmed.', key: 'payment' },
     { step: 'Currently Processing', desc: 'The Registrar is now preparing and verifying your academic records.', key: 'processing' },
-    { step: 'Ready for Release', desc: 'Your document is prepared and certified, ready for release.', key: 'ready' },
+    { step: 'Release', desc: 'Your document is prepared, certified, and ready for release.', key: 'ready' },
     { step: 'Claimed', desc: 'Document released to student.', key: 'claimed' },
   ];
 

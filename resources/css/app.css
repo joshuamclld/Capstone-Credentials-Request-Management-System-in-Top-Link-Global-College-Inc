@@ -123,6 +123,18 @@
     font-weight: 500;
 }
 
+@media (min-width: 1024px) {
+.text-headline-lg { font-size: 35px; line-height: 44px; }
+.text-headline-lg-mobile { font-size: 29px; line-height: 36px; }
+.text-headline-md { font-size: 27px; line-height: 36px; }
+.text-headline-sm { font-size: 23px; line-height: 32px; }
+.text-body-lg { font-size: 21px; line-height: 32px; }
+.text-body-md { font-size: 19px; line-height: 28px; }
+.text-body-sm { font-size: 17px; line-height: 24px; }
+.text-label-md { font-size: 15px; line-height: 20px; }
+.text-label-sm { font-size: 14px; line-height: 18px; }
+}
+
 .font-headline-lg, .font-headline-lg-mobile, .font-headline-md, .font-headline-sm {
     font-family: 'Hanken Grotesk', sans-serif;
 }

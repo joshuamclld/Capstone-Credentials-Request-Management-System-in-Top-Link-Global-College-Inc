@@ -1,18 +1,18 @@
 <?php
 
 return [
-    'statuses' => ['Pending', 'Processing', 'Ready for Release', 'Claimed'],
+    'statuses' => ['Pending', 'Processing', 'Release', 'Claimed'],
 
     'transitions' => [
         'Pending' => 'Processing',
-        'Processing' => 'Ready for Release',
-        'Ready for Release' => 'Claimed',
+        'Processing' => 'Release',
+        'Release' => 'Claimed',
     ],
 
     'reverse_transitions' => [
         'Processing' => 'Pending',
-        'Ready for Release' => 'Processing',
-        'Claimed' => 'Ready for Release',
+        'Release' => 'Processing',
+        'Claimed' => 'Release',
     ],
 
     'per_page' => env('REQUESTS_PER_PAGE', 10),

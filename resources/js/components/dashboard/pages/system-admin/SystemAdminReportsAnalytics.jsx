@@ -14,7 +14,7 @@ const statDefs = [
     { label: 'Avg Fee This Month', key: 'average_fee', icon: TrendingUp, iconBg: 'bg-purple-50', iconColor: 'text-purple-700' },
 ];
 
-const STATUS_COLORS = { Pending: '#cea700', Processing: '#326574', 'Ready for Release': '#154212', Claimed: '#2d5a27' };
+const STATUS_COLORS = { Pending: '#cea700', Processing: '#326574', 'Release': '#154212', Claimed: '#2d5a27' };
 const TYPE_COLORS = ['#154212', '#065f46', '#2d5a27', '#cea700', '#735c00', '#326574'];
 
 const shortMonth = (v) => {

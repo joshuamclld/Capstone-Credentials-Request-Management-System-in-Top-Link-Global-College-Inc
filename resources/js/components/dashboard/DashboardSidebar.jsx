@@ -24,7 +24,7 @@ export default function DashboardSidebar({ items, currentUser, sidebarOpen, onCl
                         }}
                     />
                     <div>
-                        <h1 className="text-sm font-bold text-on-primary leading-tight">Top Link Global College</h1>
+                        <h1 className="text-sm font-bold text-on-primary leading-tight">Top Link Global College, Inc.</h1>
                         <p className="text-[10px] text-on-primary/70 uppercase tracking-wider font-medium">Credentials Management</p>
                     </div>
                 </div>
@@ -42,7 +42,7 @@ export default function DashboardSidebar({ items, currentUser, sidebarOpen, onCl
                                 onNavigate(item.path);
                             }
                         }}
-                        className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive(item)
+                        className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm lg:text-[17px] font-medium transition-colors ${isActive(item)
                             ? 'bg-white/10 text-white font-semibold'
                             : 'text-on-primary/70 hover:bg-primary/20 hover:text-on-primary'
                             }`}

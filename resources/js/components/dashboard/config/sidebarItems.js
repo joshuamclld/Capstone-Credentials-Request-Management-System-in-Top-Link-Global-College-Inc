@@ -1,4 +1,4 @@
-import { LayoutDashboard, FileText, Clock, CheckCircle, Search, Users, ChartColumn, RefreshCw, GraduationCap } from 'lucide-react';
+import { LayoutDashboard, FileText, Clock, CheckCircle, Search, Users, ChartColumn, RefreshCw, GraduationCap, BookOpen } from 'lucide-react';
 
 export const registrarSidebarItems = [
     { label: 'Dashboard', icon: LayoutDashboard, path: '/admin-dashboard' },
@@ -20,6 +20,7 @@ export const systemAdminSidebarItems = [
     { label: 'User Management', icon: Users, path: '/system-admin/users', superAdminOnly: true },
     { label: 'Student Management', icon: GraduationCap, path: '/system-admin/students' },
     { label: 'Credential Types', icon: FileText, path: '/system-admin/credentials' },
+    { label: 'Course Management', icon: BookOpen, path: '/system-admin/courses' },
     { label: 'Reports & Analytics', icon: ChartColumn, path: '/system-admin/reports' },
     { label: 'Audit Logs', icon: RefreshCw, path: '/system-admin/audit-logs' },
 ];

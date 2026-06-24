@@ -75,7 +75,7 @@ export default function PaymentQueue({ user, onLogout, onNavigate }) {
         <tr key={req.id} className="hover:bg-slate-50 transition-colors">
             <td className="px-6 py-4 font-mono text-xs font-medium text-emerald-700">{req.tracking_number}</td>
             <td className="px-6 py-4 font-medium text-slate-900">{req.student_name}</td>
-            <td className="px-6 py-4 text-slate-700 max-w-[180px] truncate" title={(req.document_names || []).join(', ')}>{(req.document_names || []).join(', ')}</td>
+            <td className="px-6 py-4 text-slate-700" title={(req.document_names || []).join(', ')}>{(req.document_names || []).join(', ')}</td>
             <td className="px-6 py-4 text-xs text-slate-600 capitalize">{req.payment_method || 'N/A'}</td>
             <td className="px-6 py-4 text-sm font-medium text-slate-900">₱{(Number(req.total_fee) || 0).toFixed(2)}</td>
             <td className="px-6 py-4"><StatusBadge status={req.status === 'Cancelled' ? 'cancelled' : req.payment_status} type="payment" /></td>

@@ -54,7 +54,7 @@ export default function StudentNavbar({ student, onLogout, onNavigate, onOpenAut
               }}
             />
             <div className="flex flex-col">
-              <span className="text-headline-xs font-bold text-primary leading-tight">Top Link Global College</span>
+              <span className="text-headline-xs font-bold text-primary leading-tight">Top Link Global College, Inc.</span>
               <span className="max-sm:hidden text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider">Credentials Request Management System</span>
             </div>
           </div>

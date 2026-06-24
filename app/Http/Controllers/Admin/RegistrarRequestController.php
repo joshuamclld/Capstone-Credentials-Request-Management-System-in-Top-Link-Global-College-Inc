@@ -27,7 +27,7 @@ class RegistrarRequestController extends Controller
             COUNT(*) as total,
             SUM(CASE WHEN payment_status IN ('unpaid','pending_verification') THEN 1 ELSE 0 END) as pending_payment,
             SUM(CASE WHEN status = 'Processing' THEN 1 ELSE 0 END) as processing,
-            SUM(CASE WHEN status = 'Ready for Release' THEN 1 ELSE 0 END) as ready_for_release,
+            SUM(CASE WHEN status = 'Release' THEN 1 ELSE 0 END) as ready_for_release,
             SUM(CASE WHEN status = 'Claimed' THEN 1 ELSE 0 END) as claimed
         ")->first();
 
@@ -194,7 +194,7 @@ class RegistrarRequestController extends Controller
                 ], 422);
             }
 
-            if ($isForward && in_array($newStatus, ['Processing', 'Ready for Release', 'Claimed']) && $studentRequest->payment_status !== config('requests.paid_status')) {
+            if ($isForward && in_array($newStatus, ['Processing', 'Release', 'Claimed']) && $studentRequest->payment_status !== config('requests.paid_status')) {
                 return response()->json([
                     'message' => 'Payment must be verified before processing this request.',
                 ], 422);

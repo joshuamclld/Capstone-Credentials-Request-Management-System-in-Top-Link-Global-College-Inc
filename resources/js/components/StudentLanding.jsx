@@ -74,7 +74,7 @@ export default function StudentLanding({ student, onLogout, onNavigate, currentP
               </div>
               <div className="absolute top-6 sm:top-10 right-6 sm:right-10 text-surface-container-high font-bold text-3xl sm:text-5xl opacity-30 group-hover:opacity-100 transition-opacity">03</div>
               <h3 className="font-headline-sm text-lg sm:text-xl text-on-background mb-2 sm:mb-4">3. Track & Release</h3>
-              <p className="text-body-sm sm:text-body-md text-on-surface-variant leading-relaxed">Monitor your request status — Pending → Processing → Ready for Release → Claimed.</p>
+              <p className="text-body-sm sm:text-body-md text-on-surface-variant leading-relaxed">Monitor your request status — Pending → Processing → Release → Claimed.</p>
             </div>
           </div>
           </div>

@@ -6,7 +6,7 @@ import { getRequestStatusConfig } from '../../utils/statusConfig';
 const STATUS_SUMMARY = [
   { label: 'Pending', key: 'Pending', bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-800' },
   { label: 'Processing', key: 'Processing', bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-800' },
-  { label: 'Ready for Release', key: 'Ready for Release', bg: 'bg-purple-50', border: 'border-purple-200', text: 'text-purple-800' },
+  { label: 'Release', key: 'Release', bg: 'bg-purple-50', border: 'border-purple-200', text: 'text-purple-800' },
   { label: 'Claimed', key: 'Claimed', bg: 'bg-slate-50', border: 'border-slate-200', text: 'text-slate-800' },
 ];
 

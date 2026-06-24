@@ -29,7 +29,7 @@ class StoreStudentRequest extends FormRequest
             'studentId' => 'required|string|max:50',
             'contactNo' => 'required|string|max:20',
             'email' => 'required|email|max:255',
-            'course' => 'required|string|max:255',
+            'course' => 'required|string|max:255|exists:courses,name',
             'selectedDocs' => 'required|array|min:1',
             'selectedDocs.*' => 'required|string|exists:documents,code,is_active,1',
             'selectedSemesters' => 'nullable|array',

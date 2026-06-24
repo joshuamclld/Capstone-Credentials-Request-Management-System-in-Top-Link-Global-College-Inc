@@ -21,8 +21,15 @@
     </style>
 </head>
 <body>
-    <h1>TLGC Credentials Request Management System</h1>
-    <div class="subtitle">Reports &amp; Analytics</div>
+    <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 8px;">
+        @if($logoSrc)
+            <img src="{{ $logoSrc }}" alt="Logo" style="width: 40px; height: 40px; object-fit: contain;">
+        @endif
+        <div>
+            <h1>TLGC Credentials Request Management System</h1>
+            <div class="subtitle">Reports &amp; Analytics</div>
+        </div>
+    </div>
     <div class="meta">Generated: {{ $generatedAt }}</div>
 
     <div class="summary">

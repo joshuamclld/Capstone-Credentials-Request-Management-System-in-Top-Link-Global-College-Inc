@@ -28,6 +28,7 @@ import SystemAdminUserDetails from './components/dashboard/pages/system-admin/Sy
 import SystemAdminCredentialTypes from './components/dashboard/pages/system-admin/SystemAdminCredentialTypes';
 import SystemAdminReportsAnalytics from './components/dashboard/pages/system-admin/SystemAdminReportsAnalytics';
 import SystemAdminAuditLogs from './components/dashboard/pages/system-admin/SystemAdminAuditLogs';
+import CourseManagement from './components/dashboard/pages/system-admin/CourseManagement';
 import StudentManagement from './components/dashboard/pages/system-admin/StudentManagement';
 import '../css/app.css';
 
@@ -401,6 +402,10 @@ function App() {
 
   if (currentPath === '/system-admin/credentials') {
     return <SystemAdminCredentialTypes user={user} onLogout={handleLogout} onNavigate={navigate} />;
+  }
+
+  if (currentPath === '/system-admin/courses') {
+    return <CourseManagement user={user} onLogout={handleLogout} onNavigate={navigate} />;
   }
 
   if (currentPath === '/system-admin/reports') {

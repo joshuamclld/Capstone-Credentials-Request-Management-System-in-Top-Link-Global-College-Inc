@@ -334,7 +334,7 @@ class StudentRequestController extends Controller
         }
 
         $request->validate([
-            'proof' => 'required|file|image|max:5120',
+            'proof' => 'required|file|image|max:10240',
         ]);
 
         $path = $request->file('proof')->store('payment-proofs');

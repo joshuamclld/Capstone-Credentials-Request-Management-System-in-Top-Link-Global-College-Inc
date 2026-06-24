@@ -45,6 +45,13 @@ export default function ProcessRequests({ user, onLogout, onNavigate }) {
         fetchData();
     }, []);
 
+    useEffect(() => {
+        if (message) {
+            const timer = setTimeout(() => setMessage(null), 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [message]);
+
     const processable = allRequests.filter(
         (req) => (req.payment_status === 'paid' || req.status === 'Processing') && !['Claimed', 'Cancelled'].includes(req.status)
     );
@@ -68,14 +75,14 @@ export default function ProcessRequests({ user, onLogout, onNavigate }) {
 
     const STATUS_TRANSITIONS = {
         'Pending': { next: 'Processing', label: 'Process Request' },
-        'Processing': { next: 'Ready for Release', label: 'Mark as Ready' },
-        'Ready for Release': { next: 'Claimed', label: 'Mark as Claimed' },
+        'Processing': { next: 'Release', label: 'Mark as Ready' },
+        'Release': { next: 'Claimed', label: 'Mark as Claimed' },
     };
 
     const STATUS_REVERSE = {
         'Processing': { prev: 'Pending', label: 'Revert to Pending' },
-        'Ready for Release': { prev: 'Processing', label: 'Revert to Processing' },
-        'Claimed': { prev: 'Ready for Release', label: 'Revert to Ready' },
+        'Release': { prev: 'Processing', label: 'Revert to Processing' },
+        'Claimed': { prev: 'Release', label: 'Revert to Ready' },
     };
 
     const handleProcess = (id, currentStatus, reverse = false) => {
@@ -116,28 +123,24 @@ export default function ProcessRequests({ user, onLogout, onNavigate }) {
         <tr key={req.id} className="hover:bg-slate-50 transition-colors">
             <td className="px-6 py-4 font-mono text-xs font-medium text-emerald-700">{req.tracking_number}</td>
             <td className="px-6 py-4 font-medium text-slate-900">{req.student_name}</td>
-            <td className="px-6 py-4 text-slate-700 max-w-[200px] truncate" title={(req.document_names || []).join(', ')}>{(req.document_names || []).join(', ')}</td>
+            <td className="px-6 py-4 text-slate-700" title={(req.document_names || []).join(', ')}>{(req.document_names || []).join(', ')}</td>
             <td className="px-6 py-4"><StatusBadge status={req.status} /></td>
             <td className="px-6 py-4 text-slate-500 text-xs">{req.created_at}</td>
             <td className="px-6 py-4 flex items-center gap-2">
-                {STATUS_TRANSITIONS[req.status] && (
-                    <button
-                        onClick={() => handleProcess(req.id, req.status)}
-                        disabled={processingId === req.id}
-                        className="px-3 py-1.5 text-xs font-medium text-white bg-emerald-700 hover:bg-emerald-800 disabled:bg-emerald-400 rounded-lg transition-colors cursor-pointer disabled:cursor-not-allowed"
-                    >
-                        {processingId === req.id ? 'Processing...' : STATUS_TRANSITIONS[req.status]?.label || 'Process'}
-                    </button>
-                )}
-                {STATUS_REVERSE[req.status] && (
-                    <button
-                        onClick={() => handleProcess(req.id, req.status, true)}
-                        disabled={processingId === req.id}
-                        className="px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 rounded-lg transition-colors cursor-pointer disabled:cursor-not-allowed"
-                    >
-                        {STATUS_REVERSE[req.status]?.label}
-                    </button>
-                )}
+                <button
+                    onClick={() => handleProcess(req.id, req.status)}
+                    disabled={processingId === req.id || !STATUS_TRANSITIONS[req.status]}
+                    className="px-3 py-1.5 text-xs font-medium text-white bg-emerald-700 hover:bg-emerald-800 disabled:bg-emerald-400 rounded-lg transition-colors cursor-pointer disabled:cursor-not-allowed"
+                >
+                    {processingId === req.id ? 'Processing...' : STATUS_TRANSITIONS[req.status]?.label || 'Process'}
+                </button>
+                <button
+                    onClick={() => handleProcess(req.id, req.status, true)}
+                    disabled={processingId === req.id || !STATUS_REVERSE[req.status]}
+                    className="px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 rounded-lg transition-colors cursor-pointer disabled:cursor-not-allowed"
+                >
+                    {STATUS_REVERSE[req.status]?.label || 'Revert'}
+                </button>
             </td>
         </tr>
     );
@@ -170,11 +173,15 @@ export default function ProcessRequests({ user, onLogout, onNavigate }) {
         >
             <section className="bg-white rounded-xl border border-slate-200 overflow-hidden">
                 {message && (
-                    <div className={`mx-6 mt-5 px-4 py-3 rounded-lg text-sm font-medium border ${message.type === 'success'
-                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                            : 'bg-red-50 text-red-800 border-red-200'
-                        }`}>
-                        {message.text}
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setMessage(null)}>
+                        <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full mx-4 text-center animate-[scaleIn_0.2s_ease-out]" onClick={e => e.stopPropagation()}>
+                            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-100 flex items-center justify-center">
+                                <svg className="w-8 h-8 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                            </div>
+                            <h3 className="text-lg font-semibold text-slate-900 mb-2">Request Updated</h3>
+                            <p className="text-sm text-slate-600 mb-6">{message.text}</p>
+                            <button onClick={() => setMessage(null)} className="w-full px-4 py-2.5 bg-primary text-on-primary rounded-lg text-sm font-medium hover:brightness-110 transition-all cursor-pointer">Done</button>
+                        </div>
                     </div>
                 )}
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-6 py-5 border-b border-slate-200">
@@ -215,7 +222,7 @@ export default function ProcessRequests({ user, onLogout, onNavigate }) {
                                     ]}
                                     actionLabel={processingId === item.id ? 'Processing...' : STATUS_TRANSITIONS[item.status]?.label || 'Process'}
                                     onAction={() => handleProcess(item.id, item.status)}
-                                    secondaryAction={STATUS_REVERSE[item.status] ? { label: STATUS_REVERSE[item.status].label, onAction: () => handleProcess(item.id, item.status, true) } : null}
+                                    secondaryAction={{ label: STATUS_REVERSE[item.status]?.label || 'Revert', onAction: () => handleProcess(item.id, item.status, true) }}
                                     loading={processingId === item.id}
                                 />
                             ))}

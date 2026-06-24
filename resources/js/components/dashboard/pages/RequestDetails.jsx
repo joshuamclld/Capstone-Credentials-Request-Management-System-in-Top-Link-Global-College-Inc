@@ -8,18 +8,18 @@ import { getRequestStatusConfig, getPaymentStatusConfig } from '../../../utils/s
 const statusOptions = [
     { label: 'Pending', value: 'Pending' },
     { label: 'Processing', value: 'Processing' },
-    { label: 'Ready for Release', value: 'Ready for Release' },
+    { label: 'Release', value: 'Release' },
     { label: 'Claimed', value: 'Claimed' },
 ];
 
 const transitions = {
     'Pending': ['Processing'],
-    'Processing': ['Pending', 'Ready for Release'],
-    'Ready for Release': ['Processing', 'Claimed'],
-    'Claimed': ['Ready for Release'],
+    'Processing': ['Pending', 'Release'],
+    'Release': ['Processing', 'Claimed'],
+    'Claimed': ['Release'],
 };
 
-const paymentLockedStatuses = ['Processing', 'Ready for Release', 'Claimed'];
+const paymentLockedStatuses = ['Processing', 'Release', 'Claimed'];
 
 export default function RequestDetails({ user, onLogout, onNavigate }) {
     const [request, setRequest] = useState(null);
@@ -55,6 +55,13 @@ export default function RequestDetails({ user, onLogout, onNavigate }) {
                 setLoading(false);
             });
     }, [id]);
+
+    useEffect(() => {
+        if (message) {
+            const timer = setTimeout(() => setMessage(null), 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [message]);
 
     const doSave = (newStatus, newRemarks) => {
         if (saving) return;
@@ -196,12 +203,15 @@ export default function RequestDetails({ user, onLogout, onNavigate }) {
                 </div>
 
                 {message && (
-                    <div className={`mb-6 px-4 py-3 rounded-lg text-sm font-medium border ${
-                        message.type === 'success'
-                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                            : 'bg-red-50 text-red-800 border-red-200'
-                    }`}>
-                        {message.text}
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setMessage(null)}>
+                        <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full mx-4 text-center animate-[scaleIn_0.2s_ease-out]" onClick={e => e.stopPropagation()}>
+                            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-100 flex items-center justify-center">
+                                <svg className="w-8 h-8 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                            </div>
+                            <h3 className="text-lg font-semibold text-slate-900 mb-2">Request Updated</h3>
+                            <p className="text-sm text-slate-600 mb-6">{message.text}</p>
+                            <button onClick={() => setMessage(null)} className="w-full px-4 py-2.5 bg-primary text-on-primary rounded-lg text-sm font-medium hover:brightness-110 transition-all cursor-pointer">Done</button>
+                        </div>
                     </div>
                 )}
 

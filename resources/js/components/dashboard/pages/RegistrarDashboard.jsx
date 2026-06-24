@@ -14,7 +14,7 @@ const statDefs = [
     { label: 'Total Requests', key: 'total', icon: FileText, iconBg: 'bg-emerald-50', iconColor: 'text-emerald-700' },
     { label: 'Pending Payment', key: 'pending_payment', icon: Clock, iconBg: 'bg-orange-50', iconColor: 'text-orange-700' },
     { label: 'Processing', key: 'processing', icon: RefreshCw, iconBg: 'bg-blue-50', iconColor: 'text-blue-700' },
-    { label: 'Ready for Release', key: 'ready_for_release', icon: CheckCircle, iconBg: 'bg-purple-50', iconColor: 'text-purple-700' },
+    { label: 'Release', key: 'ready_for_release', icon: CheckCircle, iconBg: 'bg-purple-50', iconColor: 'text-purple-700' },
     { label: 'Claimed', key: 'claimed', icon: Archive, iconBg: 'bg-slate-100', iconColor: 'text-slate-600' },
     { label: 'Claimed This Month', key: 'claimed_this_month', icon: CheckCircle, iconBg: 'bg-emerald-50', iconColor: 'text-emerald-700' },
 ];
@@ -73,7 +73,7 @@ export default function RegistrarDashboard({ user, onLogout, onNavigate }) {
         <tr key={req.id} className="hover:bg-slate-50 transition-colors">
             <td className="px-6 py-4 font-mono text-xs font-medium text-emerald-700">{req.tracking_number}</td>
             <td className="px-6 py-4 font-medium text-slate-900">{req.student_name}</td>
-            <td className="px-6 py-4 text-slate-700 max-w-[200px] truncate" title={(req.document_names || []).join(', ')}>{(req.document_names || []).join(', ')}</td>
+            <td className="px-6 py-4 text-slate-700" title={(req.document_names || []).join(', ')}>{(req.document_names || []).join(', ')}</td>
             <td className="px-6 py-4"><StatusBadge status={req.payment_status} type="payment" /></td>
             <td className="px-6 py-4"><StatusBadge status={req.status} /></td>
             <td className="px-6 py-4 text-slate-500 text-xs">{req.created_at}</td>

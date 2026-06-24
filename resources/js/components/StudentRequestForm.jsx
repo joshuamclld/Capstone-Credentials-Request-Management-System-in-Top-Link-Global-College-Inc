@@ -55,6 +55,7 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
   });
 
   const [documents, setDocuments] = useState([]);
+  const [courseOptions, setCourseOptions] = useState([]);
   const [docsLoading, setDocsLoading] = useState(true);
   const isAuthenticated = Boolean(student);
   const isProfileComplete = !isAuthenticated || (
@@ -84,6 +85,11 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
         setDocsLoading(false);
       })
       .catch(() => setDocsLoading(false));
+
+    fetch('/courses', { headers: { 'Accept': 'application/json' } })
+      .then(res => res.json())
+      .then(data => setCourseOptions((data.courses || []).map(c => c.name)))
+      .catch(() => {});
   }, []);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -505,15 +511,14 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
                           />
                         </div>
                         <div>
-                          <label className="block font-label-md text-label-md text-on-surface-variant mb-2">Course / Program</label>
-                          <input
-                            required
-                            type="text"
+                          <FormSelect
+                            label="Course / Program"
                             name="course"
                             value={personalInfo.course}
                             onChange={handlePersonalChange}
-                            className="w-full rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-3 text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none"
-                            placeholder="e.g. BS in Information Technology"
+                            options={courseOptions}
+                            placeholder="Select Course / Program"
+                            required
                           />
                         </div>
                       </div>

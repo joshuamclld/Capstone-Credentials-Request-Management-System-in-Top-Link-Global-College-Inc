@@ -104,6 +104,13 @@ Route::prefix('admin')->group(function () {
         Route::post('/system/students/import', [SystemAdminController::class, 'importStudents'])->middleware('throttle:3,10');
         Route::patch('/system/students/{id}/toggle-status', [SystemAdminController::class, 'toggleStudentStatus']);
         Route::delete('/system/students/{id}', [SystemAdminController::class, 'deleteStudent']);
+
+        // Course / Program management
+        Route::get('/system/courses', [SystemAdminController::class, 'getCourses']);
+        Route::post('/system/courses', [SystemAdminController::class, 'storeCourse']);
+        Route::put('/system/courses/{course}', [SystemAdminController::class, 'updateCourse']);
+        Route::patch('/system/courses/{course}/toggle-status', [SystemAdminController::class, 'toggleCourseStatus']);
+        Route::delete('/system/courses/{course}', [SystemAdminController::class, 'deleteCourse']);
     });
 
     // API routes — moved out of SPA page path to avoid hard-refresh conflict
@@ -138,6 +145,9 @@ Route::get('/documents', [DocumentController::class, 'index']);
 Route::get('/online-payment-status', [CashierPaymentController::class, 'getOnlinePaymentStatus']);
 Route::get('/payment-qr-image', [CashierPaymentController::class, 'getQrImage'])->middleware('throttle:60,1');
 Route::get('/payment-proof/{tracking_number}', [StudentRequestController::class, 'getPaymentProof'])->middleware('throttle:60,1');
+Route::get('/courses', function () {
+    return response()->json(['courses' => \App\Models\Course::active()->orderBy('name')->get()]);
+});
 
 // Student Authentication Routes
 Route::prefix('student')->group(function () {

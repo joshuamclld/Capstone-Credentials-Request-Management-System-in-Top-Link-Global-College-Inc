@@ -15,8 +15,8 @@ export default function StudentDashboardSidebar({ student, sidebarOpen, onClose,
   };
 
   return (
-    <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-primary border-r border-primary-container flex flex-col transition-transform duration-300 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-      <div className="px-5 py-5 border-b border-primary-container">
+    <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-primary border-r border-primary-container flex flex-col transition-transform duration-300 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <div className="px-6 py-5 border-b border-primary-container">
         <div className="flex items-center gap-3">
           <img
             alt="TLGC Logo"
@@ -27,18 +27,18 @@ export default function StudentDashboardSidebar({ student, sidebarOpen, onClose,
             }}
           />
           <div>
-            <h1 className="text-sm font-bold text-on-primary leading-tight">Top Link Global College</h1>
+            <h1 className="text-sm font-bold text-on-primary leading-tight whitespace-nowrap">Top Link Global College, Inc.</h1>
             <p className="text-[10px] text-on-primary/70 uppercase tracking-wider font-medium">Credentials Request</p>
           </div>
         </div>
       </div>
 
-      <nav className="flex-1 px-3 py-5 space-y-1 overflow-y-auto">
+      <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
         {sidebarItems.map((item) => (
           <button
             key={item.label}
             onClick={() => { onClose(); onNavigate(item.path); }}
-            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all cursor-pointer ${isActive(item)
+            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm lg:text-[17px] font-medium transition-all cursor-pointer ${isActive(item)
               ? 'bg-white/10 text-white font-semibold'
               : 'text-on-primary/70 hover:bg-primary/20 hover:text-on-primary'
               }`}

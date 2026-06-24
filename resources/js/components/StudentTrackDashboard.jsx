@@ -351,7 +351,7 @@ export default function StudentTrackDashboard({ studentUser, onLogout, onNavigat
                   <div className="flex flex-col gap-1">
                     {[FileText, BadgeCheck, Clock, PackageCheck, CheckCheck].map((Icon, index) => {
                       const isLast = index === 4;
-                      const labels = ['Request Submitted', 'Payment Verified', 'Currently Processing', 'Ready for Release', 'Delivered'];
+                      const labels = ['Request Submitted', 'Payment Verified', 'Currently Processing', 'Release', 'Delivered'];
                       return (
                         <div key={labels[index]} className="flex gap-3">
                           <div className="flex flex-col items-center">

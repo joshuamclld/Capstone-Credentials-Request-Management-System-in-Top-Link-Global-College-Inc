@@ -10,16 +10,19 @@ import DashboardPagination from '../DashboardPagination';
 import DashboardDropdown from '../../common/DashboardDropdown';
 import { registrarSidebarItems } from '../config/sidebarItems';
 
-const tableHeaders = ['Reference No.', 'Student Name', 'Requested Documents', 'Payment Method', 'Payment Status', 'Request Status', 'Date Requested', 'Action'];
+const tableHeaders = ['Reference No.', 'Student Name', 'Requested Documents', 'Payment Status', 'Request Status', 'Date Requested', 'Action'];
 
 const filterOptions = [
-    'All', 'Pending', 'Payment Pending', 'Paid', 'Processing', 'Ready for Release', 'Claimed',
+    'All', 'Pending', 'Paid', 'Processing', 'Release', 'Claimed',
 ];
 
 export default function RequestManagement({ user, onLogout, onNavigate }) {
     const ITEMS_PER_PAGE = 10;
     const [query, setQuery] = useState('');
     const [filter, setFilter] = useState('All');
+    const [docFilter, setDocFilter] = useState('All');
+    const [dateFrom, setDateFrom] = useState('');
+    const [dateTo, setDateTo] = useState('');
     const [allRequests, setAllRequests] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -48,10 +51,9 @@ export default function RequestManagement({ user, onLogout, onNavigate }) {
 
     const statusFilterMap = {
         'Pending': (req) => req.status === 'Pending',
-        'Payment Pending': (req) => ['pending payment'].includes(req.payment_status),
         'Paid': (req) => req.payment_status === 'paid',
         'Processing': (req) => req.status === 'Processing',
-        'Ready for Release': (req) => req.status === 'Ready for Release',
+        'Release': (req) => req.status === 'Release',
         'Claimed': (req) => req.status === 'Claimed',
     };
 
@@ -59,8 +61,13 @@ export default function RequestManagement({ user, onLogout, onNavigate }) {
         const matchesSearch = req.student_name.toLowerCase().includes(query.toLowerCase()) ||
             req.tracking_number.toLowerCase().includes(query.toLowerCase());
         const matchesFilter = filter === 'All' || (statusFilterMap[filter]?.(req) ?? false);
-        return matchesSearch && matchesFilter;
+        const matchesDoc = docFilter === 'All' || (req.document_names || []).includes(docFilter);
+        const reqDate = req.created_at ? req.created_at.slice(0, 10) : '';
+        const matchesDate = (!dateFrom || reqDate >= dateFrom) && (!dateTo || reqDate <= dateTo);
+        return matchesSearch && matchesFilter && matchesDoc && matchesDate;
     });
+
+    const documentOptions = ['All', ...new Set(allRequests.flatMap(r => r.document_names || []))].sort((a, b) => a === 'All' ? -1 : b === 'All' ? 1 : a.localeCompare(b));
 
     const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
     const pageRecords = filtered.slice(
@@ -72,14 +79,13 @@ export default function RequestManagement({ user, onLogout, onNavigate }) {
         if (newPage >= 1 && newPage <= totalPages) setPage(newPage);
     };
 
-    useEffect(() => { setPage(1); }, [query, filter]);
+    useEffect(() => { setPage(1); }, [query, filter, docFilter, dateFrom, dateTo]);
 
     const renderRow = (req) => (
         <tr key={req.id} className="hover:bg-slate-50 transition-colors">
             <td className="px-6 py-4 font-mono text-xs font-medium text-emerald-700">{req.tracking_number}</td>
             <td className="px-6 py-4 font-medium text-slate-900">{req.student_name}</td>
-            <td className="px-6 py-4 text-slate-700 max-w-[200px] truncate" title={(req.document_names || []).join(', ')}>{(req.document_names || []).join(', ')}</td>
-            <td className="px-6 py-4 text-xs text-slate-600 capitalize">{req.payment_method}</td>
+            <td className="px-6 py-4 text-slate-700" title={(req.document_names || []).join(', ')}>{(req.document_names || []).join(', ')}</td>
             <td className="px-6 py-4"><StatusBadge status={req.payment_status} type="payment" /></td>
             <td className="px-6 py-4"><StatusBadge status={req.status} /></td>
             <td className="px-6 py-4 text-slate-500 text-xs">{req.created_at}</td>
@@ -122,14 +128,36 @@ export default function RequestManagement({ user, onLogout, onNavigate }) {
         >
             <section className="bg-white rounded-xl border border-slate-200 overflow-hidden">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-6 py-5 border-b border-slate-200">
-                    <div className="flex items-center gap-3 w-full sm:w-auto">
-                        <DashboardDropdown
-                            options={filterOptions.map(o => ({ label: o, value: o }))}
-                            value={filter}
-                            onChange={setFilter}
-                            placeholder="All"
-                            className="w-44"
-                        />
+                    <div className="flex items-center gap-3 w-full sm:w-auto flex-wrap">
+                        <label className="flex items-center gap-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                            Status
+                            <DashboardDropdown
+                                options={filterOptions.map(o => ({ label: o, value: o }))}
+                                value={filter}
+                                onChange={setFilter}
+                                placeholder="All"
+                                className="w-40"
+                            />
+                        </label>
+                        <label className="flex items-center gap-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                            Document
+                            <DashboardDropdown
+                                options={documentOptions.map(o => ({ label: o, value: o }))}
+                                value={docFilter}
+                                onChange={setDocFilter}
+                                placeholder="All Documents"
+                                className="w-48"
+                            />
+                        </label>
+                        <label className="flex items-center gap-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                            Date
+                            <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} max={dateTo || undefined} className="h-10 px-3 rounded-lg border border-slate-200 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
+                            <span className="text-slate-400 text-sm">—</span>
+                            <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} min={dateFrom || undefined} className="h-10 px-3 rounded-lg border border-slate-200 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
+                            {(dateFrom || dateTo) && (
+                                <button onClick={() => { setDateFrom(''); setDateTo(''); }} className="text-xs text-slate-500 hover:text-slate-700 underline cursor-pointer">Clear</button>
+                            )}
+                        </label>
                         <DashboardSearch
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
@@ -163,7 +191,6 @@ export default function RequestManagement({ user, onLogout, onNavigate }) {
                                     subtitle={item.student_name}
                                     metadata={[
                                         { label: 'Documents', value: (item.document_names || []).join(', ') },
-                                        { label: 'Method', value: item.payment_method || 'N/A' },
                                         { label: 'Payment', value: <StatusBadge status={item.payment_status} type="payment" /> },
                                         { label: 'Status', value: <StatusBadge status={item.status} /> },
                                         { label: 'Date', value: item.created_at },
