@@ -24,6 +24,7 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class SystemAdminController extends Controller
 {
+    // Log an action to the audit trail for accountability
     private function audit(string $action, ?string $targetType = null, ?int $targetId = null, ?string $description = null): void
     {
         $user = auth()->user();
@@ -39,6 +40,7 @@ class SystemAdminController extends Controller
 
     // ─── Dashboard ───────────────────────────────────────────────────────────
 
+    // Aggregate system-wide stats: users, requests, documents, trends, and recent audit logs
     public function dashboard(): JsonResponse
     {
         $totalUsers = User::count();
@@ -75,6 +77,7 @@ class SystemAdminController extends Controller
 
     // ─── User Management ─────────────────────────────────────────────────────
 
+    // List internal users with optional search/role filtering; super-admin only
     public function getUsers(Request $request): JsonResponse
     {
         $user = auth()->user();
@@ -109,6 +112,7 @@ class SystemAdminController extends Controller
         ]);
     }
 
+    // Show a single internal user's details along with their request count
     public function showUser(int $id): JsonResponse
     {
         $authUser = auth()->user();
@@ -125,6 +129,7 @@ class SystemAdminController extends Controller
         ]);
     }
 
+    // Create a new internal user with hashed password and audit logging
     public function storeUser(StoreUserRequest $request): JsonResponse
     {
         $authUser = auth()->user();
@@ -148,6 +153,7 @@ class SystemAdminController extends Controller
         ], 201);
     }
 
+    // Update an internal user, preventing self-deactivation and self-demotion
     public function updateUser(UpdateUserRequest $request, int $id): JsonResponse
     {
         $authUser = auth()->user();
@@ -191,6 +197,7 @@ class SystemAdminController extends Controller
         ]);
     }
 
+    // Soft-delete an internal user, blocking self-deletion
     public function deleteUser(int $id): JsonResponse
     {
         $authUser = auth()->user();
@@ -219,6 +226,7 @@ class SystemAdminController extends Controller
 
     // ─── Document / Credential Type Management ───────────────────────────────
 
+    // List all credential types with optional search filtering
     public function getDocuments(Request $request): JsonResponse
     {
         $query = Document::query();
@@ -254,6 +262,7 @@ class SystemAdminController extends Controller
         ]);
     }
 
+    // Create a new credential type with audit trail
     public function storeDocument(StoreDocumentRequest $request): JsonResponse
     {
         $document = Document::create($request->validated());
@@ -267,6 +276,7 @@ class SystemAdminController extends Controller
         ], 201);
     }
 
+    // Update a credential type
     public function updateDocument(UpdateDocumentRequest $request, int $id): JsonResponse
     {
         $document = Document::findOrFail($id);
@@ -281,6 +291,7 @@ class SystemAdminController extends Controller
         ]);
     }
 
+    // Remove a credential type
     public function deleteDocument(int $id): JsonResponse
     {
         $document = Document::findOrFail($id);
@@ -297,6 +308,7 @@ class SystemAdminController extends Controller
 
     // ─── Reports ─────────────────────────────────────────────────────────────
 
+    // Generate aggregate report data: totals, monthly trends, revenue, status breakdown
     public function getReports(Request $request): JsonResponse
     {
         $month = $request->input('month', date('Y-m'));
@@ -329,6 +341,7 @@ class SystemAdminController extends Controller
             ->whereRaw("DATE_FORMAT(created_at, '%Y-%m') = ?", [$month])
             ->sum('total_fee');
 
+        // Break down monthly requests by document type (top 6 types per month)
         $monthlyRequestsByType = StudentRequest::with('documents')
             ->lazy()
             ->groupBy(fn ($req) => $req->created_at->format('Y-m'))
@@ -363,6 +376,7 @@ class SystemAdminController extends Controller
         ]);
     }
 
+    // Download report as Excel file with optional month/year/status/payment filters
     public function exportExcel(Request $request)
     {
         return Excel::download(
@@ -376,6 +390,7 @@ class SystemAdminController extends Controller
         );
     }
 
+    // Stream a filtered CSV report with BOM for Excel UTF-8 compatibility, chunked for memory efficiency
     public function exportCsv(Request $request)
     {
         $filename = 'crms-report-' . now()->format('Y-m-d') . '.csv';
@@ -426,6 +441,7 @@ class SystemAdminController extends Controller
         ]);
     }
 
+    // Download a landscape PDF report with logo, summary stats, and filtered request data
     public function exportPdf(Request $request)
     {
         $query = StudentRequest::query();
@@ -459,6 +475,7 @@ class SystemAdminController extends Controller
 
     // ─── Audit Logs ──────────────────────────────────────────────────────────
 
+    // Browse audit logs with action type and free-text search filters
     public function getAuditLogs(Request $request): JsonResponse
     {
         $query = AuditLog::query();
@@ -490,6 +507,7 @@ class SystemAdminController extends Controller
 
     // ─── Student Management ───────────────────────────────────────────────────
 
+    // List all students with search across key fields
     public function getStudents(Request $request): JsonResponse
     {
         $query = Student::query();
@@ -517,6 +535,7 @@ class SystemAdminController extends Controller
         ]);
     }
 
+    // Create a student account, queue a welcome email with auto-generated credentials
     public function storeStudent(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -552,6 +571,7 @@ class SystemAdminController extends Controller
         ], 201);
     }
 
+    // Toggle a student's active/inactive status
     public function toggleStudentStatus(int $id): JsonResponse
     {
         $student = Student::findOrFail($id);
@@ -567,6 +587,7 @@ class SystemAdminController extends Controller
         ]);
     }
 
+    // Remove a student record
     public function deleteStudent(int $id): JsonResponse
     {
         $student = Student::findOrFail($id);
@@ -580,6 +601,7 @@ class SystemAdminController extends Controller
         ]);
     }
 
+    // Bulk-import students from an array; skip duplicates, email each new account
     public function importStudents(Request $request): JsonResponse
     {
         $request->validate([
@@ -640,6 +662,8 @@ class SystemAdminController extends Controller
             ],
         ]);
     }
+
+    // ─── Course / Program Management ─────────────────────────────────────────
 
     public function getCourses(): JsonResponse
     {

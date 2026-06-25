@@ -21,19 +21,20 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Trust all proxies by default (supports Docker/nginx/reverse-proxy setups)
         $middleware->trustProxies(at: env('TRUSTED_PROXIES', '*'));
 
+        // Short aliases used in routes/web.php middleware() calls
         $middleware->alias([
-            'admin' => AdminMiddleware::class,
-            'cashier' => CashierMiddleware::class,
-            'system_admin' => SystemAdminMiddleware::class,
+            'admin' => AdminMiddleware::class,         // role=registrar + is_active
+            'cashier' => CashierMiddleware::class,     // role=cashier or registrar + is_active
+            'system_admin' => SystemAdminMiddleware::class, // role=system_admin + is_active
         ]);
 
-        $middleware->validateCsrfTokens(except: [
-            '/webhooks/paymongo',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // All API responses are JSON so the SPA can handle them consistently
         $exceptions->render(function (ModelNotFoundException $e) {
             return response()->json(['message' => 'Resource not found.'], 404);
         });

@@ -18,7 +18,9 @@ export default function ProcessRequests({ user, onLogout, onNavigate }) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [page, setPage] = useState(1);
+    // Tracks which request is currently being processed (to disable its buttons)
     const [processingId, setProcessingId] = useState(null);
+    // Flash message shown in a modal after a successful/failed status update
     const [message, setMessage] = useState(null);
 
     const getCsrfToken = () =>
@@ -45,6 +47,7 @@ export default function ProcessRequests({ user, onLogout, onNavigate }) {
         fetchData();
     }, []);
 
+    // Auto-dismiss the flash message after 3 seconds
     useEffect(() => {
         if (message) {
             const timer = setTimeout(() => setMessage(null), 3000);
@@ -52,6 +55,7 @@ export default function ProcessRequests({ user, onLogout, onNavigate }) {
         }
     }, [message]);
 
+    // Only show requests that are paid or already in processing (exclude Claimed/Cancelled)
     const processable = allRequests.filter(
         (req) => (req.payment_status === 'paid' || req.status === 'Processing') && !['Claimed', 'Cancelled'].includes(req.status)
     );
@@ -73,18 +77,21 @@ export default function ProcessRequests({ user, onLogout, onNavigate }) {
 
     useEffect(() => { setPage(1); }, [query]);
 
+    // Forward transitions — what happens when the user clicks the primary action button
     const STATUS_TRANSITIONS = {
         'Pending': { next: 'Processing', label: 'Process Request' },
         'Processing': { next: 'Release', label: 'Mark as Ready' },
         'Release': { next: 'Claimed', label: 'Mark as Claimed' },
     };
 
+    // Reverse transitions (revert) — the revert button is always rendered but disabled when not applicable
     const STATUS_REVERSE = {
         'Processing': { prev: 'Pending', label: 'Revert to Pending' },
         'Release': { prev: 'Processing', label: 'Revert to Processing' },
         'Claimed': { prev: 'Release', label: 'Revert to Ready' },
     };
 
+    // PATCH the status to either the next forward state or the previous (revert) state
     const handleProcess = (id, currentStatus, reverse = false) => {
         if (processingId) return;
         const target = reverse ? STATUS_REVERSE[currentStatus] : STATUS_TRANSITIONS[currentStatus];
@@ -127,6 +134,7 @@ export default function ProcessRequests({ user, onLogout, onNavigate }) {
             <td className="px-6 py-4"><StatusBadge status={req.status} /></td>
             <td className="px-6 py-4 text-slate-500 text-xs">{req.created_at}</td>
             <td className="px-6 py-4 flex items-center gap-2">
+                {/* Primary action button — disabled if no valid forward transition exists for this status */}
                 <button
                     onClick={() => handleProcess(req.id, req.status)}
                     disabled={processingId === req.id || !STATUS_TRANSITIONS[req.status]}
@@ -134,6 +142,7 @@ export default function ProcessRequests({ user, onLogout, onNavigate }) {
                 >
                     {processingId === req.id ? 'Processing...' : STATUS_TRANSITIONS[req.status]?.label || 'Process'}
                 </button>
+                {/* Revert button — always rendered but disabled if no valid reverse transition exists */}
                 <button
                     onClick={() => handleProcess(req.id, req.status, true)}
                     disabled={processingId === req.id || !STATUS_REVERSE[req.status]}
@@ -172,6 +181,7 @@ export default function ProcessRequests({ user, onLogout, onNavigate }) {
             onNavigate={onNavigate}
         >
             <section className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                {/* Status update success modal — overlay with checkmark and message */}
                 {message && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setMessage(null)}>
                         <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full mx-4 text-center animate-[scaleIn_0.2s_ease-out]" onClick={e => e.stopPropagation()}>

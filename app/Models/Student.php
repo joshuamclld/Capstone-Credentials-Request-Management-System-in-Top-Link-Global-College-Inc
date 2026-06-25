@@ -11,6 +11,7 @@ class Student extends Authenticatable
 {
     use HasFactory, Notifiable;
 
+    // Fields that can be mass-assigned when creating or updating a student
     protected $fillable = [
         'student_number',
         'first_name',
@@ -26,11 +27,13 @@ class Student extends Authenticatable
         'email_verified_at',
     ];
 
+    // Hide sensitive fields like password and remember_token from JSON/array output
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
+    // Cast password as hashed, booleans/dates to native PHP types for consistency
     protected function casts(): array
     {
         return [
@@ -41,6 +44,7 @@ class Student extends Authenticatable
         ];
     }
 
+    // A student can submit many credential requests
     public function requests(): HasMany
     {
         return $this->hasMany(StudentRequest::class);

@@ -13,6 +13,9 @@ use Illuminate\Http\Request;
 
 class RegistrarRequestController extends Controller
 {
+    // ─── Requests Dashboard ──────────────────────────────────────────────────
+
+    // Fetch paginated requests with status-based stats, optionally filtered to today or by status
     public function getRequestsData(Request $request): JsonResponse
     {
         $perPage = min(max((int) $request->query('per_page', config('requests.per_page')), 1), 100);
@@ -52,6 +55,7 @@ class RegistrarRequestController extends Controller
             $baseQuery->whereDate('created_at', today());
         }
 
+        // Filter options: claimed, processable (paid or processing, not claimed/cancelled), or all
         if ($statusFilter === 'claimed') {
             $requests = (clone $baseQuery)->where('status', 'Claimed')
                 ->latest()
@@ -101,6 +105,7 @@ class RegistrarRequestController extends Controller
         ]);
     }
 
+    // Show full detail of a single request for registrar/cashier/admin
     public function show(int $id): JsonResponse
     {
         $user = auth()->user();
@@ -149,6 +154,7 @@ class RegistrarRequestController extends Controller
         ]);
     }
 
+    // Extract emergency contact and demographic fields from a student record
     private function studentFields(?Student $student): array
     {
         if (!$student) {
@@ -164,6 +170,9 @@ class RegistrarRequestController extends Controller
         ];
     }
 
+    // ─── Status & Remarks Update ─────────────────────────────────────────────
+
+    // Update a request's status (with transition validation) or remarks, then notify and audit
     public function update(Request $request, int $id): JsonResponse
     {
         $studentRequest = StudentRequest::with('documents')->find($id);
@@ -188,12 +197,14 @@ class RegistrarRequestController extends Controller
             $isForward = isset($allowedTransitions[$currentStatus]) && $allowedTransitions[$currentStatus] === $newStatus;
             $isReverse = isset($allowedReverseTransitions[$currentStatus]) && $allowedReverseTransitions[$currentStatus] === $newStatus;
 
+            // Reject any transition not in the allowed forward or reverse map
             if (!$isForward && !$isReverse) {
                 return response()->json([
                     'message' => 'Invalid request status transition.',
                 ], 422);
             }
 
+            // Prevent progressing to active statuses without verified payment
             if ($isForward && in_array($newStatus, ['Processing', 'Release', 'Claimed']) && $studentRequest->payment_status !== config('requests.paid_status')) {
                 return response()->json([
                     'message' => 'Payment must be verified before processing this request.',

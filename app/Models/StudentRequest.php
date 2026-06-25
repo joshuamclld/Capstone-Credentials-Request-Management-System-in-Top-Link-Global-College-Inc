@@ -17,17 +17,20 @@ class StudentRequest extends Model
         'digital_document_path', 'is_digitally_sent', 'digitally_sent_at', 'digitally_sent_by', 'delivery_type',
     ];
 
+    // Each request belongs to a single student record
     public function student(): BelongsTo
     {
         return $this->belongsTo(Student::class);
     }
 
+    // A request can include many document types through the document_request pivot table
     public function documents(): BelongsToMany
     {
         return $this->belongsToMany(Document::class, 'document_request')
             ->withTimestamps();
     }
 
+    // Cast JSON semesters, decimal total_fee, booleans, and timestamps to native PHP types
     protected function casts(): array
     {
         return [

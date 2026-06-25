@@ -42,7 +42,8 @@ function App() {
 
     const [currentPath, setCurrentPath] = useState(window.location.pathname);
 
-  // Check authentication status on app load
+  // Auth check on load — verify admin session via /admin/check-auth
+  // Sets isAuthenticated if a valid session cookie exists
   useEffect(() => {
     const controller = new AbortController();
     fetch('/admin/check-auth', { signal: controller.signal })
@@ -60,7 +61,7 @@ function App() {
     return () => controller.abort();
   }, []);
 
-  // Check student authentication status on app load
+  // Auth check on load — verify student session via /student/check
   useEffect(() => {
     const controller = new AbortController();
     fetch('/student/check', { signal: controller.signal })
@@ -82,14 +83,14 @@ function App() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  // SPA navigation function
+  // SPA navigation function — pushes to history and updates currentPath
   const navigate = (path) => {
     window.history.pushState(null, '', path);
     setCurrentPath(path);
-    // Scroll to top on navigation
     window.scrollTo({ top: 0, behavior: 'instant' });
   };
 
+  // Login handler: after student logs in via modal, redirect to dashboard
   const handleStudentModalLogin = (studentData) => {
     setStudentUser(studentData);
     navigate('/student/dashboard');
@@ -105,6 +106,7 @@ function App() {
     }
   }, [studentUser, studentAuthChecked, currentPath]);
 
+  // Logout handler: student posts to /student/logout, clears state, goes home
   const handleStudentLogout = async () => {
     if (!studentUser) return;
     const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
@@ -114,7 +116,7 @@ function App() {
         headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token },
       });
     } catch {
-      // Fallback: session might already be expired
+      /* network error — session may already be expired */
     }
     setStudentUser(null);
     navigate('/');
@@ -136,6 +138,7 @@ function App() {
       .catch(err => console.error('Auth check failed:', err));
   }, []);
 
+  // Login handler: admin login success — set auth, refresh CSRF token, route to role dashboard
   const handleLoginSuccess = (userData) => {
     setIsAuthenticated(true);
     setUser(userData);
@@ -153,7 +156,8 @@ function App() {
     navigate(dashboard);
   };
 
-  // Poll auth status every 5 minutes to detect session expiry
+  // Polling interval: check auth every 5 minutes to detect session expiry
+  // Redirects to /admin-login?expired=1 if session is gone
   useEffect(() => {
     if (!isAuthenticated) return;
     const controller = new AbortController();
@@ -177,7 +181,7 @@ function App() {
     };
   }, [isAuthenticated]);
 
-  // Refresh CSRF token every 30 minutes to prevent token mismatch on network changes
+  // Polling interval: refresh CSRF token every 30 minutes to prevent mismatch
   useEffect(() => {
     const refresh = () => {
       fetch('/csrf-token')
@@ -191,6 +195,7 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
+  // Logout handler: admin posts to /admin/logout, clears state, redirects to login
   const handleLogout = () => {
     fetch('/admin/logout', {
       method: 'POST',
@@ -211,7 +216,7 @@ function App() {
     });
   };
 
-  // Route resolver
+  // Route resolution: /admin-login — show login or redirect if already authenticated
   if (currentPath === '/admin-login') {
     if (isAuthenticated && authChecked) {
       const dashboard = user?.role === 'cashier'
@@ -222,43 +227,42 @@ function App() {
       setTimeout(() => navigate(dashboard), 0);
       return null;
     }
-    
-    // Show loading state while checking auth
     if (!authChecked) {
       return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
     }
-    
     return <AdminLogin onLoginSuccess={handleLoginSuccess} />;
   }
 
-  // Auth check helper for all admin/cashier routes
+  // Route resolution: auth guard for all admin/cashier/system-admin routes
   if (currentPath.startsWith('/admin-') || currentPath.startsWith('/admin/') || currentPath.startsWith('/cashier-') || currentPath.startsWith('/cashier/') || currentPath.startsWith('/system-') || currentPath.startsWith('/system-admin-') || currentPath.startsWith('/system-admin/')) {
     if (!isAuthenticated && authChecked) {
       setTimeout(() => navigate('/admin-login'), 0);
       return null;
     }
-
     if (!authChecked) {
       return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
     }
 
-    // Role-based route guarding
+    // Role-based guarding: registrar-only paths
     const registrarPaths = ['/admin-dashboard', '/admin/requests', '/admin/process', '/admin/release', '/admin/search'];
     const isRegistrarPath = registrarPaths.some(p => currentPath === p || (currentPath.startsWith('/admin/requests/') && p === '/admin/requests'));
     const isCashierPath = currentPath.startsWith('/cashier');
 
+    // Role-based guarding: block non-registrar from registrar paths
     if (isRegistrarPath && user.role !== 'registrar') {
       const fallback = user.role === 'system_admin' ? '/system-admin-dashboard' : '/cashier-dashboard';
       setTimeout(() => navigate(fallback), 0);
       return null;
     }
 
+    // Role-based guarding: block non-cashier (registrar still allowed) from cashier paths
     if (isCashierPath && user.role !== 'cashier' && user.role !== 'registrar') {
       const fallback = user.role === 'system_admin' ? '/system-admin-dashboard' : '/admin-dashboard';
       setTimeout(() => navigate(fallback), 0);
       return null;
     }
 
+    // Role-based guarding: block non-system_admin from system-admin paths
     const isSystemAdminPath = currentPath.startsWith('/system-admin-') || currentPath.startsWith('/system-admin/');
     if (isSystemAdminPath && user.role !== 'system_admin') {
       const fallback = user.role === 'registrar' ? '/admin-dashboard' : '/cashier-dashboard';
@@ -266,20 +270,21 @@ function App() {
       return null;
     }
 
-    // Non-super-admin system_admin cannot access user management
+    // Role-based guarding: non-super-admin cannot access user management
     const isUserMgmtPath = currentPath === '/system-admin/users' || currentPath.startsWith('/system-admin/users/');
     if (isUserMgmtPath && user.role === 'system_admin' && !user.is_super_admin) {
       setTimeout(() => navigate('/system-admin-dashboard'), 0);
       return null;
     }
 
-    // Unknown role — redirect to login
+    // Role-based guarding: unknown role redirects to login
     if (user.role !== 'registrar' && user.role !== 'cashier' && user.role !== 'system_admin') {
       setTimeout(() => navigate('/admin-login'), 0);
       return null;
     }
   }
 
+  // Route resolution: render the correct component based on currentPath
   if (currentPath === '/admin/notifications') {
     return <NotificationList user={user} onLogout={handleLogout} onNavigate={navigate} />;
   }
@@ -329,6 +334,7 @@ function App() {
     return <CashierSettings user={user} onLogout={handleLogout} onNavigate={navigate} />;
   }
 
+  // /request: show form for authenticated students, or landing for guests
   if (currentPath === '/request') {
     if (!studentAuthChecked) return <div className="flex items-center justify-center min-h-screen text-on-surface-variant">Loading...</div>;
     if (!studentUser) return <StudentLanding student={studentUser} onLogout={handleStudentLogout} onNavigate={navigate} currentPath={currentPath} initialAuthTab="login" onStudentLogin={handleStudentModalLogin} />;
@@ -339,21 +345,21 @@ function App() {
     return <StudentTrackDashboard studentUser={studentUser} onLogout={handleStudentLogout} onNavigate={navigate} onStudentLogin={handleStudentModalLogin} currentPath={currentPath} />;
   }
 
-  // Student Dashboard - authenticated only
+  // Student Dashboard — authenticated only
   if (currentPath === '/student/dashboard') {
     if (!studentAuthChecked) return <div className="flex items-center justify-center min-h-screen text-on-surface-variant">Loading...</div>;
     if (!studentUser) return <StudentLanding student={studentUser} onLogout={handleStudentLogout} onNavigate={navigate} currentPath={currentPath} initialAuthTab="login" onStudentLogin={handleStudentModalLogin} />;
     return <StudentDashboard student={studentUser} onLogout={handleStudentLogout} onNavigate={navigate} currentPath={currentPath} />;
   }
 
-  // My Requests - authenticated only
+  // My Requests — authenticated only
   if (currentPath === '/student/requests') {
     if (!studentAuthChecked) return <div className="flex items-center justify-center min-h-screen text-on-surface-variant">Loading...</div>;
     if (!studentUser) return <StudentLanding student={studentUser} onLogout={handleStudentLogout} onNavigate={navigate} currentPath={currentPath} initialAuthTab="login" onStudentLogin={handleStudentModalLogin} />;
     return <StudentMyRequests student={studentUser} onLogout={handleStudentLogout} onNavigate={navigate} currentPath={currentPath} />;
   }
 
-  // Student Request Detail (plural - dashboard layout) - authenticated only
+  // Student Request Detail (dashboard layout) — authenticated only, extracts tracking number from URL
   if (currentPath.startsWith('/student/requests/')) {
     if (!studentAuthChecked) return <div className="flex items-center justify-center min-h-screen text-on-surface-variant">Loading...</div>;
     if (!studentUser) return <StudentLanding student={studentUser} onLogout={handleStudentLogout} onNavigate={navigate} currentPath={currentPath} initialAuthTab="login" onStudentLogin={handleStudentModalLogin} />;
@@ -361,14 +367,14 @@ function App() {
     return <StudentRequestDetail student={studentUser} onLogout={handleStudentLogout} onNavigate={navigate} currentPath={currentPath} trackingNumber={trackingNumber} />;
   }
 
-  // Student Profile - authenticated only
+  // Student Profile — authenticated only
   if (currentPath === '/student/profile') {
     if (!studentAuthChecked) return <div className="flex items-center justify-center min-h-screen text-on-surface-variant">Loading...</div>;
     if (!studentUser) return <StudentLanding student={studentUser} onLogout={handleStudentLogout} onNavigate={navigate} currentPath={currentPath} initialAuthTab="login" onStudentLogin={handleStudentModalLogin} />;
     return <StudentProfile student={studentUser} onLogout={handleStudentLogout} onNavigate={navigate} currentPath={currentPath} onStudentUpdate={setStudentUser} />;
   }
 
-  // Student Request Detail (singular - public layout) - authenticated only
+  // Student Request Detail (public layout) — authenticated only, extracts tracking number from URL
   if (currentPath.startsWith('/student/request/')) {
     if (!studentAuthChecked) return <div className="flex items-center justify-center min-h-screen text-on-surface-variant">Loading...</div>;
     if (!studentUser) return <StudentLanding student={studentUser} onLogout={handleStudentLogout} onNavigate={navigate} currentPath={currentPath} initialAuthTab="login" onStudentLogin={handleStudentModalLogin} />;
@@ -381,7 +387,7 @@ function App() {
     return <StudentLanding student={studentUser} onLogout={handleStudentLogout} onNavigate={navigate} currentPath={currentPath} initialAuthTab="login" onStudentLogin={handleStudentModalLogin} />;
   }
 
-  // Legacy redirect — /system/* and /system-* → /system-admin/*
+  // Legacy redirect: /system/* → /system-admin/*
   if ((currentPath.startsWith('/system/') || currentPath.startsWith('/system-')) && !currentPath.startsWith('/system-admin')) {
     setTimeout(() => navigate(currentPath.replace('/system', '/system-admin')), 0);
     return null;
@@ -420,7 +426,7 @@ function App() {
     return <StudentManagement user={user} onLogout={handleLogout} onNavigate={navigate} />;
   }
 
-  // Fallback: Default to Student Landing Page
+  // Fallback: Default to Student Landing Page (homepage)
   return <StudentLanding student={studentUser} onLogout={handleStudentLogout} onNavigate={navigate} currentPath={currentPath} onStudentLogin={handleStudentModalLogin} />;
 }
 

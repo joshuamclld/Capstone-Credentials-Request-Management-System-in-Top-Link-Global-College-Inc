@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\Hash;
 
 class StudentAuthController extends Controller
 {
+    // ─── Session Check ───────────────────────────────────────────────────────
+
+    // Return the authenticated student or false if not logged in
     public function check(): JsonResponse
     {
         $student = auth('student')->user();
@@ -24,6 +27,9 @@ class StudentAuthController extends Controller
         ]);
     }
 
+    // ─── Login ───────────────────────────────────────────────────────────────
+
+    // Authenticate a student by email or student number, with active-account guard
     public function login(Request $request): JsonResponse
     {
         $credentials = $request->validate([
@@ -65,6 +71,9 @@ class StudentAuthController extends Controller
         ]);
     }
 
+    // ─── Forgot Password ─────────────────────────────────────────────────────
+
+    // Look up a student by email or student number to confirm they exist before reset
     public function forgotPassword(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -90,6 +99,7 @@ class StudentAuthController extends Controller
         ]);
     }
 
+    // Update the student's password and log them in automatically
     public function resetPassword(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -111,6 +121,9 @@ class StudentAuthController extends Controller
         ]);
     }
 
+    // ─── Logout ─────────────────────────────────────────────────────────────
+
+    // Log out the student and clear their session data
     public function logout(): JsonResponse
     {
         auth('student')->logout();

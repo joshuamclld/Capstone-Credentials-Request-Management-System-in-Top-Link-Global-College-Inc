@@ -7,10 +7,12 @@ export default function AdminLogin({ onLoginSuccess }) {
     const [password, setPassword] = useState('');
     const [rememberMe, setRememberMe] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
-    const [status, setStatus] = useState('idle'); // 'idle' | 'loading' | 'success' | 'error'
+    // Status states: idle | loading | success | error — controls UI feedback on the submit button
+    const [status, setStatus] = useState('idle');
     const [errorMessage, setErrorMessage] = useState('');
     const [sessionExpired, setSessionExpired] = useState(false);
 
+    // Check URL for ?expired=1 query param (set by app.jsx when polling detects session expiry)
     useEffect(() => {
         if (window.location.search.includes('expired=1')) {
             setSessionExpired(true);
@@ -18,6 +20,7 @@ export default function AdminLogin({ onLoginSuccess }) {
         }
     }, []);
 
+    // Form submission: POST credentials to /admin/login with CSRF token
     const handleSubmit = (e) => {
         e.preventDefault();
         if (!email || !password) return;
@@ -30,12 +33,14 @@ export default function AdminLogin({ onLoginSuccess }) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                // CSRF token: attached from meta tag to protect against cross-site requests
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
             },
             body: JSON.stringify({ email, password, remember_me: rememberMe })
         })
             .then(response => {
                 if (!response.ok) {
+                    // Error handling: 419 (CSRF mismatch), 429 (throttle), 422 (validation), 401 (unauthorized)
                     return response.json().then(err => {
                         throw new Error(err.message || 'Login failed');
                     }).catch(e => {
@@ -56,6 +61,7 @@ export default function AdminLogin({ onLoginSuccess }) {
                 }
             })
             .catch(error => {
+                // Error handling: network failure or server error — show message on the form
                 setStatus('error');
                 setErrorMessage(error.message || 'An error occurred during login');
             });
@@ -171,7 +177,7 @@ export default function AdminLogin({ onLoginSuccess }) {
                             </a>
                         </div>
 
-                        {/* Session Expired Message */}
+                        {/* Session Expired Message — shown when redirected with ?expired=1 */}
                         {sessionExpired && (
                             <div className="text-amber-800 bg-amber-50 border border-amber-200 px-4 py-3 rounded-lg text-body-sm font-body-sm flex items-center gap-2">
                                 <Clock className="size-4 shrink-0" />
@@ -179,14 +185,14 @@ export default function AdminLogin({ onLoginSuccess }) {
                             </div>
                         )}
 
-                        {/* Error Message */}
+                        {/* Error Message — shown on any login failure (419, 429, 422, 401) */}
                         {status === 'error' && (
                             <div className="text-error bg-error-container/20 px-4 py-3 rounded-lg text-body-sm font-body-sm">
                                 {errorMessage}
                             </div>
                         )}
 
-                        {/* Submit Button */}
+                        {/* Submit Button — changes appearance and text based on the status state */}
                         <button
                             className={`mt-4 w-full py-4 px-6 rounded-lg font-headline-sm text-headline-sm hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer 
                                 ${status === 'success'
@@ -225,7 +231,7 @@ export default function AdminLogin({ onLoginSuccess }) {
                         </button>
                     </form>
 
-                    {/* Security Info */}
+                    {/* Security Info — institutional warning banner */}
                     <div className="mt-10 pt-6 border-t border-outline-variant flex flex-col items-center gap-3">
                         <div className="flex items-center gap-2 text-on-error-container bg-error-container/20 px-3 py-1.5 rounded-full">
                             <ShieldAlert className="size-4 text-error" />

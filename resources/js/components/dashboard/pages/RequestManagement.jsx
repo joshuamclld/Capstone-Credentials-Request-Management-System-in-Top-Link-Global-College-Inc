@@ -18,9 +18,13 @@ const filterOptions = [
 
 export default function RequestManagement({ user, onLogout, onNavigate }) {
     const ITEMS_PER_PAGE = 10;
+    // Search text filter
     const [query, setQuery] = useState('');
+    // Status-based quick filter dropdown
     const [filter, setFilter] = useState('All');
+    // Filter by specific document name
     const [docFilter, setDocFilter] = useState('All');
+    // Date range filter — from/to
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');
     const [allRequests, setAllRequests] = useState([]);
@@ -49,6 +53,7 @@ export default function RequestManagement({ user, onLogout, onNavigate }) {
         fetchData();
     }, []);
 
+    // Maps the status filter dropdown value to a predicate function on the request object
     const statusFilterMap = {
         'Pending': (req) => req.status === 'Pending',
         'Paid': (req) => req.payment_status === 'paid',
@@ -57,19 +62,23 @@ export default function RequestManagement({ user, onLogout, onNavigate }) {
         'Claimed': (req) => req.status === 'Claimed',
     };
 
+    // Apply all active filters: search query, status, document name, and date range
     const filtered = allRequests.filter((req) => {
         const matchesSearch = req.student_name.toLowerCase().includes(query.toLowerCase()) ||
             req.tracking_number.toLowerCase().includes(query.toLowerCase());
         const matchesFilter = filter === 'All' || (statusFilterMap[filter]?.(req) ?? false);
         const matchesDoc = docFilter === 'All' || (req.document_names || []).includes(docFilter);
         const reqDate = req.created_at ? req.created_at.slice(0, 10) : '';
+        // dateTo must be >= reqDate, and dateFrom must be <= reqDate
         const matchesDate = (!dateFrom || reqDate >= dateFrom) && (!dateTo || reqDate <= dateTo);
         return matchesSearch && matchesFilter && matchesDoc && matchesDate;
     });
 
+    // Dynamically build the document filter options from all requests (sorted, "All" first)
     const documentOptions = ['All', ...new Set(allRequests.flatMap(r => r.document_names || []))].sort((a, b) => a === 'All' ? -1 : b === 'All' ? 1 : a.localeCompare(b));
 
     const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+    // Slice the filtered list down to the current page
     const pageRecords = filtered.slice(
         (page - 1) * ITEMS_PER_PAGE,
         page * ITEMS_PER_PAGE
@@ -79,6 +88,7 @@ export default function RequestManagement({ user, onLogout, onNavigate }) {
         if (newPage >= 1 && newPage <= totalPages) setPage(newPage);
     };
 
+    // Reset to page 1 whenever any filter changes
     useEffect(() => { setPage(1); }, [query, filter, docFilter, dateFrom, dateTo]);
 
     const renderRow = (req) => (
@@ -127,6 +137,7 @@ export default function RequestManagement({ user, onLogout, onNavigate }) {
             onNavigate={onNavigate}
         >
             <section className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                {/* Filter bar: status dropdown, document dropdown, date range inputs, search */}
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-6 py-5 border-b border-slate-200">
                     <div className="flex items-center gap-3 w-full sm:w-auto flex-wrap">
                         <label className="flex items-center gap-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">
@@ -151,8 +162,10 @@ export default function RequestManagement({ user, onLogout, onNavigate }) {
                         </label>
                         <label className="flex items-center gap-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                             Date
+                            {/* dateFrom input — max is constrained to dateTo to prevent inverted ranges */}
                             <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} max={dateTo || undefined} className="h-10 px-3 rounded-lg border border-slate-200 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
                             <span className="text-slate-400 text-sm">—</span>
+                            {/* dateTo input — min is constrained to dateFrom to prevent inverted ranges */}
                             <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} min={dateFrom || undefined} className="h-10 px-3 rounded-lg border border-slate-200 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
                             {(dateFrom || dateTo) && (
                                 <button onClick={() => { setDateFrom(''); setDateTo(''); }} className="text-xs text-slate-500 hover:text-slate-700 underline cursor-pointer">Clear</button>
@@ -209,6 +222,7 @@ export default function RequestManagement({ user, onLogout, onNavigate }) {
                     )}
                 </div>
 
+                {/* Pagination — always visible at the bottom of the table */}
                 <div className="px-6 py-4 border-t border-slate-100">
                     <DashboardPagination
                         currentPage={page}

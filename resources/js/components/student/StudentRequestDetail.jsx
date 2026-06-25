@@ -16,8 +16,10 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
   const [cancelModalError, setCancelModalError] = useState('');
   const [proofUploading, setProofUploading] = useState(false);
   const [proofError, setProofError] = useState('');
+  // pendingFile holds a File object before it is confirmed for upload
   const [pendingFile, setPendingFile] = useState(null);
   const [pendingPreviewUrl, setPendingPreviewUrl] = useState(null);
+  // Confirmation step before the proof is actually sent to the server
   const [showConfirmUpload, setShowConfirmUpload] = useState(false);
   const [proofModalUrl, setProofModalUrl] = useState(null);
   const [paymentQrUrl, setPaymentQrUrl] = useState(null);
@@ -41,6 +43,7 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
       .catch(() => null);
   }, [trackingNumber]);
 
+  // Fetch on mount and poll every 10 seconds for live status updates
   useEffect(() => {
     if (!trackingNumber) return;
     setLoading(true);
@@ -54,6 +57,7 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
     return () => clearInterval(interval);
   }, [trackingNumber, fetchRequest]);
 
+  // Fetch the payment QR code if the request uses online payment
   useEffect(() => {
     if (!request || request.payment_method !== 'online') return;
     fetch('/admin/payment-qr')
@@ -64,6 +68,7 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
       .catch(() => {});
   }, [request]);
 
+  // User selects a file — stored in pendingFile until confirmation
   const handleUploadProof = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -83,6 +88,7 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
     setPendingPreviewUrl(null);
   };
 
+  // User confirmed — send the file to the server via multipart/form-data POST
   const confirmUpload = async () => {
     if (!pendingFile) return;
     setShowConfirmUpload(false);
@@ -100,6 +106,7 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
       if (!res.ok || !data.success) {
         setProofError(data.message || 'Upload failed.');
       } else {
+        // Update the local request with the returned proof URL
         setRequest(prev => prev ? { ...prev, payment_proof: data.proof_url } : prev);
       }
     } catch (err) {
@@ -111,11 +118,13 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
     setPendingPreviewUrl(null);
   };
 
+  // Cancel request: show modal
   const handleCancelClick = () => {
     setCancelModalError('');
     setShowCancelModal(true);
   };
 
+  // Confirm cancellation: PATCH to /requests/:tracking_number/cancel
   const handleConfirmCancel = async () => {
     if (!request) return;
     setCancelling(true);
@@ -135,6 +144,7 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
         setCancelling(false);
         return;
       }
+      // Close modal and re-fetch the request to get the updated Cancelled status
       setShowCancelModal(false);
       const searchRes = await fetch(`/requests/${encodeURIComponent(request.tracking_number)}`, {
         headers: { 'Accept': 'application/json' },
@@ -153,6 +163,7 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
     setCancelModalError('');
   };
 
+  // Build the timeline from the shared utility — shows up to 5 steps (Submitted → Paid → Processing → Release → Claimed) or Cancelled
   const timeline = request ? buildTimeline(request.status, request.payment_status) : [];
 
   return (
@@ -285,6 +296,7 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
                   <span className="text-2xl font-bold text-primary">₱ {(Number(request.total_fee) || 0).toFixed(2)}</span>
                 </div>
 
+                {/* Cancel button — only shown while the request is still Pending and not yet paid */}
                 <div className="mt-6 pt-4 border-t border-outline-variant flex flex-col sm:flex-row gap-2 sm:justify-end">
                   {request.status === 'Pending' && request.payment_status !== 'paid' && (
                     <button
@@ -298,6 +310,7 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
                   )}
                 </div>
 
+                {/* Online payment section — QR code display, file upload for payment proof */}
                 {request.payment_method === 'online' && request.payment_status !== 'paid' && request.status !== 'Cancelled' && (
                   <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
                     <p className="text-xs font-bold text-amber-800 mb-2">Upload Payment Proof</p>
@@ -333,6 +346,7 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
               <RegistrarRemarksCard remarks={request.remarks} />
             </div>
 
+            {/* Right column: Timeline visualization — icons + step labels + connecting lines */}
             <div className="lg:col-span-5 self-start">
               <div className="bg-surface-container-high border border-outline-variant rounded-2xl p-4 sm:p-6">
                 <div className="mb-4 sm:mb-6">
@@ -390,6 +404,7 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
         ) : null}
       </div>
 
+      {/* Cancel confirmation modal */}
       {showCancelModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4" onClick={handleCancelModalClose}>
           <div className="bg-surface rounded-2xl shadow-xl border border-outline-variant w-full max-w-md p-4 sm:p-6 animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
@@ -425,6 +440,7 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
         </div>
       )}
 
+      {/* Upload confirmation modal — shows preview before actually sending */}
       {showConfirmUpload && pendingFile && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4" onClick={closeConfirmUpload}>
           <div className="bg-surface rounded-2xl shadow-xl border border-outline-variant w-full max-w-md p-4 sm:p-6" onClick={(e) => e.stopPropagation()}>
@@ -455,6 +471,7 @@ export default function StudentRequestDetail({ student, onLogout, onNavigate, cu
         </div>
       )}
 
+      {/* Full-screen image modal for viewing the uploaded payment proof */}
       {proofModalUrl && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setProofModalUrl(null)}>
           <div className="relative max-w-2xl w-full bg-white rounded-2xl overflow-hidden shadow-xl" onClick={e => e.stopPropagation()}>

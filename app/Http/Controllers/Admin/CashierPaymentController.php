@@ -15,6 +15,9 @@ use Illuminate\Support\Facades\Storage;
 
 class CashierPaymentController extends Controller
 {
+    // ─── Payments Dashboard ──────────────────────────────────────────────────
+
+    // Fetch paginated payments with daily stats (pending, verified counts, online vs cash totals)
     public function getPaymentsData(Request $request): JsonResponse
     {
         $perPage = min(max((int) $request->query('per_page', config('requests.per_page')), 1), 100);
@@ -75,6 +78,7 @@ class CashierPaymentController extends Controller
 
         $paymentFilter = $request->query('payment_status');
 
+        // Apply status filter: pending (unpaid + pending_verification), paid, or all
         if ($paymentFilter === 'pending') {
             $requests = (clone $requestsQuery)->whereIn('payment_status', ['unpaid', 'pending_verification'])
                 ->latest()
@@ -120,6 +124,9 @@ class CashierPaymentController extends Controller
         ]);
     }
 
+    // ─── Payment Verification ────────────────────────────────────────────────
+
+    // Mark a request as paid within a locked transaction, notify registrar and student, audit the action
     public function verify(int $id): JsonResponse
     {
         $studentRequest = StudentRequest::find($id);
@@ -207,6 +214,9 @@ class CashierPaymentController extends Controller
         ]);
     }
 
+    // ─── Online Payment Toggle ───────────────────────────────────────────────
+
+    // Check whether online payment is globally enabled
     public function getOnlinePaymentStatus(): JsonResponse
     {
         $setting = PaymentSetting::where('key', 'enable_online_payment')->first();
@@ -218,6 +228,7 @@ class CashierPaymentController extends Controller
         ]);
     }
 
+    // Enable or disable the online payment option globally
     public function toggleOnlinePayment(Request $request): JsonResponse
     {
         $request->validate(['enabled' => 'required|boolean']);
@@ -234,6 +245,9 @@ class CashierPaymentController extends Controller
         ]);
     }
 
+    // ─── QR Code Management ──────────────────────────────────────────────────
+
+    // Upload a QR code image for students to scan when paying online
     public function uploadQr(Request $request): JsonResponse
     {
         $request->validate([
@@ -254,6 +268,7 @@ class CashierPaymentController extends Controller
         ]);
     }
 
+    // Return the QR image URL if one has been uploaded
     public function getQr(): JsonResponse
     {
         $setting = PaymentSetting::where('key', 'payment_qr')->first();
@@ -268,6 +283,7 @@ class CashierPaymentController extends Controller
         ]);
     }
 
+    // Serve the QR image file from local or public disk
     public function getQrImage()
     {
         $setting = PaymentSetting::where('key', 'payment_qr')->first();

@@ -3,12 +3,14 @@ import FormSelect from './ui/FormSelect';
 import StudentDashboardLayout from './student/StudentDashboardLayout';
 import ProtectedImage from './ui/ProtectedImage';
 
+// Constants for grade year/semester selectors in the semester-picker UI
 const GRADE_YEARS = ['1st Year', '2nd Year', '3rd Year'];
 const GRADE_SEMESTERS = ['1st Semester', '2nd Semester'];
 const YEAR_LEVELS = ['1st Year', '2nd Year', '3rd Year'];
 const SECTIONS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
 const SECTION_OPTIONS = SECTIONS.map(s => ({ value: s, label: `Section ${s}` }));
 
+// Static metadata for each known document type (icon, display color, tag label, turnaround time)
 const DOCUMENT_META = {
   enrollment: { icon: 'badge', color: 'primary', daysLabel: 'Same Day' },
   'good-moral': { icon: 'verified', color: 'secondary', daysLabel: 'Same Day' },
@@ -30,6 +32,7 @@ const fallbackBgColors = ['bg-rose-50', 'bg-pink-50', 'bg-orange-50', 'bg-lime-5
 export default function StudentRequestForm({ onNavigate, student, onLogout, currentPath }) {
   const [step, setStep] = useState(1);
 
+  // Personal information form fields
   const [personalInfo, setPersonalInfo] = useState({
     fullName: '',
     studentId: '',
@@ -41,13 +44,16 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
   });
 
   const [selectedDocs, setSelectedDocs] = useState([]);
+  // For per-semester docs (e.g. grades): which year-semester combos the user picks
   const [selectedSemesters, setSelectedSemesters] = useState([]);
+  // For per-page docs (e.g. TOR): how many pages
   const [pages, setPages] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState('');
   const [paymentQrUrl, setPaymentQrUrl] = useState(null);
   const [deliveryType, setDeliveryType] = useState('pickup');
   const [purpose, setPurpose] = useState('');
 
+  // Three checkboxes the student must tick before submitting on step 4
   const [confirmations, setConfirmations] = useState({
     infoCorrect: false,
     understandDelay: false,
@@ -58,6 +64,7 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
   const [courseOptions, setCourseOptions] = useState([]);
   const [docsLoading, setDocsLoading] = useState(true);
   const isAuthenticated = Boolean(student);
+  // A student must have filled out these extra profile fields before they can submit
   const isProfileComplete = !isAuthenticated || (
     student?.date_of_birth &&
     student?.gender &&
@@ -66,6 +73,7 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
     student?.complete_address
   );
 
+  // Pre-fill name, student ID, and email from the logged-in student object
   useEffect(() => {
     if (student) {
       setPersonalInfo(prev => ({
@@ -77,7 +85,9 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
     }
   }, [student]);
 
+  // Course fetch + document types fetch on mount
   useEffect(() => {
+    // Fetch the list of credential types from the registrar config
     fetch('/documents', { headers: { 'Accept': 'application/json' } })
       .then(res => res.json())
       .then(data => {
@@ -86,6 +96,7 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
       })
       .catch(() => setDocsLoading(false));
 
+    // Fetch available courses for the dropdown
     fetch('/courses', { headers: { 'Accept': 'application/json' } })
       .then(res => res.json())
       .then(data => setCourseOptions((data.courses || []).map(c => c.name)))
@@ -99,6 +110,7 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
   const [submitError, setSubmitError] = useState('');
   const [onlinePaymentEnabled, setOnlinePaymentEnabled] = useState(true);
 
+  // Check whether the admin has enabled online payment; disable the option if not
   useEffect(() => {
     fetch('/online-payment-status')
       .then(res => res.json())
@@ -111,6 +123,7 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
       .catch(() => { });
   }, []);
 
+  // When the user selects online payment, fetch the QR code image URL
   useEffect(() => {
     if (paymentMethod === 'online') {
       fetch('/admin/payment-qr')
@@ -153,6 +166,7 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
 
   const selectedDocObjects = documents.filter(d => selectedDocs.includes(d.code));
 
+  // Determine whether the selected docs include per-semester or per-page pricing
   const hasSemesterDoc = selectedDocObjects.some(d => d.is_per_semester);
   const hasPerPageDoc = selectedDocObjects.some(d => d.is_per_page);
 
@@ -161,6 +175,7 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
 
   const allConfirmed = confirmations.infoCorrect && confirmations.understandDelay && confirmations.agreeRules;
 
+  // Fee calculation: flat-rate added once, per-semester × semester count, per-page × page count
   const totalPrice = (() => {
     if (selectedDocObjects.length === 0) return 0;
     return selectedDocObjects.reduce((sum, doc) => {
@@ -173,6 +188,7 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
   const lockedFields = ['fullName', 'studentId', 'email'];
 
   const handlePersonalChange = (e) => {
+    // Auto-filled fields from the student profile cannot be manually edited
     if (isAuthenticated && lockedFields.includes(e.target.name)) return;
     setPersonalInfo({
       ...personalInfo,
@@ -201,6 +217,7 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
     setConfirmations(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
+  // Semester validation + step progression: validate current step before moving forward
   const handleNextStep = (e) => {
     e.preventDefault();
     setStepError('');
@@ -209,14 +226,17 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
       return;
     }
     if (step === 2) {
+      // Validate document selection
       if (selectedDocs.length === 0) {
         setStepError('Please select at least one document.');
         return;
       }
+      // Semester validation: ensure at least one combo is picked for per-semester docs
       if (hasSemesterDoc && selectedSemesters.length === 0) {
         setStepError('Please select at least one year-semester combination for the selected document.');
         return;
       }
+      // Validate page count for per-page docs
       if (hasPerPageDoc && (!pages || pages < 1)) {
         setStepError('Please specify the number of pages.');
         return;
@@ -238,6 +258,7 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
     }
   };
 
+  // Form submission: POST the entire form payload as JSON to /requests
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isSubmitting) return;
@@ -287,6 +308,7 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
 
       const data = await response.json();
 
+      // Handle validation errors from the server (field-level messages) or generic failure
       if (!response.ok) {
         if (data.errors) {
           const messages = Object.values(data.errors).flat().join(' ');
@@ -309,6 +331,7 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
   return (
     <StudentDashboardLayout title="Request Documents" subtitle="Submit a new credential request." student={student} onLogout={onLogout} onNavigate={onNavigate} currentPath={currentPath}>
       <div className="max-w-container-max mx-auto">
+        {/* Success screen shown after a successful submission */}
         {submitSuccess ? (
           <div className="max-w-xl mx-auto text-center bg-surface-container-lowest border border-outline-variant rounded-2xl p-8 sm:p-10 shadow-xl mt-8">
             <div className="w-14 h-14 sm:w-20 sm:h-20 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-8">
@@ -322,6 +345,7 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
               <p className="text-label-sm text-on-surface-variant uppercase tracking-widest mb-1">Reference Number</p>
               <p className="text-lg sm:text-2xl font-bold text-primary tracking-wider">{generatedRef}</p>
             </div>
+            {/* Show QR code on the success screen if the student chose online payment */}
             {paymentMethod === 'online' && paymentQrUrl && (
               <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl">
                 <p className="text-xs font-bold text-amber-800 mb-3">Scan to Pay via GCash / Maya</p>
@@ -393,6 +417,7 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
             </div>
 
             <form onSubmit={step === 4 ? handleSubmit : handleNextStep}>
+              {/* Profile-complete warning banner */}
               {isAuthenticated && !isProfileComplete && (
                 <div className="mb-6 p-4 sm:p-5 bg-amber-50 border border-amber-200 rounded-xl">
                   <div className="flex items-start gap-3">
@@ -416,7 +441,7 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
               </div>
               <section className="bg-surface-container-lowest rounded-xl border border-outline-variant p-4 sm:p-5 md:p-6 mb-6 sm:mb-8 shadow-sm">
 
-                {/* STEP 1: Personal Info */}
+                {/* Step 1: Personal Info — name, student ID, email, course, year, section */}
                 {step === 1 && (
                   <div className="animate-fade-in-up">
                     <header className="mb-4 sm:mb-6">
@@ -526,7 +551,7 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
                   </div>
                 )}
 
-                {/* STEP 2: Document Selection */}
+                {/* Step 2: Document Selection — choose credential types, semesters, pages, and purpose */}
                 {step === 2 && (
                   <div className="animate-fade-in-up">
                     <header className="mb-4 sm:mb-8">
@@ -581,7 +606,7 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
                       </div>
                     )}
 
-                    {/* Semester Selection for per-semester documents */}
+                    {/* Semester Selection for per-semester documents (e.g. grades) */}
                     {hasSemesterDoc && (
                       <div className="mt-8">
                         <label className="block font-label-md text-label-md text-on-surface-variant mb-4">
@@ -634,7 +659,7 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
                       </div>
                     )}
 
-                    {/* Page count for per-page documents */}
+                    {/* Page count input for per-page documents (e.g. TOR) */}
                     {hasPerPageDoc && (
                       <div className="mt-8">
                         <label className="block font-label-md text-label-md text-on-surface-variant mb-4">
@@ -675,7 +700,7 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
                   </div>
                 )}
 
-                {/* STEP 3: Release Type & Payment Options */}
+                {/* Step 3: Release Type & Payment Options — cash or online payment */}
                 {step === 3 && (
                   <div className="animate-fade-in-up">
                     <header className="mb-4 sm:mb-8">
@@ -683,7 +708,7 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
                       <p className="font-body-sm sm:font-body-md text-body-sm sm:text-body-md text-on-surface-variant">Select your payment method.</p>
                     </header>
 
-                    {/* Pickup Info - default, not selectable */}
+                    {/* Pickup Info — only pickup is available; delivery is always campus pickup */}
                     <div className="max-w-lg mx-auto mb-6">
                       <div className="flex items-start gap-3 px-4 py-3 rounded-lg bg-primary-container/20 border-l-4 border-l-primary">
                         <div className="w-5 h-5 shrink-0 flex items-center justify-center mt-0.5">
@@ -696,7 +721,7 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
                       </div>
                     </div>
 
-                    {/* Payment Method */}
+                    {/* Payment Method radio-style cards: cash or online */}
                     <div className="max-w-lg mx-auto mb-8">
                       <h3 className="font-headline-sm text-headline-sm text-on-surface mb-4">Payment Method</h3>
                       <div className="space-y-3">
@@ -742,7 +767,7 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
                   </div>
                 )}
 
-                {/* STEP 4: Verify Request */}
+                {/* Step 4: Verify Request — summary, confirmation checkboxes, and submit */}
                 {step === 4 && (
                   <div className="animate-fade-in-up">
                     <header className="mb-4 sm:mb-8">
@@ -750,7 +775,7 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
                       <p className="font-body-sm sm:font-body-md text-body-sm sm:text-body-md text-on-surface-variant">Please review your information carefully before submitting.</p>
                     </header>
 
-                    {/* Request Summary */}
+                    {/* Request Summary — read-only display of all collected data */}
                     <div className="border border-outline-variant rounded-xl p-6 bg-surface-container-low mb-8">
                       <h3 className="font-headline-sm text-lg text-on-surface mb-4">Request Summary</h3>
 
@@ -797,13 +822,14 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
                         </div>
                       </div>
 
+                      {/* Total fee line — computed live from per-semester, per-page, and flat-rate pricing */}
                       <div className="flex justify-between items-center pt-4 border-t-2 border-primary/20">
                         <span className="text-headline-sm text-xl font-bold text-on-surface">Total Processing Fee:</span>
                         <span className="text-2xl font-bold text-primary">₱ {totalPrice.toFixed(2)}</span>
                       </div>
                     </div>
 
-                    {/* Verification Section */}
+                    {/* Verification Section — three checkboxes the user must tick */}
                     <div className="mb-8">
                       <h3 className="font-headline-sm text-headline-sm text-on-surface mb-2">Confirm Your Information</h3>
                       <p className="font-body-sm text-body-sm text-on-surface-variant mb-5">Please review your information carefully before submitting.</p>
@@ -846,7 +872,7 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
                 </div>
               )}
 
-              {/* Warning Box */}
+              {/* Warning Box on step 4 — remind user they can't edit after submission */}
               {step === 4 && (
                 <div className="mb-6 p-4 rounded-lg bg-amber-50 border border-amber-200">
                   <p className="font-body-sm text-body-sm text-amber-800 flex items-center gap-2">
@@ -856,7 +882,7 @@ export default function StudentRequestForm({ onNavigate, student, onLogout, curr
                 </div>
               )}
 
-              {/* Navigation Buttons */}
+              {/* Navigation Buttons — back/cancel, next/submit */}
               <div className="flex items-center justify-between gap-3 sm:gap-6 pt-2">
                 {step > 1 ? (
                   <button

@@ -8,6 +8,7 @@ use Illuminate\Validation\Rule;
 
 class StoreStudentRequest extends FormRequest
 {
+    // Valid year-semester combinations allowed for per-semester document pricing
     private const VALID_SEMESTER_COMBOS = [
         '1st Year - 1st Semester',
         '1st Year - 2nd Semester',
@@ -17,11 +18,15 @@ class StoreStudentRequest extends FormRequest
         '3rd Year - 2nd Semester',
     ];
 
+    // Allow all users to submit this request (authentication is handled at controller level)
     public function authorize(): bool
     {
         return true;
     }
 
+    // ─── Validation Rules ────────────────────────────────────────────────────
+
+    // Define all field validation rules for student request submission
     public function rules(): array
     {
         return [
@@ -43,6 +48,7 @@ class StoreStudentRequest extends FormRequest
         ];
     }
 
+    // Custom user-facing error messages for validation failures
     public function messages(): array
     {
         return [
@@ -55,6 +61,7 @@ class StoreStudentRequest extends FormRequest
         ];
     }
 
+    // Additional cross-field validation: require semesters when a per-semester doc is chosen, require pages when a per-page doc is chosen
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {

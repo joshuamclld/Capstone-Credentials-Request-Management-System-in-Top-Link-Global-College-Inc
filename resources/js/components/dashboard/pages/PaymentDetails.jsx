@@ -11,8 +11,10 @@ export default function PaymentDetails({ user, onLogout, onNavigate }) {
     const [error, setError] = useState(null);
     const [verifying, setVerifying] = useState(false);
     const [message, setMessage] = useState(null);
+    // Modal state to show the payment proof image full-screen
     const [proofModalUrl, setProofModalUrl] = useState(null);
 
+    // Extract the request ID from the URL path (last segment after /cashier/payments/)
     const id = window.location.pathname.split('/').filter(Boolean).pop();
 
     useEffect(() => {
@@ -37,6 +39,7 @@ export default function PaymentDetails({ user, onLogout, onNavigate }) {
             });
     }, [id]);
 
+    // Verify payment: PATCH /admin/payments/:id/verify to mark the payment as paid
     const handleVerify = () => {
         if (verifying) return;
         setVerifying(true);
@@ -105,7 +108,7 @@ export default function PaymentDetails({ user, onLogout, onNavigate }) {
         >
             <div className="max-w-6xl mx-auto">
 
-                {/* Flash Message */}
+                {/* Flash Message — shown after a successful or failed verification */}
                 {message && (
                     <div className={`mb-5 px-4 py-3 rounded-lg text-sm font-medium border ${
                         message.type === 'success'
@@ -159,7 +162,7 @@ export default function PaymentDetails({ user, onLogout, onNavigate }) {
                 {/* ─── Two-Column Layout ─── */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
 
-                    {/* ─── Left Column (70%) ─── */}
+                    {/* ─── Left Column (70%) — student info, requested docs, remarks ─── */}
                     <div className="lg:col-span-7 xl:col-span-8 space-y-5">
 
                         {/* Student Information */}
@@ -224,7 +227,7 @@ export default function PaymentDetails({ user, onLogout, onNavigate }) {
                             </div>
                         </div>
 
-                        {/* Remarks — only if present */}
+                        {/* Registrar Remarks — only rendered if present on the request */}
                         {request.remarks && (
                             <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                                 <div className="flex items-center gap-2 px-5 py-3 bg-emerald-50 border-b border-emerald-100">
@@ -238,7 +241,7 @@ export default function PaymentDetails({ user, onLogout, onNavigate }) {
                         )}
                     </div>
 
-                    {/* ─── Right Sidebar (30%) ─── */}
+                    {/* ─── Right Sidebar (30%) — payment summary + verification controls ─── */}
                     <div className="lg:col-span-5 xl:col-span-4 space-y-5">
 
                         {/* Payment Summary */}
@@ -277,7 +280,7 @@ export default function PaymentDetails({ user, onLogout, onNavigate }) {
                             </div>
                         </div>
 
-                        {/* Payment Verification */}
+                        {/* Payment Verification — the main action card */}
                         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                             <div className="flex items-center gap-2 px-5 py-3 bg-emerald-50 border-b border-emerald-100">
                                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
@@ -285,6 +288,7 @@ export default function PaymentDetails({ user, onLogout, onNavigate }) {
                             </div>
                             <div className="px-5 py-4">
                                 {request.payment_status === 'paid' ? (
+                                    // Already paid — show verification details
                                     <div className="flex items-start gap-3 p-4 bg-emerald-50 rounded-lg border border-emerald-200">
                                         <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
                                         <div>
@@ -300,6 +304,7 @@ export default function PaymentDetails({ user, onLogout, onNavigate }) {
                                         </div>
                                     </div>
                                 ) : request.status === 'Cancelled' ? (
+                                    // Cancelled — disable verification
                                     <div className="flex items-start gap-3 p-4 bg-red-50 rounded-lg border border-red-200">
                                         <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
                                         <div>
@@ -308,6 +313,7 @@ export default function PaymentDetails({ user, onLogout, onNavigate }) {
                                         </div>
                                     </div>
                                 ) : (
+                                    // Pending — show the verify button, plus online payment proof viewer
                                     <div className="space-y-4">
                                         {request.payment_method === 'online' && (
                                             <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
@@ -327,6 +333,7 @@ export default function PaymentDetails({ user, onLogout, onNavigate }) {
                                         <p className="text-xs text-slate-500 leading-relaxed">
                                             Verify payment after confirming student payment.
                                         </p>
+                                        {/* The main action: mark this payment as paid */}
                                         <button
                                             onClick={handleVerify}
                                             disabled={verifying}
@@ -347,6 +354,7 @@ export default function PaymentDetails({ user, onLogout, onNavigate }) {
             </div>
         </DashboardLayout>
 
+        {/* Full-screen modal for viewing the student's uploaded payment proof image */}
         {proofModalUrl && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setProofModalUrl(null)}>
                 <div className="relative max-w-2xl w-full bg-white rounded-2xl overflow-hidden shadow-xl" onClick={e => e.stopPropagation()}>

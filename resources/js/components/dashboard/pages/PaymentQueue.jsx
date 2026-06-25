@@ -12,17 +12,20 @@ import { cashierSidebarItems } from '../config/sidebarItems';
 
 const tableHeaders = ['Tracking No.', 'Student Name', 'Requested Documents', 'Payment Method', 'Total Fee', 'Payment Status', 'Request Status', 'Date Requested', 'Action'];
 
+// Payment queue can be filtered by all, cash-only, or online-only payments
 const filterOptions = ['All', 'Cash Payments', 'Online Payments'];
 
 export default function PaymentQueue({ user, onLogout, onNavigate }) {
     const ITEMS_PER_PAGE = 10;
     const [query, setQuery] = useState('');
+    // Payment method filter: All, Cash Payments, Online Payments
     const [filter, setFilter] = useState('All');
     const [allRequests, setAllRequests] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [page, setPage] = useState(1);
 
+    // Fetch only requests with pending payment status from the backend
     const fetchData = () => {
         setLoading(true);
         fetch(`/admin/payments-data?per_page=9999&payment_status=pending`, { credentials: 'same-origin' })
@@ -44,12 +47,14 @@ export default function PaymentQueue({ user, onLogout, onNavigate }) {
         fetchData();
     }, []);
 
+    // Sort so cancelled requests appear at the bottom of the queue
     const sortedRequests = [...allRequests].sort((a, b) => {
         if (a.status === 'Cancelled' && b.status !== 'Cancelled') return 1;
         if (a.status !== 'Cancelled' && b.status === 'Cancelled') return -1;
         return 0;
     });
 
+    // Filter by payment method: cash = unpaid, online = pending_verification (proof uploaded but not yet verified)
     const filtered = sortedRequests.filter((req) => {
         const matchesSearch = req.student_name.toLowerCase().includes(query.toLowerCase()) ||
             req.tracking_number.toLowerCase().includes(query.toLowerCase());
@@ -121,6 +126,7 @@ export default function PaymentQueue({ user, onLogout, onNavigate }) {
             <section className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-6 py-5 border-b border-slate-200">
                     <div className="flex items-center gap-3 w-full sm:w-auto">
+                        {/* Dropdown to toggle between All / Cash / Online payments */}
                         <DashboardDropdown
                             options={filterOptions.map(o => ({ label: o, value: o }))}
                             value={filter}

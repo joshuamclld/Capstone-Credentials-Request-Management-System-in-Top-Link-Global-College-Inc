@@ -11,6 +11,7 @@ class AdminMiddleware
 {
     public function handle(Request $request, Closure $next): Response
     {
+        // Redirect unauthenticated users to the admin login page
         if (!Auth::check()) {
             if ($request->expectsJson()) {
                 return response()->json([
@@ -23,6 +24,7 @@ class AdminMiddleware
 
         $user = Auth::user();
 
+        // Block access if the account has been deactivated
         if (!$user->is_active) {
             if ($request->expectsJson()) {
                 return response()->json([
@@ -33,6 +35,7 @@ class AdminMiddleware
             abort(403);
         }
 
+        // Only users with the 'registrar' role may access admin routes
         if ($user->role !== 'registrar') {
             if ($request->expectsJson()) {
                 return response()->json([

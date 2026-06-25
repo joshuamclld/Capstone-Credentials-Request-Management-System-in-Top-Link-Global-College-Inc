@@ -14,6 +14,9 @@ use Illuminate\Support\Facades\Storage;
 
 class StudentRequestController extends Controller
 {
+    // ─── Student Dashboard ────────────────────────────────────────────────────
+
+    // Fetch all requests for the authenticated student, newest first
     public function myRequests(Request $request)
     {
         if (!$request->expectsJson()) {
@@ -56,6 +59,7 @@ class StudentRequestController extends Controller
         ]);
     }
 
+    // Show full detail of one request by tracking number, scoped to the owner student
     public function myRequestDetail(Request $request, $trackingNumber)
     {
         if (!$request->expectsJson()) {
@@ -105,6 +109,9 @@ class StudentRequestController extends Controller
         ]);
     }
 
+    // ─── Request Submission ───────────────────────────────────────────────────
+
+    // Create a new credential request with validated data, calculate fee, and notify admins
     public function store(StoreStudentRequest $request)
     {
         $validated = $request->validated();
@@ -115,6 +122,7 @@ class StudentRequestController extends Controller
             $validated['fullName'] = $student->last_name . ', ' . $student->first_name;
             $validated['email'] = $student->email;
 
+            // Require complete profile before allowing a request
             if (!$student->date_of_birth || !$student->gender || !$student->emergency_contact_person || !$student->emergency_contact_number || !$student->complete_address) {
                 return response()->json([
                     'success' => false,
@@ -163,6 +171,7 @@ class StudentRequestController extends Controller
             $docIds = Document::whereIn('code', $validated['selectedDocs'])->pluck('id');
             $studentRequest->documents()->attach($docIds);
 
+            // Alert registrar and cashier about the new request
             Notification::notifyRole('registrar', 'new_request', 'New Credential Request', "{$validated['fullName']} submitted a request", (string) $studentRequest->id, "/admin/requests/{$studentRequest->id}");
             Notification::notifyRole('cashier', 'new_request', 'New Credential Request', "{$validated['fullName']} submitted a new request waiting for payment.", (string) $studentRequest->id, "/cashier/payments/{$studentRequest->id}");
 
@@ -178,6 +187,9 @@ class StudentRequestController extends Controller
         ], 201);
     }
 
+    // ─── Public Tracking ──────────────────────────────────────────────────────
+
+    // Look up a request by tracking number; return full detail for owner, limited for guests
     public function show(Request $request, string $trackingNumber)
     {
         if (!$request->expectsJson()) {
@@ -200,6 +212,7 @@ class StudentRequestController extends Controller
         $documentNames = $documents->pluck('name')->toArray();
         $processingDays = $documents->max('processing_days');
 
+        // Hide claimed requests from non-owners to protect privacy
         if (!$isOwner && $studentRequest->status === 'Claimed') {
             return response()->json([
                 'success' => false,
@@ -262,6 +275,9 @@ class StudentRequestController extends Controller
         ]);
     }
 
+    // ─── Cancellation ─────────────────────────────────────────────────────────
+
+    // Allow a student to cancel their own request only while it's still Pending
     public function cancel(string $trackingNumber)
     {
         $student = auth('student')->user();
@@ -314,6 +330,9 @@ class StudentRequestController extends Controller
 
 
 
+    // ─── Payment Proof ────────────────────────────────────────────────────────
+
+    // Upload a payment proof image and mark payment as pending verification
     public function uploadPaymentProof(Request $request, string $trackingNumber)
     {
         $student = auth('student')->user();
@@ -350,6 +369,7 @@ class StudentRequestController extends Controller
         ]);
     }
 
+    // Serve the stored payment proof image to the owner or an authorized admin
     public function getPaymentProof(string $trackingNumber)
     {
         $studentRequest = StudentRequest::where('tracking_number', $trackingNumber)->first();
@@ -382,6 +402,9 @@ class StudentRequestController extends Controller
         return response()->file($path);
     }
 
+    // ─── Fee Calculation ──────────────────────────────────────────────────────
+
+    // Compute total fee: per-semester docs multiply by semester count, per-page by page count, others flat
     private function calculateFee($documents, array $semesters, ?int $pages): float
     {
         $total = 0;
@@ -399,6 +422,7 @@ class StudentRequestController extends Controller
         return (float) $total;
     }
 
+    // Generate a unique tracking number (TLGC-YYYY-xxxxx) with retry on collision
     private function generateTrackingNumber(): string
     {
         $maxAttempts = 5;

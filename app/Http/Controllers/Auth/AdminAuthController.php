@@ -10,12 +10,7 @@ use Illuminate\Support\Facades\Auth;
 
 class AdminAuthController extends Controller
 {
-    /**
-     * Handle admin login.
-     *
-     * @param Request $request
-     * @return JsonResponse
-     */
+    // Authenticate admin users and guard against deactivated or non-admin accounts
     public function login(Request $request): JsonResponse
     {
         $request->validate([
@@ -38,6 +33,7 @@ class AdminAuthController extends Controller
         if (Auth::attempt($credentials, $remember)) {
             $user = Auth::user();
 
+            // Block login if the account has been deactivated
             if (isset($user->is_active) && !$user->is_active) {
                 Auth::logout();
                 $request->session()->invalidate();
@@ -47,6 +43,7 @@ class AdminAuthController extends Controller
                 ], 403);
             }
 
+            // Restrict login to registrar, cashier, or system_admin roles
             if (!in_array($user->role, ['registrar', 'cashier', 'system_admin'])) {
                 Auth::logout();
                 return response()->json([
@@ -70,12 +67,7 @@ class AdminAuthController extends Controller
         ], 401);
     }
 
-    /**
-     * Handle admin logout.
-     *
-     * @param Request $request
-     * @return JsonResponse
-     */
+    // Log out the admin, invalidate the session, and regenerate CSRF token
     public function logout(Request $request): JsonResponse
     {
         Auth::logout();
@@ -88,12 +80,7 @@ class AdminAuthController extends Controller
         ]);
     }
 
-    /**
-     * Check authentication status.
-     *
-     * @param Request $request
-     * @return JsonResponse
-     */
+    // Verify whether the current session belongs to an active admin user
     public function checkAuth(Request $request): JsonResponse
     {
         if (Auth::check() && (Auth::user()->is_active ?? true) && in_array(Auth::user()->role, ['registrar', 'cashier', 'system_admin'])) {
