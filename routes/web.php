@@ -38,7 +38,7 @@ Route::get('/system-admin-dashboard', function () {
 // Admin Authentication Routes
 Route::prefix('admin')->group(function () {
     Route::post('/login', [AdminAuthController::class, 'login'])
-        ->middleware('throttle:5,1');
+        ->middleware('throttle:login');
 
     Route::post('/logout', [AdminAuthController::class, 'logout'])
         ->middleware('auth');
@@ -152,11 +152,11 @@ Route::get('/courses', function () {
 // Student Authentication Routes
 Route::prefix('student')->group(function () {
     Route::post('/login', [StudentAuthController::class, 'login'])
-        ->middleware('throttle:5,1');
+        ->middleware('throttle:login');
     Route::post('/forgot-password', [StudentAuthController::class, 'forgotPassword'])
-        ->middleware('throttle:3,1');
+        ->middleware('throttle:login');
     Route::post('/reset-password', [StudentAuthController::class, 'resetPassword'])
-        ->middleware('throttle:5,1');
+        ->middleware('throttle:login');
     Route::post('/logout', [StudentAuthController::class, 'logout'])->middleware('auth:student');
     Route::get('/check', [StudentAuthController::class, 'check'])->middleware('throttle:60,1');
 
