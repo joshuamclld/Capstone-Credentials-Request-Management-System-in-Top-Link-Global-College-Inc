@@ -132,7 +132,7 @@ export default function NotificationList({ user, onLogout, onNavigate }) {
                     <EmptyState icon={Bell} title="No Notifications" subtitle="You have no notifications yet." />
                 ) : (
                     <>
-                        <div className="hidden md:block">
+                        <div className="hidden lg:block">
                             <div className="divide-y divide-slate-100">
                                 {notifications.map((n) => (
                                     <button
@@ -162,7 +162,7 @@ export default function NotificationList({ user, onLogout, onNavigate }) {
                             </div>
                         </div>
 
-                        <div className="md:hidden">
+                        <div className="lg:hidden">
                             <div className="divide-y divide-slate-100">
                                 {notifications.map((n) => (
                                     <button
@@ -193,12 +193,12 @@ export default function NotificationList({ user, onLogout, onNavigate }) {
                         </div>
 
                         {pagination && pagination.last_page > 1 && (
-                            <div className="hidden md:block px-6 py-4 border-t border-slate-100">
+                            <div className="hidden lg:block px-6 py-4 border-t border-slate-100">
                                 <DashboardPagination currentPage={pagination.current_page} lastPage={pagination.last_page} onPageChange={handlePageChange} />
                             </div>
                         )}
                         {pagination && pagination.last_page > 1 && (
-                            <div className="md:hidden px-4 py-3 border-t border-slate-100">
+                            <div className="lg:hidden px-4 py-3 border-t border-slate-100">
                                 <DashboardPagination currentPage={pagination.current_page} lastPage={pagination.last_page} onPageChange={handlePageChange} />
                             </div>
                         )}

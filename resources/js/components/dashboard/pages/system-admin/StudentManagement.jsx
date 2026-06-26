@@ -308,7 +308,7 @@ export default function StudentManagement({ user, onLogout, onNavigate }) {
         <EmptyState icon={GraduationCap} title="No students found" subtitle={debouncedQuery ? 'Try a different search term.' : 'Click "Add Student" or "Import CSV" to get started.'} />
       ) : (
         <>
-          <div className="hidden md:block bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="hidden lg:block bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <DashboardTable headers={tableHeaders}>
               {students.map(s => (
                 <tr key={s.id} className="border-b border-outline-variant/50 hover:bg-surface-container-low/50 transition-colors">
@@ -320,16 +320,16 @@ export default function StudentManagement({ user, onLogout, onNavigate }) {
                   <td className="px-4 py-3.5">
                     <div className="flex items-center gap-1.5">
                       <button onClick={() => openViewModal(s)}
-                        className="p-2 rounded-lg bg-primary text-on-primary hover:opacity-90 transition-all cursor-pointer" title="View">
+                        className="p-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-all cursor-pointer" title="View">
                         <Eye className="w-4 h-4" />
                       </button>
                       <button onClick={() => openToggleModal(s)}
-                        className={`p-2 rounded-lg text-white transition-all cursor-pointer ${s.is_active ? 'bg-amber-600 hover:bg-amber-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
+                        className={`p-1.5 rounded-lg text-white transition-all cursor-pointer ${s.is_active ? 'bg-amber-600 hover:bg-amber-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
                         title={s.is_active ? 'Deactivate' : 'Activate'}>
                         <Power className="w-4 h-4" />
                       </button>
                       <button onClick={() => openDeleteModal(s)}
-                        className="p-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-all cursor-pointer" title="Delete">
+                        className="p-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-all cursor-pointer" title="Delete">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
@@ -338,7 +338,7 @@ export default function StudentManagement({ user, onLogout, onNavigate }) {
               ))}
             </DashboardTable>
           </div>
-          <div className="md:hidden space-y-3">
+          <div className="lg:hidden space-y-3">
             {students.map(s => (
               <div key={s.id} className="bg-surface rounded-xl border border-outline-variant shadow-sm p-4">
                 <div className="space-y-2">
@@ -351,16 +351,16 @@ export default function StudentManagement({ user, onLogout, onNavigate }) {
                   <p className="text-xs text-on-surface-variant">{new Date(s.created_at).toLocaleDateString()}</p>
                   <div className="flex items-center gap-1.5 mt-2">
                     <button onClick={() => openViewModal(s)}
-                      className="p-2 rounded-lg bg-primary text-on-primary hover:opacity-90 transition-all cursor-pointer" title="View">
+                      className="p-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-all cursor-pointer" title="View">
                       <Eye className="w-4 h-4" />
                     </button>
                     <button onClick={() => openToggleModal(s)}
-                      className={`p-2 rounded-lg text-white transition-all cursor-pointer ${s.is_active ? 'bg-amber-600 hover:bg-amber-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
+                      className={`p-1.5 rounded-lg text-white transition-all cursor-pointer ${s.is_active ? 'bg-amber-600 hover:bg-amber-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
                       title={s.is_active ? 'Deactivate' : 'Activate'}>
                       <Power className="w-4 h-4" />
                     </button>
                     <button onClick={() => openDeleteModal(s)}
-                      className="p-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-all cursor-pointer" title="Delete">
+                      className="p-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-all cursor-pointer" title="Delete">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>

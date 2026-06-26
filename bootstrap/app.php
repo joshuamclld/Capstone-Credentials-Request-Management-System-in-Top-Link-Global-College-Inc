@@ -30,8 +30,6 @@ return Application::configure(basePath: dirname(__DIR__))
             'cashier' => CashierMiddleware::class,     // role=cashier or registrar + is_active
             'system_admin' => SystemAdminMiddleware::class, // role=system_admin + is_active
         ]);
-
-        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // All API responses are JSON so the SPA can handle them consistently

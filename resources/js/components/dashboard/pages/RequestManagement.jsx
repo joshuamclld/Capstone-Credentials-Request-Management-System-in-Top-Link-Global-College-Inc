@@ -136,50 +136,56 @@ export default function RequestManagement({ user, onLogout, onNavigate }) {
             onLogout={onLogout}
             onNavigate={onNavigate}
         >
-            <section className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+            <section className="bg-white rounded-xl border border-slate-200 mb-6">
                 {/* Filter bar: status dropdown, document dropdown, date range inputs, search */}
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-6 py-5 border-b border-slate-200">
-                    <div className="flex items-center gap-3 w-full sm:w-auto flex-wrap">
-                        <label className="flex items-center gap-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-6 py-5">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full">
+                        <label className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 w-full sm:w-auto text-xs font-semibold text-slate-500 uppercase tracking-wider">
                             Status
                             <DashboardDropdown
                                 options={filterOptions.map(o => ({ label: o, value: o }))}
                                 value={filter}
                                 onChange={setFilter}
                                 placeholder="All"
-                                className="w-40"
+                                className="w-full sm:w-40"
                             />
                         </label>
-                        <label className="flex items-center gap-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                        <label className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 w-full sm:w-auto text-xs font-semibold text-slate-500 uppercase tracking-wider">
                             Document
                             <DashboardDropdown
                                 options={documentOptions.map(o => ({ label: o, value: o }))}
                                 value={docFilter}
                                 onChange={setDocFilter}
                                 placeholder="All Documents"
-                                className="w-48"
+                                className="w-full sm:w-48"
                             />
                         </label>
-                        <label className="flex items-center gap-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                        <label className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 w-full sm:w-auto text-xs font-semibold text-slate-500 uppercase tracking-wider">
                             Date
-                            {/* dateFrom input — max is constrained to dateTo to prevent inverted ranges */}
-                            <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} max={dateTo || undefined} className="h-10 px-3 rounded-lg border border-slate-200 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
-                            <span className="text-slate-400 text-sm">—</span>
-                            {/* dateTo input — min is constrained to dateFrom to prevent inverted ranges */}
-                            <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} min={dateFrom || undefined} className="h-10 px-3 rounded-lg border border-slate-200 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
-                            {(dateFrom || dateTo) && (
-                                <button onClick={() => { setDateFrom(''); setDateTo(''); }} className="text-xs text-slate-500 hover:text-slate-700 underline cursor-pointer">Clear</button>
-                            )}
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
+                                {/* dateFrom input — max is constrained to dateTo to prevent inverted ranges */}
+                                <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} max={dateTo || undefined} className="h-10 px-3 w-full sm:w-auto rounded-lg border border-slate-200 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
+                                <span className="hidden sm:inline text-slate-400 text-sm">—</span>
+                                {/* dateTo input — min is constrained to dateFrom to prevent inverted ranges */}
+                                <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} min={dateFrom || undefined} className="h-10 px-3 w-full sm:w-auto rounded-lg border border-slate-200 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
+                                {(dateFrom || dateTo) && (
+                                    <button onClick={() => { setDateFrom(''); setDateTo(''); }} className="text-xs text-slate-500 hover:text-slate-700 underline cursor-pointer shrink-0">Clear</button>
+                                )}
+                            </div>
                         </label>
-                        <DashboardSearch
-                            value={query}
-                            onChange={(e) => setQuery(e.target.value)}
-                            placeholder="Search requests..."
-                        />
                     </div>
                 </div>
+            </section>
 
-                <div className="hidden md:block">
+            <section className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                <div className="px-6 py-5 border-b border-slate-200">
+                    <DashboardSearch
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        placeholder="Search requests..."
+                    />
+                </div>
+                <div className="hidden lg:block">
                     <DashboardTable
                         headers={tableHeaders}
                         emptyState={
@@ -194,7 +200,7 @@ export default function RequestManagement({ user, onLogout, onNavigate }) {
                     </DashboardTable>
                 </div>
 
-                        <div className="md:hidden">
+                        <div className="lg:hidden">
                             {pageRecords.length > 0 ? (
                                 <div className="divide-y divide-slate-100">
                                     {pageRecords.map((item) => (

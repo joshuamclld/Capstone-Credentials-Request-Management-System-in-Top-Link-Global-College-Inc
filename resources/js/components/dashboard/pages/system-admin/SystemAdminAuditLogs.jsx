@@ -113,13 +113,13 @@ export default function SystemAdminAuditLogs({ user, onLogout, onNavigate }) {
                     <div className="p-6 text-center text-sm text-red-500">Error: {error}</div>
                 ) : (
                     <>
-                        <div className="hidden md:block">
+                        <div className="hidden lg:block">
                             <DashboardTable headers={tableHeaders} emptyState={<EmptyState icon={RefreshCw} title="No Audit Logs" subtitle="System activity will appear here." />}>
                                 {filtered.map(renderRow)}
                             </DashboardTable>
                         </div>
 
-                        <div className="md:hidden">
+                        <div className="lg:hidden">
                             {filtered.length > 0 ? (
                                 <div className="divide-y divide-slate-100">
                                     {filtered.map((item) => (
@@ -141,12 +141,12 @@ export default function SystemAdminAuditLogs({ user, onLogout, onNavigate }) {
                         </div>
 
                         {pagination && (
-                            <div className="hidden md:block px-6 py-4 border-t border-slate-100">
+                            <div className="hidden lg:block px-6 py-4 border-t border-slate-100">
                                 <DashboardPagination currentPage={pagination.current_page} lastPage={pagination.last_page} onPageChange={handlePageChange} />
                             </div>
                         )}
                         {pagination && (
-                            <div className="md:hidden px-4 py-3 border-t border-slate-100">
+                            <div className="lg:hidden px-4 py-3 border-t border-slate-100">
                                 <DashboardPagination currentPage={pagination.current_page} lastPage={pagination.last_page} onPageChange={handlePageChange} />
                             </div>
                         )}

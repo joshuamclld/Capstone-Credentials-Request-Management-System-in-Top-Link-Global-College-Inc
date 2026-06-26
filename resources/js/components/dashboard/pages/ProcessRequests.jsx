@@ -202,7 +202,7 @@ export default function ProcessRequests({ user, onLogout, onNavigate }) {
                     />
                 </div>
 
-                <div className="hidden md:block">
+                <div className="hidden lg:block">
                     <DashboardTable
                         headers={tableHeaders}
                         emptyState={
@@ -217,7 +217,7 @@ export default function ProcessRequests({ user, onLogout, onNavigate }) {
                     </DashboardTable>
                 </div>
 
-                        <div className="md:hidden">
+                        <div className="lg:hidden">
                             {pageRecords.length > 0 ? (
                                 <div className="divide-y divide-slate-100">
                                     {pageRecords.map((item) => (
@@ -246,14 +246,14 @@ export default function ProcessRequests({ user, onLogout, onNavigate }) {
                     )}
                 </div>
 
-                <div className="hidden md:block px-6 py-4 border-t border-slate-100">
+                <div className="hidden lg:block px-6 py-4 border-t border-slate-100">
                     <DashboardPagination
                         currentPage={page}
                         lastPage={totalPages}
                         onPageChange={handlePageChange}
                     />
                 </div>
-                <div className="md:hidden px-4 py-3 border-t border-slate-100">
+                <div className="lg:hidden px-4 py-3 border-t border-slate-100">
                     <DashboardPagination
                         currentPage={page}
                         lastPage={totalPages}
